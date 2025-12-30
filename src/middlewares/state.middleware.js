@@ -1,6 +1,6 @@
-export const stateHandler = (req, res, next) => {
+export const stateHandler = (req, message = '성공', data) => {
   res.success = (success) => {
-    return res.json({ resultType: "SUCCESS", error: null, success });
+    return res.status(200).json({ resultType: "SUCCESS", message, data });
   };
   next();
 };
