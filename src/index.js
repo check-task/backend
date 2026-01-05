@@ -1,12 +1,15 @@
-// const express = require('express')  // -> CommonJS
+import dotenv from "dotenv";
 import express from "express"; // -> ES Module'
 import cors from "cors";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { stateHandler } from "./middlewares/state.middleware.js";
 import { corsOptions } from "./config/cors.config.js";
 
+dotenv.config();
+console.log(process.env.PORT);
+
 const app = express();
-const port = 3000;
+const port = process.env.PORT;
 
 //cors 방식 허용
 app.use(cors(corsOptions));
