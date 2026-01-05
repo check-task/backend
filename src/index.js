@@ -22,7 +22,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(stateHandler);
 
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+  return res.success({ message: "Hello World!" }, "성공");
 });
 
 app.use(errorHandler);
