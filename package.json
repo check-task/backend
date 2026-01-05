@@ -17,7 +17,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/index.js",
-    "dev": "nodemon --exec node src/index.js",
+    "dev": "nodemon -e js,json,prisma --exec \"prisma generate && node src/index.js\"",
     "db:test": "node --input-type=module -e 'import { prisma } from \"./src/db.config.js\"; await prisma.$connect(); const r = await prisma.$queryRawUnsafe(\"SELECT 1 as ok\"); console.log(\"DB CONNECT OK\", r); await prisma.$disconnect();'",
     "prisma:generate": "prisma generate",
     "prisma:pull": "prisma db pull",
@@ -25,8 +25,7 @@
     "migrate:dev": "prisma migrate dev --name init",
     "migrate:deploy": "prisma migrate deploy",
     "migrate:reset": "prisma migrate reset --force",
-    "migrate:status": "prisma migrate status",
-    "db:delete:restaurants": "node scripts/delete_restaurants.js"
+    "migrate:status": "prisma migrate status"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.2.0",
