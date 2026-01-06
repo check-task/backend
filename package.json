@@ -21,8 +21,9 @@
     "db:test": "node --input-type=module -e 'import { prisma } from \"./src/db.config.js\"; await prisma.$connect(); const r = await prisma.$queryRawUnsafe(\"SELECT 1 as ok\"); console.log(\"DB CONNECT OK\", r); await prisma.$disconnect();'",
     "prisma:generate": "prisma generate",
     "prisma:pull": "prisma db pull",
+    "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio",
-    "migrate:dev": "prisma migrate dev --name init",
+    "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "migrate:reset": "prisma migrate reset --force",
     "migrate:status": "prisma migrate status"
