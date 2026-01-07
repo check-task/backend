@@ -1,3 +1,8 @@
 {
-  "javascript.preferences.importModuleSpecifierEnding": "js"
+  "javascript.preferences.importModuleSpecifierEnding": "js",
+
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  },
+  "editor.formatOnSave": true
 }
