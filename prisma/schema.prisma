@@ -48,6 +48,10 @@ model User {
   updatedAt DateTime? @updatedAt @map("updated_at") @db.DateTime
   deletedAt DateTime? @map("deleted_at") @db.DateTime
 
+  //알람 관련
+  deadlineAlarm Int @default(24) @map("deadline_alarm") // 마감 알람 설정 시간(기본값: 24시간)
+  taskAlarm     Int @default(24) @map("task_alarm") // 과제 알람 설정 시간(기본값: 24시간)
+
   // 관계 설정 (Relations)
   alarms      UserAlarm[] @relation("UserAlarms")
   folders     Folder[]    @relation("UserFolders") // 유저가 가진 폴더들 
@@ -69,13 +73,13 @@ model UserAlarm {
   taskId    Int? @map("task_id") // 과제 id 과제 알람일 수도 있고 아닐 수도 있으니 nullable 고려
   subTaskId Int? @map("sub_task_id") // 세부과제 id 세부과제알람일 수도 있고 아닐 수도 있으니 nullable 고려
 
-  title        String   @db.VarChar(30) //알람 제목
-  alarmContent String   @map("alarm_content") @db.VarChar(50) //알람 내용
-  isRead       Boolean  @default(false) @map("is_read") // 0: off, 1: on
+  title        String  @db.VarChar(30) //알람 제목
+  alarmContent String  @map("alarm_content") @db.VarChar(50) //알람 내용
+  isRead       Boolean @default(false) @map("is_read") // 0: off, 1: on
+
   //시간 관련
-  alarmDate    DateTime @map("alarm_date") @db.DateTime // 알람 보낼 시간(기본값: 24시간 후)
-  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime // 알람 생성 시간
-  setTime      Int      @default(24) @map("set_time") // 알람 설정 시간(기본값: 24시간)
+  alarmDate DateTime @map("alarm_date") @db.DateTime // 알람 보낼 시간(기본값: 24시간 후)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime // 알람 생성 시간
 
   // 관계 설정 (Relations)
   user    User     @relation("UserAlarms", fields: [userId], references: [id], onDelete: Restrict) // 유저와 연결
