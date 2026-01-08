@@ -106,15 +106,17 @@ model Folder {
 
 // 과제 (Task)
 model Task {
-  id        Int        @id @default(autoincrement()) @map("task_id")
-  folderId  Int?       @map("folder_id") // 처음 과제를 생성하면 폴더에 과제가 안들어가있으므로 nullable 고려
-  title     String     @db.VarChar(30)
-  deadline  DateTime   @db.Date
-  type      TaskType // Team, Personal
-  status    TaskStatus // PENDING, PROGRESS, COMPLETED
-  isAlarm   Boolean    @map("is_alarm") // 0: off, 1: on
-  createdAt DateTime   @default(now()) @map("created_at") @db.DateTime
-  updatedAt DateTime?  @updatedAt @map("updated_at") @db.DateTime
+  id              Int        @id @default(autoincrement()) @map("task_id")
+  folderId        Int?       @map("folder_id") // 처음 과제를 생성하면 폴더에 과제가 안들어가있으므로 nullable 고려
+  title           String     @db.VarChar(30)
+  deadline        DateTime   @db.Date
+  type            TaskType // Team, Personal
+  status          TaskStatus // PENDING, PROGRESS, COMPLETED
+  isAlarm         Boolean    @map("is_alarm") // 0: off, 1: on
+  createdAt       DateTime   @default(now()) @map("created_at") @db.DateTime
+  updatedAt       DateTime?  @updatedAt @map("updated_at") @db.DateTime
+  inviteCode      String?    @map("invite_code") @db.VarChar(50) // 팀과제 초대 코드
+  inviteExpiredAt DateTime?  @map("invite_expired") @db.DateTime // 팀과제 초대 코드 만료 시간
 
   // 관계 설정 (Relations)
   folder         Folder?         @relation(fields: [folderId], references: [id], onDelete: Cascade) // 폴더와 연결 (삭제 시 과제도 삭제됨)
