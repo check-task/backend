@@ -112,7 +112,7 @@ model Task {
   deadline        DateTime   @db.Date
   type            TaskType // Team, Personal
   status          TaskStatus // PENDING, PROGRESS, COMPLETED
-  isAlarm         Boolean    @map("is_alarm") // 0: off, 1: on
+  isAlarm         Boolean    @default(true) @map("is_alarm") // true: on, false: off => 생성 시 true로 설정됨.
   createdAt       DateTime   @default(now()) @map("created_at") @db.DateTime
   updatedAt       DateTime?  @updatedAt @map("updated_at") @db.DateTime
   inviteCode      String?    @map("invite_code") @db.VarChar(50) // 팀과제 초대 코드
@@ -155,7 +155,7 @@ model SubTask {
   title     String        @db.VarChar(30) // 세부과제 제목
   endDate   DateTime      @map("end_date") @db.Date // 세부과제 완료 일자 => 생성 시 설정되어야 함.
   status    SubTaskStatus @default(PENDING) // PENDING, PROGRESS, COMPLETED => 생성 시 PENDING으로 설정됨.
-  isAlarm   Boolean       @map("is_alarm") // 0: off, 1: on
+  isAlarm   Boolean       @default(true) @map("is_alarm") // true: on, false: off => 생성 시 true로 설정됨.
   createdAt DateTime      @default(now()) @map("created_at") @db.DateTime // 세부과제 생성 일자
   updatedAt DateTime?     @updatedAt @map("updated_at") @db.DateTime // 세부과제 수정 일자
 
