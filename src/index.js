@@ -4,6 +4,7 @@ import cors from "cors";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { stateHandler } from "./middlewares/state.middleware.js";
 import { corsOptions } from "./config/cors.config.js";
+import apiRouter from "./routes/index.js";
 
 dotenv.config();
 console.log(process.env.PORT);
@@ -24,6 +25,8 @@ app.use(stateHandler);
 app.get("/", (req, res) => {
   return res.success({ result: "Hello World!" }, "아싸 나이스 성공~");
 });
+// API 라우터 등록
+app.use("/v1/api", apiRouter); // 모든 API는 /api prefix를 가짐
 
 app.use(errorHandler);
 
