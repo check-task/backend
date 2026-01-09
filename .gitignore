@@ -1,6 +1,8 @@
 # Environment variables
 .env
 
+# Prisma
+prisma/migrations
 
 # Logs
 logs
