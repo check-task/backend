@@ -1,29 +1,18 @@
-import * as AlarmService from "../services/alarm.service.js"; // 추가!
-import { alarmListResponseDTO } from "../dtos/alarm.dto.js"; // 추가!
+import * as AlarmService from "../services/alarm.service.js";
 
 // 알람 목록 조회
-// Controller (간단해짐!)
-export const getAlarms = async (req, res, next) => {
-  try {
-    const userId = req.user?.id || 1;
+export const handleAlarmList = async (req, res) => {
+  // userId를 query 파라미터에서 받기 (임시)
+  const userId = req.query.userId ? parseInt(req.query.userId) : 1; // 기본값 1
+  // req.user는 로그인 미들웨어에서 설정됨
+  const result = await AlarmService.getAlarms(
+    userId, // 임시로 지정한 유저 ID
+    // req.user.id, // 로그인 미들웨어에서 검증된 유저 ID
+    req.query.cursor ? parseInt(req.query.cursor) : undefined,
+    req.query.limit ? parseInt(req.query.limit) : undefined,
+    req.query.orderBy,
+    req.query.order
+  );
 
-    const options = {
-      cursor: req.query.cursor ? parseInt(req.query.cursor) : undefined,
-      limit: req.query.limit ? parseInt(req.query.limit) : undefined,
-      orderBy: req.query.orderBy,
-      order: req.query.order,
-    };
-
-    const { alarms, hasNextPage, cursor } = await AlarmService.getAlarms(
-      userId,
-      options
-    );
-
-    const responseData = alarmListResponseDTO(alarms);
-    const meta = { hasNextPage, cursor };
-
-    return res.success({ ...responseData, meta }, "알림 목록 조회 성공");
-  } catch (error) {
-    next(error);
-  }
+  return res.success(result, "알림 목록 조회 성공");
 };

@@ -1,9 +1,9 @@
 import express from "express";
-import * as AlarmController from "../controllers/alarm.controller.js"; // 추가!
+import { handleAlarmList } from "../controllers/alarm.controller.js";
 
 const router = express.Router();
 
 // GET /v1/api/alarm - 알람 목록 조회
-router.get("/", AlarmController.getAlarms);
+router.get("/", handleAlarmList);
 
 export default router;

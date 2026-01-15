@@ -21,16 +21,6 @@ export class BadRequestError extends CustomError {
   }
 }
 
-// 401 Token Not Found
-export class TokenNotFoundError extends CustomError {
-  constructor(
-    errorCode = "TOKEN_NOT_FOUND",
-    reason = "토큰이 누락되었습니다.",
-    data = null
-  ) {
-    super(401, errorCode, reason, data);
-  }
-}
 // 401 Unauthorized
 export class UnauthorizedError extends CustomError {
   constructor(
@@ -58,17 +48,6 @@ export class NotFoundError extends CustomError {
   constructor(
     errorCode = "NOT_FOUND",
     reason = "리소스를 찾을 수 없습니다",
-    data = null
-  ) {
-    super(404, errorCode, reason, data);
-  }
-}
-
-// 404 Not Found
-export class UserNotFoundError extends CustomError {
-  constructor(
-    errorCode = "USER_NOT_FOUND",
-    reason = "사용자를 찾을 수 없습니다.",
     data = null
   ) {
     super(404, errorCode, reason, data);

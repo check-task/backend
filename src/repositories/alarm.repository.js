@@ -1,30 +1,31 @@
-import prisma from "../db.config.js"; // 추가!
+import prisma from "../db.config.js";
 import dayjs from "dayjs";
 
-// 커서 기반 알람 목록 조회
 export const findAlarmsByUserId = async (userId, options = {}) => {
-  const kstDate = dayjs().add(9, "hour").toDate();
+  // 기본값 적용
   const {
-    cursor = null, // ← undefined면 null 사용
-    limit = 10, // ← undefined면 10 사용
-    orderBy = "alarmDate", // ← undefined면 "alarmDate" 사용
-    order = "desc", // ← undefined면 "desc" 사용
+    cursor = null,
+    limit = 10,
+    orderBy = "alarmDate",
+    order = "desc",
   } = options;
 
-  // 이제 cursor, limit, orderBy, order는 항상 값이 있음!
+  const kstDate = dayjs().add(9, "hour").toDate();
 
   const where = {
     userId,
     alarmDate: {
       lte: kstDate,
     },
-    ...(cursor && { id: { lt: cursor } }), // cursor가 null이면 무시
+    ...(cursor && { id: { lt: cursor } }),
   };
 
   const alarms = await prisma.userAlarm.findMany({
     where,
-    orderBy: { [orderBy]: order }, // 항상 유효한 값
-    take: limit + 1, // 항상 숫자
+    orderBy: {
+      [orderBy]: order,
+    },
+    take: limit + 1,
   });
 
   return alarms;
