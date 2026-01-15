@@ -12,14 +12,3 @@ export const alarmListResponseDTO = (alarms, hasNextPage = false) => {
     })),
   };
 };
-
-// 커서 기반 페이징 메타 정보
-export const cursorPaginationMeta = (alarms, limit) => {
-  const hasNextPage = alarms.length > limit;
-  const cursor = hasNextPage ? alarms[limit - 1].id : null;
-
-  return {
-    hasNextPage,
-    cursor,
-  };
-};
