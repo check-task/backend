@@ -1,4 +1,4 @@
-import * as AlarmRepository from "../repositories/alarm.repository.js";
+import { findAlarmsByUserId } from "../repositories/alarm.repository.js";
 import { alarmListResponseDTO } from "../dtos/alarm.dto.js";
 import { NotFoundError, ForbiddenError } from "../errors/custom.error.js";
 import prisma from "../db.config.js";
@@ -24,7 +24,7 @@ export const getAlarms = async (userId, cursor, limit, orderBy, order) => {
   }
 
   // 1. 알람 조회
-  const alarms = await AlarmRepository.findAlarmsByUserId(userId, {
+  const alarms = await findAlarmsByUserId(userId, {
     cursor,
     limit,
     orderBy,
