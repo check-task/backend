@@ -26,7 +26,7 @@ app.get("/", (req, res) => {
   return res.success({ result: "Hello World!" }, "아싸 나이스 성공~");
 });
 // API 라우터 등록
-app.use("/v1/api", apiRouter); // 모든 API는 /api prefix를 가짐
+app.use("/api/v1", apiRouter); // 모든 API는 /api/v1 prefix를 가짐
 
 app.use(errorHandler);
 
