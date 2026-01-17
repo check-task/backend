@@ -14,5 +14,8 @@ router.patch('/communication/:taskId/:communicationId', modalController.updateCo
 router.delete('/communication/:taskId/:communicationId', modalController.deleteCommunication);
 
 //회의록
+router.post('/log/:taskId', modalController.createLog);
+router.patch('/log/:taskId/:logId', modalController.updateLog);
+router.delete('/log/:taskId/:logId', modalController.deleteLog);
 
 export default router;

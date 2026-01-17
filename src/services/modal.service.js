@@ -93,6 +93,40 @@ class ModalService {
 
     return modalRepository.deleteCommu(referenceId);
   }
+
+  // 회의록
+  async createLog(dto) {
+    const { taskId, userId, date, agenda, conclusion, discussion } = dto;
+
+    const member = await modalRepository.memberCheck(userId, taskId);
+    if (!member) throw new UnauthorizedError('권한이 없습니다.');
+
+    await modalRepository.createLog({ taskId, date, agenda, conclusion, discussion });
+    return modalRepository.findLogByTaskId(taskId);
+  }
+
+  async updateLog(dto) {
+    const { taskId, logId, userId, date, agenda, conclusion, discussion } = dto;
+
+    const member = await modalRepository.memberCheck(userId, taskId);
+    if (!member) throw new UnauthorizedError('권한이 없습니다.');
+
+    const log = await modalRepository.findLogById(logId);
+    if (!log || log.taskId !== taskId) throw new NotFoundError('회의록이 존재하지 않습니다.');
+
+    await modalRepository.updateLog(logId, { ...(date && { date }), ...(agenda && { agenda }), ...(conclusion && { conclusion }), ...(discussion && { discussion }) });
+    return modalRepository.findLogByTaskId(taskId);
+  }
+
+  async deleteLog({ taskId, logId, userId }) {
+    const member = await modalRepository.memberCheck(userId, taskId);
+    if (!member) throw new UnauthorizedError('권한이 없습니다.');
+
+    const log = await modalRepository.findLogById(logId);
+    if (!log || log.taskId !== taskId) throw new NotFoundError('회의록이 존재하지 않습니다.');
+
+    return modalRepository.deleteLog(logId);
+  }
 }
 
 export default new ModalService();

@@ -67,6 +67,30 @@ class ModalRepository {
   async deleteCommu(id) {
     return prisma.communication.delete({ where: { id } });
   }
+
+  // 회의록
+  async createLog(data) {
+    return prisma.log.create({ data });
+  }
+
+  async findLogByTaskId(taskId) {
+    return prisma.log.findMany({
+      where: { taskId },
+      orderBy: { id: 'desc' },
+    });
+  }
+
+  async findLogById(id) {
+    return prisma.log.findUnique({ where: { id } });
+  }
+
+  async updateLog(id, data) {
+    return prisma.log.update({ where: { id }, data });
+  }
+
+  async deleteLog(id) {
+    return prisma.log.delete({ where: { id } });
+  }
 }
 
 export default new ModalRepository();

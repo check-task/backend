@@ -97,6 +97,55 @@ class ModalController {
           next(err);
         }
     }
+    
+    // 회의록
+    async createLog(req, res, next) {
+        try {
+          const dto = new CreateLogDto({
+            taskId: Number(req.params.taskId),
+            userId: req.body.userId,
+            date: req.body.date,
+            agenda: req.body.agenda,
+            conclusion: req.body.conclusion,
+            discussion: req.body.discussion,
+          });
+    
+          const data = await logService.createLog(dto);
+          return stateHandler(res, '회의록 생성 성공', data);
+        } catch (err) {
+          next(err);
+        }
+    }
+    
+    async updateLog(req, res, next) {
+        try {
+          const dto = new UpdateLogDto({
+            taskId: Number(req.params.taskId),
+            logId: Number(req.params.logId),
+            userId: req.body.userId,
+            ...req.body,
+          });
+    
+          const data = await logService.updateLog(dto);
+          return stateHandler(res, '회의록 수정 성공', data);
+        } catch (err) {
+          next(err);
+        }
+    }
+    
+    async deleteLog(req, res, next) {
+        try {
+          const data = await logService.deleteLog({
+            taskId: Number(req.params.taskId),
+            logId: Number(req.params.logId),
+            userId: req.body.userId,
+          });
+    
+          return stateHandler(res, '회의록 삭제 성공', data);
+        } catch (err) {
+          next(err);
+        }
+    }
 }
 
 export default new ModalController();

@@ -128,3 +128,65 @@ export class UpdateCommunicationDto {
       }
     }
 }
+
+// 회의록
+export class CreateLogDto {
+    constructor({ taskId, userId, date, agenda, conclusion, discussion }) {
+      this.taskId = taskId;
+      this.userId = userId;
+      this.date = date;
+      this.agenda = agenda || null;
+      this.conclusion = conclusion || null;
+      this.discussion = discussion || null;
+  
+      this.validate();
+    }
+  
+    validate() {
+      if (!this.taskId || isNaN(this.taskId)) {
+        throw new BadRequestError('taskId가 올바르지 않습니다.');
+      }
+      if (!this.userId) {
+        throw new BadRequestError('userId가 필요합니다.');
+      }
+      if (!this.date) {
+        throw new BadRequestError('회의 일자(date)가 필요합니다.');
+      }
+      // YYYY.MM.DD 형식 체크
+      if (!/^\d{4}\.\d{2}\.\d{2}$/.test(this.date)) {
+        throw new BadRequestError('회의 일자 형식이 올바르지 않습니다. (YYYY.MM.DD)');
+      }
+    }
+}
+
+export class UpdateLogDto {
+    constructor({ taskId, logId, userId, date, agenda, conclusion, discussion }) {
+      this.taskId = taskId;
+      this.logId = logId;
+      this.userId = userId;
+      this.date = date;
+      this.agenda = agenda;
+      this.conclusion = conclusion;
+      this.discussion = discussion;
+  
+      this.validate();
+    }
+  
+    validate() {
+      if (!this.taskId || isNaN(this.taskId)) {
+        throw new BadRequestError('taskId가 올바르지 않습니다.');
+      }
+      if (!this.logId || isNaN(this.logId)) {
+        throw new BadRequestError('logId가 올바르지 않습니다.');
+      }
+      if (!this.userId) {
+        throw new BadRequestError('userId가 필요합니다.');
+      }
+      if (!this.date && !this.agenda && !this.conclusion && !this.discussion) {
+        throw new BadRequestError('수정할 값이 없습니다.');
+      }
+      if (this.date && !/^\d{4}\.\d{2}\.\d{2}$/.test(this.date)) {
+        throw new BadRequestError('회의 일자 형식이 올바르지 않습니다. (YYYY.MM.DD)');
+      }
+    }
+}
