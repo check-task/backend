@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import express from "express"; // -> ES Module'
+import express from "express";
 import cors from "cors";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { stateHandler } from "./middlewares/state.middleware.js";
