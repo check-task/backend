@@ -40,7 +40,7 @@ const kakaoVerify = async (profile) => {
   const email = kakaoAccount.email || null;
   const phoneNum = kakaoAccount.phone_number
   ? kakaoAccount.phone_number.replace("+82 ", "0")
-  : null;
+  : "01000000000";
   
   const providerId = profile.id.toString();
   // 기존 사용자를 조회
