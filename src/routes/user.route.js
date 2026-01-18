@@ -1,6 +1,9 @@
 import express from "express";
 import userController from "../controllers/user.controller.js";
+// import { checkAuth } from "../middlewares/auth.middleware.js";
 
-export const userRouter = express.Router();
+const userRouter = express.Router();
 
-userRouter.get('/me', userController.getMyInfo);
+userRouter.get('/me', /*checkAuth*/ userController.getMyInfo);
+
+export default userRouter;
