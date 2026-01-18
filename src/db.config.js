@@ -21,5 +21,4 @@ const adapter = new PrismaMariaDb({
 // Prisma Client 인스턴스 생성
 // Prisma 7에서는 런타임에 연결 정보를 생성자에 전달해야 합니다.
 export const prisma = new PrismaClient({ adapter });
-
 export default prisma;
