@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { BadRequestError, UnauthorizedError } from '../errors/custom.error';
+import { BadRequestError, UnauthorizedError } from '../errors/custom.error.js';
 
 export default function authenticate(req, res, next) {
   try {
@@ -17,16 +17,16 @@ export default function authenticate(req, res, next) {
     const secret = process.env.JWT_SECRET;
 
     const decoded = jwt.verify(token, secret);
-    if (!decoded.userId) {
-      throw new UnauthorizedError('유효하지 않은 토큰입니다.');
+    if (!decoded.id) {
+      throw new UnauthorizedError('유효하지 않은 토큰입니다.--');
     }
 
-    const userIdInt = parseInt(decoded.userId, 10);
+    const userIdInt = parseInt(decoded.id, 10);
     if (isNaN(userIdInt)) {
       throw new UnauthorizedError('토큰에 저장된 userId가 유효하지 않습니다.');
     }
 
-    req.user = { userId: userIdInt };
+    req.user = { id: userIdInt };
     next();
   } catch (error) {
     next(error);
