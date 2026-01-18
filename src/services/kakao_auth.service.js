@@ -27,49 +27,43 @@ const generateRefreshToken = (user) => {
 
 //Kakao 사용자 DB 처리
 export const handleKakaoLogin = async (profile) => {
-  try {
-    const kakaoAccount = profile._json.kakao_account || {};
-    const profileInfo = kakaoAccount.profile || {};
+  const kakaoAccount = profile._json.kakao_account || {};
+  const profileInfo = kakaoAccount.profile || {};
 
-    const nickname = profileInfo.nickname || "카카오유저";
-    const profileImage = profileInfo.profile_image_url || "";
-    const email = kakaoAccount.email || null;
-    const phoneNum = kakaoAccount.phone_number
-      ? kakaoAccount.phone_number.replace("+82 ", "0")
-      : "01000000000";
+  const nickname = profileInfo.nickname || "카카오유저";
+  const profileImage = profileInfo.profile_image_url || "";
+  const email = kakaoAccount.email || null;
+  const phoneNum = kakaoAccount.phone_number
+    ? kakaoAccount.phone_number.replace("+82 ", "0")
+    : "01000000000";
 
-    const providerId = profile.id.toString();
+  const providerId = profile.id.toString();
 
-    let user = await prisma.user.findFirst({
-      where: { provider: "KAKAO", providerId },
+  let user = await prisma.user.findFirst({
+    where: { provider: "KAKAO", providerId },
+  });
+
+  let isNewUser = false;
+
+  if (!user) {
+    isNewUser = true;
+    user = await prisma.user.create({
+      data: {
+        nickname,
+        phoneNum,
+        email,
+        profileImage,
+        password: "",
+        provider: "KAKAO",
+        providerId,
+      },
     });
-
-    let isNewUser = false;
-
-    if (!user) {
-      isNewUser = true;
-      user = await prisma.user.create({
-        data: {
-          nickname,
-          phoneNum,
-          email,
-          profileImage,
-          password: "",
-          provider: "KAKAO",
-          providerId,
-        },
-      });
-    }
-
-    return {
-      user,
-      isNewUser,
-      accessToken: generateAccessToken(user),
-      refreshToken: generateRefreshToken(user),
-    };
-  } catch (err) {
-    err.statusCode = 500;
-    err.errorCode = "KAKAO_AUTH_SERVICE_ERROR";
-    throw err;
   }
+
+  return {
+    user,
+    isNewUser,
+    accessToken: generateAccessToken(user),
+    refreshToken: generateRefreshToken(user),
+  };
 };
