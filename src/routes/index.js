@@ -1,6 +1,7 @@
 import express from "express";
 import userRouter from "./user.route.js";
 import alarmRouter from "./alarm.route.js";
+import commentRouter from "./comment.route.js"; 
 import modalRouter from "./modal.route.js";
 
 const router = express.Router();
@@ -8,6 +9,7 @@ const router = express.Router();
 // 각 도메인별 라우터 등록
 router.use("/user", userRouter);
 router.use("/alarm", alarmRouter);
+router.use(commentRouter);
 router.use("/reference", modalRouter);
 
 // health check용 기본 라우트
