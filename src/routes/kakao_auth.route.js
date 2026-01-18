@@ -1,19 +1,14 @@
 import { Router } from "express";
-import passport from "../config/kakao_passport.config.js";
+import {kakaoMiddleware} from "../middlewares/kakao.middleware.js";
 
 const router = Router();
 
 //카카오 로그인 요청
-router.get("/kakao",
-  passport.authenticate("kakao", { session: false })
-);
+router.get("/kakao", kakaoMiddleware.start);
 
 router.get(
   "/kakao/callback",
-  passport.authenticate("kakao", {
-    session: false,
-    failureRedirect: "/login-failed",
-  }),
+  kakaoMiddleware.callback,
   (req, res) => {
     const { user, accessToken, refreshToken, isNewUser } = req.user;
 
@@ -22,7 +17,7 @@ router.get(
       resultType: "SUCCESS",
       message: isNewUser ? "회원 가입 성공" : "로그인 성공",
       data: {
-        user_id: user.user_id,
+        id: user.id,
         isNewUser,
         provider: "KAKAO",  
         token: {

@@ -3,6 +3,7 @@ import userRouter from "./user.route.js";
 import alarmRouter from "./alarm.route.js";
 import commentRouter from "./comment.route.js";
 import taskRouter from "./task.route.js";
+import commentRouter from "./comment.route.js"; 
 import modalRouter from "./modal.route.js";
 
 const router = express.Router();
