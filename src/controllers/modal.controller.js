@@ -8,8 +8,7 @@ class ModalController {
       try {
         const dto = new CreateReferenceDto({
             taskId: Number(req.params.taskId),
-            //userId: req.user.id,
-            userId: req.body.userId,
+            userId: req.user.id,
             type: req.query.type,
             items: req.body.items,
         });
@@ -26,8 +25,7 @@ class ModalController {
           const dto = new UpdateReferenceDto({
             taskId: Number(req.params.taskId),
             referenceId: Number(req.params.referenceId),
-            //userId: req.user.id,
-            userId: req.body.userId,
+            userId: req.user.id,
             ...req.body,
           });
     
@@ -43,8 +41,7 @@ class ModalController {
           const data = await modalService.deleteReference({
             taskId: Number(req.params.taskId),
             referenceId: Number(req.params.referenceId),
-            //userId: req.user.id,
-            userId: req.body.userId,
+            userId: req.user.id,
           });
     
           return res.success(data, '자료 삭제 성공');
@@ -58,8 +55,7 @@ class ModalController {
         try {
           const dto = new CreateCommunicationDto({
             taskId: Number(req.params.taskId),
-            //userId: req.user.id,
-            userId: req.body.userId,
+            userId: req.user.id,
             name: req.body.name,
             url: req.body.url,
           });
@@ -76,8 +72,7 @@ class ModalController {
           const dto = new UpdateCommunicationDto({
             taskId: Number(req.params.taskId),
             communicationId: Number(req.params.communicationId),
-            //userId: req.user.id,
-            userId: req.body.userId,
+            userId: req.user.id,
             ...req.body,
           });
     
@@ -90,11 +85,14 @@ class ModalController {
     
     async deleteCommunication(req, res, next) {
         try {
+          if (!req.user) {
+            return res.status(401).json({ message: '로그인이 필요합니다.' });
+          }
+          
           const data = await modalService.deleteCommunication({
             taskId: Number(req.params.taskId),
             communicationId: Number(req.params.communicationId),
-            //userId: req.user.id,
-            userId: req.body.userId,
+            userId: req.user.id,
           });
     
           return res.success(data, '커뮤니케이션 삭제 성공');
@@ -108,8 +106,7 @@ class ModalController {
         try {
           const dto = new CreateLogDto({
             taskId: Number(req.params.taskId),
-            //userId: req.user.id,
-            userId: req.body.userId,
+            userId: req.user.id,
             date: new Date(req.body.date),
             agenda: req.body.agenda,
             conclusion: req.body.conclusion,
@@ -128,8 +125,7 @@ class ModalController {
           const dto = new UpdateLogDto({
             taskId: Number(req.params.taskId),
             logId: Number(req.params.logId),
-            //userId: req.user.id,
-            userId: req.body.userId,
+            userId: req.user.id,
             ...req.body,
           });
     
@@ -145,7 +141,7 @@ class ModalController {
           const data = await modalService.deleteLog({
             taskId: Number(req.params.taskId),
             logId: Number(req.params.logId),
-            userId: req.body.userId,
+            userId: req.user.id,
           });
     
           return res.success(data, '회의록 삭제 성공');
