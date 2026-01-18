@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import express from "express"; // -> ES Module'
+import express from "express";
 import cors from "cors";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { stateHandler } from "./middlewares/state.middleware.js";
@@ -9,7 +9,6 @@ import apiRouter from "./routes/index.js";
 
 
 dotenv.config();
-console.log(process.env.PORT);
 
 const app = express();
 const port = process.env.PORT;
@@ -28,8 +27,9 @@ app.use(stateHandler);
 //app.use("/auth",kakaoAuthRouter)
 
 app.get("/", (req, res) => {
-  return res.success({ result: "Hello World!" }, "아싸 나이스 성공~");
+  return res.success("아싸 나이스 성공~");
 });
+
 // API 라우터 등록
 app.use("/api/v1", apiRouter); // 모든 API는 /api prefix를 가짐
 
