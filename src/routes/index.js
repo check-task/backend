@@ -1,7 +1,8 @@
 import express from "express";
 import userRouter from "./user.route.js";
 import alarmRouter from "./alarm.route.js";
-import commentRouter from "./comment.route.js"; 
+import commentRouter from "./comment.route.js";
+import taskRouter from "./task.route.js";
 
 const router = express.Router();
 
@@ -9,6 +10,7 @@ const router = express.Router();
 router.use("/user", userRouter);
 router.use("/alarm", alarmRouter);
 router.use(commentRouter);
+router.use("/task", taskRouter);
 
 // health check용 기본 라우트
 router.get("/health", (req, res) => {
