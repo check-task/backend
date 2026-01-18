@@ -1,0 +1,54 @@
+name: Deploy Backend to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Install Dependencies
+        run: npm install 
+
+      - name: Connect & Deploy to EC2
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          BACKEND_ENV: ${{ secrets.BACKEND_ENV }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
+          ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << 'EOF'
+            # 에러 발생시 즉시 중단
+            set -e
+
+            # backend 디렉토리 이동
+            cd /home/ubuntu/backend
+
+            # 최신 코드로 PULL 받기
+            git pull origin main
+
+            # .env 생성
+            # export BACKEND_ENV="${{ secrets.BACKEND_ENV }}"
+            echo "$BACKEND_ENV" > .env
+
+            # 의존성 설치
+            npm ci
+
+            #Prisma migrate
+            npx prisma migrate deploy
+
+            # 앱 재시작
+            pm2 describe backend > /dev/null \
+                && pm2 reload backend \
+                || pm2 start src/index.js --name backend
+            pm2 status
+          EOF
