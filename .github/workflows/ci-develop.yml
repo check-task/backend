@@ -1,0 +1,32 @@
+name: CI - Pull Request
+
+on:
+  pull_request:
+    branches:
+      - develop
+  push:
+   branches:
+    - develop
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+        
+      - name: 의존성 설치
+        run: npm ci 
+
+      - name: Prisma Client 생성
+        run: npm run prisma:generate
+        env: 
+          DATABASE_URL: "mysql://user:pass@localhost:3306/dummy"
+
+      
+
