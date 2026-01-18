@@ -4,7 +4,9 @@ import cors from "cors";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { stateHandler } from "./middlewares/state.middleware.js";
 import { corsOptions } from "./config/cors.config.js";
+import kakaoAuthRouter from "./routes/kakao_auth.route.js"
 import apiRouter from "./routes/index.js";
+
 
 dotenv.config();
 console.log(process.env.PORT);
@@ -22,11 +24,14 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use(stateHandler);
 
+//kakao
+app.use("/auth",kakaoAuthRouter)
+
 app.get("/", (req, res) => {
   return res.success({ result: "Hello World!" }, "아싸 나이스 성공~");
 });
 // API 라우터 등록
-app.use("/api/v1", apiRouter); // 모든 API는 /api/v1 prefix를 가짐
+app.use("/api/v1", apiRouter); // 모든 API는 /api prefix를 가짐
 
 app.use(errorHandler);
 
