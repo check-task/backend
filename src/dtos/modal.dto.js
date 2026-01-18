@@ -152,10 +152,6 @@ export class CreateLogDto {
       if (!this.date) {
         throw new BadRequestError('회의 일자(date)가 필요합니다.');
       }
-      // YYYY.MM.DD 형식 체크
-      if (!/^\d{4}\.\d{2}\.\d{2}$/.test(this.date)) {
-        throw new BadRequestError('회의 일자 형식이 올바르지 않습니다. (YYYY.MM.DD)');
-      }
     }
 }
 
@@ -169,6 +165,14 @@ export class UpdateLogDto {
       this.conclusion = conclusion;
       this.discussion = discussion;
   
+      if (date) {
+        if (!/^\d{4}\.\d{2}\.\d{2}$/.test(date)) {
+          throw new BadRequestError('회의 일자 형식이 올바르지 않습니다. (YYYY.MM.DD)');
+        }
+        const [year, month, day] = date.split('.').map(Number);
+        this.date = new Date(year, month - 1, day); // JS Date 객체
+      }
+
       this.validate();
     }
   
@@ -184,9 +188,6 @@ export class UpdateLogDto {
       }
       if (!this.date && !this.agenda && !this.conclusion && !this.discussion) {
         throw new BadRequestError('수정할 값이 없습니다.');
-      }
-      if (this.date && !/^\d{4}\.\d{2}\.\d{2}$/.test(this.date)) {
-        throw new BadRequestError('회의 일자 형식이 올바르지 않습니다. (YYYY.MM.DD)');
       }
     }
 }

@@ -9,10 +9,13 @@ const { PrismaClient } = prismaPkg;
 
 const adapter = new PrismaMariaDb({
   host: process.env.DATABASE_HOST,
-  port: process.env.DATABASE_PORT,
+  port: Number(process.env.DATABASE_PORT),
   user: process.env.DATABASE_USER,
-  password: process.env.DATABASE_PASSWORD,
+  password: decodeURIComponent(process.env.DATABASE_PASSWORD),
   database: process.env.DATABASE_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
 // Prisma Client 인스턴스 생성

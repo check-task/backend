@@ -2,9 +2,15 @@ import prisma from "../db.config.js";
 
 class ModalRepository {
   async memberCheck(userId, taskId) {
-    return prisma.member.findUnique({
-      where: { userId_taskId: { userId, taskId } },
+    return prisma.member.findFirst({
+      where: { userId, taskId }
     })
+  }
+
+  async findTaskById(taskId) {
+    return prisma.task.findUnique({
+      where: { id: taskId },
+    });
   }
 
   // 자료
@@ -14,23 +20,36 @@ class ModalRepository {
     })
   }
 
+  async isTask(taskId) {
+    return prisma.task.findFirst({
+      where: { id: taskId }
+    })
+  }
+
   async findRefByTaskId(taskId) {
     return prisma.reference.findMany({
       where: { taskId },
+      select: {
+        id: true,
+        name: true,
+        url: true,
+        fileUrl: true
+      }
     });
   }
 
   async findReferenceById(referenceId) {
     return prisma.reference.findUnique({
       where: { id: referenceId },
+      select: {
+        id: true,
+        name: true,
+        url: true,
+        fileUrl: true,
+        updatedAt: true
+      }
     });
   }
-
-  async findTaskById(taskId) {
-    return prisma.task.findUnique({
-      where: { id: taskId },
-    });
-  }  
 
   async updateRef(referenceId, data) {
     return prisma.reference.update({
@@ -42,6 +61,7 @@ class ModalRepository {
   async deleteRef(referenceId) {
     return prisma.reference.delete({
       where: { id: referenceId },
+      select: { id: referenceId }
     });
   }
 
@@ -53,11 +73,23 @@ class ModalRepository {
   async findCommuByTaskId(taskId) {
     return prisma.communication.findMany({
       where: { taskId },
+      select: {
+        id: true,
+        name: true,
+        url: true,
+      }
     });
   }
 
   async findCommuById(id) {
-    return prisma.communication.findUnique({ where: { id } });
+    return prisma.communication.findUnique({ where: { id },
+      select: {
+        id: true,
+        name: true,
+        url: true,
+        updatedAt: true
+      }
+    });
   }
 
   async updateCommu(id, data) {
@@ -65,7 +97,7 @@ class ModalRepository {
   }
 
   async deleteCommu(id) {
-    return prisma.communication.delete({ where: { id } });
+    return prisma.communication.delete({ where: { id }, select: { id } });
   }
 
   // 회의록
@@ -77,11 +109,26 @@ class ModalRepository {
     return prisma.log.findMany({
       where: { taskId },
       orderBy: { id: 'desc' },
+      select: {
+        id: true,
+        date: true,
+        agenda: true,
+        conclusion: true,
+        discussion: true,
+      }
     });
   }
 
   async findLogById(id) {
-    return prisma.log.findUnique({ where: { id } });
+    return prisma.log.findUnique({ where: { id },
+      select: {
+        id: true,
+        date: true,
+        agenda: true,
+        conclusion: true,
+        discussion: true,
+      }
+    });
   }
 
   async updateLog(id, data) {
@@ -89,7 +136,7 @@ class ModalRepository {
   }
 
   async deleteLog(id) {
-    return prisma.log.delete({ where: { id } });
+    return prisma.log.delete({ where: { id }, select: { id } });
   }
 }
 

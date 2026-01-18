@@ -7,7 +7,6 @@ import { corsOptions } from "./config/cors.config.js";
 import apiRouter from "./routes/index.js";
 
 dotenv.config();
-console.log(process.env.PORT);
 
 const app = express();
 const port = process.env.PORT;
@@ -23,8 +22,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use(stateHandler);
 
 app.get("/", (req, res) => {
-  return res.success({ result: "Hello World!" }, "아싸 나이스 성공~");
+  return res.success("아싸 나이스 성공~");
 });
+
 // API 라우터 등록
 app.use("/api/v1", apiRouter); // 모든 API는 /api/v1 prefix를 가짐
 

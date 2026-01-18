@@ -1,4 +1,4 @@
-import { stateHandler } from '../middlewares/state.middleware.js';
+import { CreateReferenceDto, UpdateReferenceDto, CreateCommunicationDto, UpdateCommunicationDto, CreateLogDto, UpdateLogDto } from '../dtos/modal.dto.js';
 
 import modalService from '../services/modal.service.js';
 
@@ -15,7 +15,7 @@ class ModalController {
         });
   
         const data = await modalService.createReferences(dto);
-        return stateHandler(res, '자료 생성 성공', data)
+        return res.success(data, '자료 생성 성공')
       } catch (err) {
         next(err)
       }
@@ -26,12 +26,13 @@ class ModalController {
           const dto = new UpdateReferenceDto({
             taskId: Number(req.params.taskId),
             referenceId: Number(req.params.referenceId),
-            userId: req.user.id,
+            //userId: req.user.id,
+            userId: req.body.userId,
             ...req.body,
           });
     
           const data = await modalService.updateReference(dto);
-          return stateHandler(res, '자료 수정 성공', data);
+          return res.success(data, '자료 수정 성공');
         } catch (err) {
           next(err);
         }
@@ -42,10 +43,11 @@ class ModalController {
           const data = await modalService.deleteReference({
             taskId: Number(req.params.taskId),
             referenceId: Number(req.params.referenceId),
-            userId: req.user.id,
+            //userId: req.user.id,
+            userId: req.body.userId,
           });
     
-          return stateHandler(res, '자료 삭제 성공', data);
+          return res.success(data, '자료 삭제 성공');
         } catch (err) {
           next(err);
         }
@@ -56,13 +58,14 @@ class ModalController {
         try {
           const dto = new CreateCommunicationDto({
             taskId: Number(req.params.taskId),
+            //userId: req.user.id,
             userId: req.body.userId,
             name: req.body.name,
             url: req.body.url,
           });
     
-          const data = await communicationService.createCommunication(dto);
-          return stateHandler(res, '커뮤니케이션 생성 성공', data);
+          const data = await modalService.createCommunication(dto);
+          return res.success(data, '커뮤니케이션 생성 성공');
         } catch (err) {
           next(err);
         }
@@ -73,12 +76,13 @@ class ModalController {
           const dto = new UpdateCommunicationDto({
             taskId: Number(req.params.taskId),
             communicationId: Number(req.params.communicationId),
+            //userId: req.user.id,
             userId: req.body.userId,
             ...req.body,
           });
     
-          const data = await communicationService.updateCommunication(dto);
-          return stateHandler(res, '커뮤니케이션 수정 성공', data);
+          const data = await modalService.updateCommunication(dto);
+          return res.success(data, '커뮤니케이션 수정 성공');
         } catch (err) {
           next(err);
         }
@@ -86,13 +90,14 @@ class ModalController {
     
     async deleteCommunication(req, res, next) {
         try {
-          const data = await communicationService.deleteCommunication({
+          const data = await modalService.deleteCommunication({
             taskId: Number(req.params.taskId),
             communicationId: Number(req.params.communicationId),
+            //userId: req.user.id,
             userId: req.body.userId,
           });
     
-          return stateHandler(res, '커뮤니케이션 삭제 성공', data);
+          return res.success(data, '커뮤니케이션 삭제 성공');
         } catch (err) {
           next(err);
         }
@@ -103,15 +108,16 @@ class ModalController {
         try {
           const dto = new CreateLogDto({
             taskId: Number(req.params.taskId),
+            //userId: req.user.id,
             userId: req.body.userId,
-            date: req.body.date,
+            date: new Date(req.body.date),
             agenda: req.body.agenda,
             conclusion: req.body.conclusion,
             discussion: req.body.discussion,
           });
     
-          const data = await logService.createLog(dto);
-          return stateHandler(res, '회의록 생성 성공', data);
+          const data = await modalService.createLog(dto);
+          return res.success(data, '회의록 생성 성공');
         } catch (err) {
           next(err);
         }
@@ -122,12 +128,13 @@ class ModalController {
           const dto = new UpdateLogDto({
             taskId: Number(req.params.taskId),
             logId: Number(req.params.logId),
+            //userId: req.user.id,
             userId: req.body.userId,
             ...req.body,
           });
     
-          const data = await logService.updateLog(dto);
-          return stateHandler(res, '회의록 수정 성공', data);
+          const data = await modalService.updateLog(dto);
+          return res.success(data, '회의록 수정 성공');
         } catch (err) {
           next(err);
         }
@@ -135,13 +142,13 @@ class ModalController {
     
     async deleteLog(req, res, next) {
         try {
-          const data = await logService.deleteLog({
+          const data = await modalService.deleteLog({
             taskId: Number(req.params.taskId),
             logId: Number(req.params.logId),
             userId: req.body.userId,
           });
     
-          return stateHandler(res, '회의록 삭제 성공', data);
+          return res.success(data, '회의록 삭제 성공');
         } catch (err) {
           next(err);
         }
