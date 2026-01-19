@@ -44,7 +44,7 @@ export const taskDetailResponseDTO = (task) => {
   return {
     taskId: task.id, 
     title: task.title, 
-    type: task.type === "TEAM" ? "팀" : "개인", 
+    type: task.type === "TEAM" ? "TEAM" : "INDIVIDUAL", 
     deadline: task.deadline.toISOString().split('T')[0], 
     dDay: dDay, 
     progressRate: progressRate, 
@@ -52,10 +52,10 @@ export const taskDetailResponseDTO = (task) => {
       subTaskId: st.id, 
       title: st.title, 
       deadline: st.endDate?.toISOString().split('T')[0] || null, 
-      status: st.status === 'COMPLETED' ? '완료' : '진행중', 
+      status: st.status === 'COMPLETED' ? 'COMPLETED' : 'PROGRASS', 
       isAlarm: st.isAlarm || false,
       commentCount: st._count?.comments || 0, 
-      assigneeName: st.assigneeName || "미지정" 
+      assigneeName: st.assigneeName || "PENDING" 
     })) || [],
     communications: task.communications?.map(c => ({
       name: c.name, 
@@ -84,12 +84,30 @@ export const taskListResponseDTO = (tasks) => {
         return {
             taskId: task.id,
             folderId: task.folderId,
-            folderTitle: task.folder?.title || "미지정",
+            folderTitle: task.folder?.title || "PENDING",
             title: task.title,
-            type: task.type === "TEAM" ? "팀" : "개인",
+            type: task.type === "TEAM" ? "TEAM" : "INDIVIDUAL",
             deadline: task.deadline.toISOString().split('T')[0].replace(/-/g, '.'),
             dDay: dDay,
             progressRate: task.progressRate // 서비스에서 계산된 값 사용
         };
     });
+};
+
+export const responseFromCompletedTasks = (tasks) => {
+  return {
+    tasks: tasks.map((task) => ({
+      taskId: task.id,
+      title: task.title,
+      deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : null,
+      
+      type: task.type === "TEAM" ? "팀" : "개인", 
+      
+      status: task.status === 'COMPLETED' ? '완료' : task.status,
+      
+      folderId: task.folder ? task.folder.id : null,
+      folderTitle: task.folder ? task.folder.folderTitle : null,
+      color: task.folder ? task.folder.color : null,
+    })),
+  };
 };

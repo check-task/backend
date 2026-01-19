@@ -83,3 +83,55 @@ export const updateTaskAlarm = async (userId, taskAlarm) => {
     },
   });
 };
+
+// 과제 알림 여부 설정
+export const updateTaskAlarmStatusRepository = async (taskId, isAlarm) => {
+  return await prisma.task.update({
+    where: { id: taskId },
+    data: { isAlarm },
+    select: {
+      id: true,
+      title: true,
+      deadline: true,
+      isAlarm: true,
+      updatedAt: true,
+    },
+  });
+};
+
+// 세부과제 알림 여부 설정
+export const updateSubtaskAlarmStatusRepository = async (
+  subTaskId,
+  isAlarm
+) => {
+  return await prisma.subTask.update({
+    where: { id: subTaskId },
+    data: { isAlarm },
+    select: {
+      id: true,
+      assigneeId: true,
+      taskId: true,
+      title: true,
+      endDate: true,
+      isAlarm: true,
+      updatedAt: true,
+    },
+  });
+};
+
+//  알림 읽음 처리
+export const updateAlarmReadStatusRepository = async (alarmId, isRead) => {
+  return await prisma.userAlarm.update({
+    where: { id: alarmId },
+    data: { isRead },
+    select: {
+      id: true,
+      userId: true,
+      taskId: true,
+      subTaskId: true,
+      title: true,
+      alarmContent: true,
+      isRead: true,
+    },
+  });
+};
