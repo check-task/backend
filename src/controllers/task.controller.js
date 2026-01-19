@@ -173,7 +173,27 @@ class TaskController {
       next(error);
     }
   }
+
+  // 초대 링크 생성
+  async generateInviteCode(req, res, next) {
+    try {
+      const { taskId } = req.params;
+      const userId = req.user.id; // 인증 미들웨어에서 설정된 사용자 ID
+
+      const result = await taskService.generateInviteCode(parseInt(taskId), userId);
+
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "초대 링크가 생성되었습니다.",
+        data: {
+          invite_code: result.invite_code,
+          invite_expired: result.invite_expired
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new TaskController();
-
