@@ -1,6 +1,24 @@
 import { prisma } from "../db.config.js";
 
 class TaskRepository {
+  async getCompletedTasks(userId) {
+    return await prisma.task.findMany({
+      where: {
+        folder: {
+          userId: userId,
+        },
+        
+        status: 'COMPLETED',
+      },
+      include: {
+        folder: true,
+      },
+      orderBy: {
+        deadline: 'asc',
+      },
+    });
+  }
+
   // 폴더 찾기
   async findFolderById(id) {
     return await prisma.folder.findUnique({ where: { id } });

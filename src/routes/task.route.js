@@ -1,8 +1,11 @@
 import express from "express";
 import taskController from "../controllers/task.controller.js";
-import authenticate from '../middlewares/authenticate.middleware.js';
+import authenticate from "../middlewares/authenticate.middleware.js";
 
 const router = express.Router();
+
+// 완료된 과제
+router.get("/completed", authenticate, taskController.getCompletedTasks);
 
 // POST /api/v1/task -- 과제 생성
 router.post("/", authenticate, taskController.createTask);
@@ -29,6 +32,7 @@ router.patch("/:taskId/member/:memberId", authenticate, taskController.updateTea
 // 세부 TASK 상태 업데이트
 router.patch(
   '/subtask/:subTaskId/status',
+  authenticate,
   taskController.updateSubTaskStatus
 );
 
