@@ -1,8 +1,21 @@
 import taskRepository from "../repositories/task.repository.js";
 import { BadRequestError, NotFoundError, ForbiddenError } from "../errors/custom.error.js";
+import { getUserData } from "../repositories/user.repository.js"; 
+import { responseFromCompletedTasks } from "../dtos/task.dto.js";
 import { prisma } from "../db.config.js";
 
 class TaskService {
+  async getCompletedTasks(userId) {
+    const user = await getUserData(userId);
+    if (!user) {
+      throw new NotFoundError("USER_NOT_FOUND", "해당 사용자를 찾을 수 없습니다.");
+    }
+
+    const tasks = await taskRepository.getCompletedTasks(userId);
+
+    return responseFromCompletedTasks(tasks);
+  }
+  
   // 과제 등록
   async registerTask(data) {
     const { subTasks, references, folderId, ...taskData } = data;
@@ -87,43 +100,18 @@ class TaskService {
   }
 
   // 과제 목록 조회
-  async getTaskList(queryParams) {
-    const tasks = await taskRepository.findAllTasks(queryParams);
+  async getTaskList(userId, queryParams = {}) {
+    const { type, folderId, sort } = queryParams;
 
-    // 각 과제의 진행률을 미리 계산하여 객체에 추가
-    const tasksWithProgress = tasks.map(task => {
-        const totalSubTasks = task.subTasks?.length || 0;
-        const completedSubTasks = task.subTasks?.filter(
-            st => st.status === 'COMPLETED' || st.status === '완료'
-        ).length || 0;
-        
-        const progressRate = totalSubTasks > 0 
-            ? Math.round((completedSubTasks / totalSubTasks) * 100) 
-            : 0;
-
-        return { ...task, progressRate }; 
+    // 레포지토리의 findAllTasks 호출
+    const tasks = await taskRepository.findAllTasks({
+      userId,
+      type,
+      folderId,
+      sort
     });
 
-    if (queryParams.sort === '진척도순') {
-        tasksWithProgress.sort((a, b) => b.progressRate - a.progressRate);
-    }
-
-    return tasksWithProgress;
-  }
-
-  // 팀원 정보 수정
-  async modifyMemberRole(taskId, memberId, role) {
-    const member = await taskRepository.findMemberInTask(taskId, memberId);
-    if (!member) throw new NotFoundError("멤버를 찾을 수 없음");
-
-    // 역할 변경
-    const isMember = role === 1;
-        
-    return await prisma.$transaction(async (tx) => {
-      await taskRepository.resetOtherMembersRole(taskId, memberId, tx);
-
-      return await taskRepository.updateMemberRole(memberId, isMember, tx);
-    });
+    return tasks;
   }
   
   // 세부 TASK 완료 처리 API 

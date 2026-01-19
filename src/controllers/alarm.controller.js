@@ -1,7 +1,7 @@
 import { BadRequestError } from "../errors/custom.error.js";
 import * as AlarmService from "../services/alarm.service.js";
 
-// 알람 목록 조회
+// ✅ GET /v1/api/alarm - 알람 목록 조회
 export const handleAlarmList = async (req, res) => {
   const userId = req.user.id;
   // req.user는 로그인 미들웨어에서 설정됨
@@ -17,7 +17,7 @@ export const handleAlarmList = async (req, res) => {
   return res.success(result, "알림 목록 조회 성공");
 };
 
-// 개별 알림 삭제
+// ✅ DELETE /v1/api/alarm/:alarmId - 개별 알림 삭제
 export const handleAlarmDelete = async (req, res) => {
   // userId (임시 - 로그인 미들웨어 생성 후 req.user.id 사용)
   const userId = req.user.id;
@@ -42,7 +42,7 @@ export const handleAlarmDelete = async (req, res) => {
   return res.success(null, "개별 알림 삭제 성공");
 };
 
-// 전체 알림 삭제
+// ✅ DELETE /v1/api/alarm - 전체 알림 삭제
 export const handleAlarmDeleteAll = async (req, res) => {
   const userId = req.user.id;
 
@@ -53,7 +53,7 @@ export const handleAlarmDeleteAll = async (req, res) => {
   return res.success(null, "알림 전체 삭제 성공");
 };
 
-// 최종 마감 알림 수정
+// ✅ PATCH /v1/api/alarm/deadline - 최종 마감 알림 수정
 export const handleAlarmUpdateDeadline = async (req, res) => {
   const userId = req.user.id;
   const deadlineAlarm = req.body.deadlineAlarm;
@@ -72,7 +72,7 @@ export const handleAlarmUpdateDeadline = async (req, res) => {
   return res.success(result, "최종 마감 시간의 알림 전송 시간을 변경했습니다.");
 };
 
-// Task 마감 알림 수정
+// ✅ Task 마감 알림 수정
 export const handleAlarmUpdateTask = async (req, res) => {
   const userId = req.user.id;
   const taskAlarm = req.body.taskAlarm;
@@ -89,4 +89,61 @@ export const handleAlarmUpdateTask = async (req, res) => {
 
   // 성공 응답 (이미지 명세에 맞게)
   return res.success(result, "과제 마감 시간의 알림 전송 시간을 변경했습니다.");
+};
+
+// ✅ 과제 알림 여부 설정
+export const handleAlarmUpdateTaskStatus = async (req, res) => {
+  const userId = req.user.id;
+  const taskId = req.params.taskId;
+  const isAlarm = req.body.isAlarm;
+
+  const parsedTaskId = parseInt(taskId);
+
+  // Service 호출
+  const result = await AlarmService.updateTaskAlarmStatus(
+    userId,
+    parsedTaskId,
+    isAlarm
+  );
+
+  // 성공 응답 (이미지 명세에 맞게)
+  return res.success(result, "과제에 대한 알림 여부를 변경하였습니다..");
+};
+
+// ✅ PATCH /v1/api/alarm/subtask/:subTaskId - subtask 알림 여부 설정
+export const handleAlarmUpdateSubtaskStatus = async (req, res) => {
+  const userId = req.user.id;
+  const subTaskId = req.params.subtaskId;
+  const isAlarm = req.body.isAlarm;
+
+  const parsedSubTaskId = parseInt(subTaskId);
+
+  // Service 호출
+  const result = await AlarmService.updateSubtaskAlarmStatus(
+    userId,
+    parsedSubTaskId,
+    isAlarm
+  );
+
+  // 성공 응답 (이미지 명세에 맞게)
+  return res.success(result, "세부과제에 대한 알림 여부를 변경하였습니다..");
+};
+
+// ✅ PATCH /v1/api/alarm/read/:alarmId - 알림 읽음 처리
+export const handleAlarmUpdateAlarmReadStatus = async (req, res) => {
+  const userId = req.user.id;
+  const alarmId = req.params.alarmId;
+  const isRead = req.body.isRead;
+
+  const parsedAlarmId = parseInt(alarmId);
+
+  // Service 호출
+  const result = await AlarmService.updateAlarmReadStatus(
+    userId,
+    parsedAlarmId,
+    isRead
+  );
+
+  // 성공 응답 (이미지 명세에 맞게)
+  return res.success(result, "알림 읽음 처리 성공");
 };

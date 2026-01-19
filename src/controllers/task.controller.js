@@ -5,7 +5,23 @@ import { taskDetailResponseDTO } from "../dtos/task.dto.js";
 import { taskListResponseDTO } from "../dtos/task.dto.js";
 
 class TaskController {
-  // 과제 생성
+  // 완료된 과제 조회
+  async getCompletedTasks(req, res, next) {
+    try {
+      const userId = req.user.id; 
+      
+      const result = await taskService.getCompletedTasks(userId);
+
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "완료된 과제 조회에 성공하였습니다.",
+        data: result
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async createTask(req, res, next) {
     try {
       const taskRequest = createTaskRequestDTO(req.body);
@@ -83,13 +99,32 @@ class TaskController {
             sort: req.query.sort,
             folderId: req.query.folderId || req.query.folder_id || req.query.folderld,
         };
+        const userId = req.user.id;
 
-        const tasks = await taskService.getTaskList(queryParams);
+        const tasks = await taskService.getTaskList(userId, queryParams);
 
         res.status(200).json({
             resultType: "SUCCESS",
             message: "서버가 요청을 성공적으로 처리하였습니다.",
             data: taskListResponseDTO(tasks)
+        });
+    } catch (error) {
+        next(error);
+    }
+  }
+
+  // 우선 순위 변경
+  async updateTaskPriorities(req, res, next) {
+    try {
+        const userId = req.user.id; 
+        const { orderedTasks } = req.body; 
+
+        await taskService.updatePriorities(userId, orderedTasks);
+
+        res.status(200).json({
+          resultType: "SUCCESS",
+          message: "과제 우선순위가 일괄 변경되었습니다.",
+          data: null
         });
     } catch (error) {
         next(error);
@@ -250,5 +285,7 @@ class TaskController {
     }
   }
 }
+
+
 
 export default new TaskController();
