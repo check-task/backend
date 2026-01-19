@@ -5,7 +5,6 @@ import { BadRequestError, NotFoundError } from "../errors/custom.error.js";
 import { prisma } from "../db.config.js";
 
 class TaskService {
-  // 완료된 과제 조회
   async getCompletedTasks(userId) {
     const user = await getUserData(userId);
     if (!user) {
