@@ -90,6 +90,25 @@ class TaskRepository {
       where: { id }
     });
   }
+
+  // 초대 코드 생성 및 업데이트
+  async updateTaskInviteCode(taskId, inviteCode, tx = prisma) {
+    // 1년 후 만료일로 설정
+    const oneYearLater = new Date();
+    oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+    
+    return await tx.task.update({
+      where: { id: taskId },
+      data: {
+        inviteCode,
+        inviteExpiredAt: oneYearLater
+      },
+      select: {
+        inviteCode: true,
+        inviteExpiredAt: true
+      }
+    });
+  }
 }
 
 export default new TaskRepository();

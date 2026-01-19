@@ -39,4 +39,11 @@ router.patch(
   taskController.setSubTaskAssignee
 );
 
+// 초대 링크 생성 API
+router.post(
+  '/:taskId/invitation',
+  authenticate,
+  taskController.generateInviteCode
+);
+
 export default router;
