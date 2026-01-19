@@ -26,6 +26,13 @@ jobs:
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa 
           chmod 600 ~/.ssh/id_rsa
+
+          echo "$BACKEND_ENV" > /tmp/.env
+
+          scp -i ~/.ssh/id_rsa \
+            -o StrictHostKeyChecking=no \
+            /tmp/.env \
+            $EC2_USER@$EC2_HOST:/home/ubuntu/backend/.env
           
           ssh -i ~/.ssh/id_rsa \
             -o StrictHostKeyChecking=no \
