@@ -93,3 +93,21 @@ export const taskListResponseDTO = (tasks) => {
         };
     });
 };
+
+export const responseFromCompletedTasks = (tasks) => {
+  return {
+    tasks: tasks.map((task) => ({
+      taskId: task.id,
+      title: task.title,
+      deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : null,
+      
+      type: task.type === "TEAM" ? "팀" : "개인", 
+      
+      status: task.status === 'COMPLETED' ? '완료' : task.status,
+      
+      folderId: task.folder ? task.folder.id : null,
+      folderTitle: task.folder ? task.folder.folderTitle : null,
+      color: task.folder ? task.folder.color : null,
+    })),
+  };
+};
