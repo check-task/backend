@@ -46,10 +46,6 @@ jobs:
             # 최신 코드로 PULL 받기
             git pull origin main
 
-            # .env 생성
-            # export BACKEND_ENV="${{ secrets.BACKEND_ENV }}"
-            echo "$BACKEND_ENV" > .env
-
             # 의존성 설치
             npm ci
 
