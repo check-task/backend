@@ -1,6 +1,22 @@
 import { prisma } from "../db.config.js";
 
 class TaskRepository {
+  // 완료된 과제 조회
+  async getCompletedTasks(userId) {
+    return await prisma.task.findMany({
+      where: {
+        userId: userId,
+        status: 'COMPLETED',
+      },
+      include: {
+        folder: true, // 폴더 정보 Join
+      },
+      orderBy: {
+        deadline: 'asc', // 마감일 가까운 순 정렬
+      },
+    });
+  }
+  
   // 폴더 찾기
   async findFolderById(id) {
     return await prisma.folder.findUnique({ where: { id } });

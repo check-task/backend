@@ -1,8 +1,21 @@
 import taskRepository from "../repositories/task.repository.js";
+import { getUserData } from "../repositories/user.repository.js"; 
+import { responseFromCompletedTasks } from "../dtos/task.dto.js";
 import { BadRequestError, NotFoundError } from "../errors/custom.error.js";
 import { prisma } from "../db.config.js";
 
 class TaskService {
+  // 완료된 과제 조회
+  async getCompletedTasks(userId) {
+    const user = await getUserData(userId);
+    if (!user) {
+      throw new NotFoundError("USER_NOT_FOUND", "해당 사용자를 찾을 수 없습니다.");
+    }
+
+    const tasks = await taskRepository.getCompletedTasks(userId);
+
+    return responseFromCompletedTasks(tasks);
+  }
   // 과제 등록
   async registerTask(data) {
     const { subTasks, references, folderId, ...taskData } = data;
