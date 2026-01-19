@@ -59,6 +59,26 @@ class TaskRepository {
 
     return await prisma.task.findMany(query);
   }
+  // 우선 순위 변경
+  async upsertTaskPriority(userId, taskId, rank, tx = prisma) {
+    return await tx.taskPirority.upsert({
+      where: {
+        userId_taskId: { 
+          userId: userId,
+          taskId: taskId
+        }
+      },
+      update: {
+        rank: rank 
+      },
+      create: {
+        userId: userId,
+        taskId: taskId,
+        rank: rank 
+      }
+    });
+  }
+
   // 멤버 존재 여부 확인
   async findMemberInTask (taskId, memberId) {
     return await prisma.member.findFirst({

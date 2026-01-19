@@ -111,6 +111,16 @@ class TaskService {
     return tasksWithProgress;
   }
 
+  // 우선순위 변경
+  async updatePriorities(userId, orderedTasks) {
+        // 일괄 변경 트랜잭션 처리 
+        return await prisma.$transaction(async (tx) => {
+            for (const item of orderedTasks) {
+                await taskRepository.upsertTaskPriority(userId, item.taskId, item.rank, tx);
+            }
+        });
+    }
+
   // 팀원 정보 수정
   async modifyMemberRole(taskId, memberId, role) {
     const member = await taskRepository.findMemberInTask(taskId, memberId);
