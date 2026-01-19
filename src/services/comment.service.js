@@ -20,4 +20,24 @@ export class CommentService {
     const comment = await CommentRepository.createComment(createCommentDto, subTaskId);
     return CommentResponseDto.from(comment);
   }
+
+  // 댓글 수정
+  static async updateComment(commentId, userId, content) {
+    // 댓글 존재 여부 및 소유자 확인
+    const comment = await CommentRepository.findCommentById(commentId);
+    if (!comment) {
+      throw new NotFoundError('COMMENT_NOT_FOUND', '댓글을 찾을 수 없습니다.');
+    }
+
+    // 댓글 작성자만 수정 가능
+    if (comment.userId !== userId) {
+      const error = new Error('수정 권한이 없습니다.');
+      error.status = 403;
+      throw error;
+    }
+
+    // 댓글 수정
+    const updatedComment = await CommentRepository.updateComment(commentId, content);
+    return CommentResponseDto.from(updatedComment);
+  }
 }

@@ -2,6 +2,58 @@ import { prisma } from '../db.config.js';
 import Joi from 'joi'; //요청 데이터 유효성 검사
 import { NotFoundError, BadRequestError } from '../errors/custom.error.js';
 
+// 댓글 수정 유효성 검사 스키마
+const updateCommentSchema = Joi.object({
+  content: Joi.string().trim().required().messages({
+    'string.empty': '댓글 내용을 입력해주세요.',
+    'any.required': '댓글 내용은 필수 입력값입니다.'
+  })
+});
+
+// 댓글 수정 서비스 함수
+const updateCommentService = async (commentId, userId, content) => {
+  try {
+    // 댓글 존재 여부 및 소유자 확인
+    const comment = await prisma.comment.findUnique({
+      where: { id: parseInt(commentId) },
+      include: { user: { select: { id: true } } }
+    });
+
+    if (!comment) {
+      throw new NotFoundError('COMMENT_NOT_FOUND', '댓글을 찾을 수 없습니다.');
+    }
+
+    // 댓글 작성자만 수정 가능
+    if (comment.user.id !== userId) {
+      const error = new Error('수정 권한이 없습니다.');
+      error.status = 403;
+      throw error;
+    }
+
+    // 댓글 수정
+    const updatedComment = await prisma.comment.update({
+      where: { id: parseInt(commentId) },
+      data: { content },
+      include: {
+        user: { select: { id: true, nickname: true } },
+        subTask: { select: { id: true, title: true } }
+      }
+    });
+
+    // 응답 DTO 형태로 변환
+    return {
+      comment_id: updatedComment.id,
+      content: updatedComment.content,
+      user_id: updatedComment.user.id,
+      sub_task_id: updatedComment.subTask.id,
+      created_at: updatedComment.createdAt
+    };
+  } catch (error) {
+    console.error('Update Comment Service Error:', error);
+    throw error;
+  }
+};
+
 // 유효성 검사 스키마
 const createCommentSchema = Joi.object({
   user_id: Joi.number().integer().required().messages({
@@ -142,6 +194,41 @@ export const createCommentController = async (req, res, next) => {
     });
   } catch (error) {
     console.error('Controller error:', error);
+    next(error);
+  }
+};
+
+// 댓글 수정 컨트롤러
+export const updateCommentController = async (req, res, next) => {
+  try {
+    const { commentId } = req.params;
+    const userId = req.user.id; // authenticate 미들웨어에서 설정된 사용자 ID
+
+    // 요청 본문 유효성 검사
+    const { error, value } = updateCommentSchema.validate(req.body, { abortEarly: false });
+    if (error) {
+      const errorMessage = error.details.map(detail => detail.message).join(', ');
+      throw new BadRequestError('INVALID_INPUT', `유효성 검사 실패: ${errorMessage}`);
+    }
+
+    // 서비스 레이어 호출
+    const result = await updateCommentService(
+      commentId,
+      userId,
+      value.content
+    );
+
+    // 성공 응답
+    res.status(200).json({
+      resultType: "SUCCESS",
+      message: "댓글이 수정되었습니다.",
+      data: {
+        comment_id: result.comment_id,
+        content: result.content
+      }
+    });
+  } catch (error) {
+    console.error('Update Comment Controller Error:', error);
     next(error);
   }
 };
