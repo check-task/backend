@@ -1,0 +1,342 @@
+import taskRepository from "../repositories/task.repository.js";
+import { BadRequestError, NotFoundError } from "../errors/custom.error.js";
+import { prisma } from "../db.config.js";
+
+class TaskService {
+  // 과제 등록
+  async registerTask(data) {
+    const { subTasks, references, folderId, ...taskData } = data;
+
+    if (!taskData.title) throw new BadRequestError("과제명은 필수입니다.");
+
+    const folder = await taskRepository.findFolderById(folderId);
+    if (!folder) throw new NotFoundError("존재하지 않는 폴더입니다.");
+
+    return await prisma.$transaction(async (tx) => {
+      // 과제 생성
+      const newTask = await taskRepository.createTask({ ...taskData, folderId }, tx);
+
+      // 하위 데이터 저장
+      if (subTasks.length > 0) {
+        await taskRepository.addSubTasks(newTask.id, subTasks, tx);
+      }
+      if (references.length > 0) {
+        await taskRepository.addReferences(newTask.id, references, tx);
+      }
+
+      return { taskId: newTask.id };
+    });
+  }
+
+  // 과제 수정
+  async modifyTask(taskId, data) {
+    const { subTasks, references, folderId, ...taskData } = data;
+
+    // 과제 존재 여부 확인
+    const currentTask = await taskRepository.findTaskById(taskId);
+    if (!currentTask) throw new NotFoundError("수정하려는 과제가 존재하지 않습니다.");
+
+    // 폴더 변경 시 유효성 체크
+    if (folderId) {
+      const folder = await taskRepository.findFolderById(folderId);
+      if (!folder) throw new NotFoundError("변경하려는 폴더가 존재하지 않습니다.");
+    }
+
+    // 트랜잭션
+    return await prisma.$transaction(async (tx) => {
+      // 과제 기본 정보 업데이트
+      const updatedTask = await taskRepository.updateTask(taskId, { ...taskData, folderId }, tx);
+
+      // 세부 과제 갱신 
+      await taskRepository.deleteAllSubTasks(taskId, tx);
+      if (subTasks?.length > 0) {
+        await taskRepository.addSubTasks(taskId, subTasks, tx);
+      }
+
+      // 자료 갱신 
+      await taskRepository.deleteAllReferences(taskId, tx);
+      if (references?.length > 0) {
+        await taskRepository.addReferences(taskId, references, tx);
+      }
+
+      return { taskId: updatedTask.id };
+    });
+  }
+
+  // 과제 삭제
+  async removeTask(taskId) {
+    // 과제 존재 여부 확인
+    const currentTask = await taskRepository.findTaskById(taskId);
+    if (!currentTask) {
+      throw new NotFoundError("삭제하려는 과제가 존재하지 않습니다.");
+    }
+
+    // 과제 삭제 실행
+    return await taskRepository.deleteTask(taskId);
+  }
+  
+  // 세부 TASK 완료 처리 API 
+  async updateSubTaskStatus(subTaskId, status) {
+    try {
+      // 서브태스크 존재 여부 확인
+      const existingTask = await prisma.SubTask.findUnique({
+        where: { id: parseInt(subTaskId) },
+      });
+
+      if (!existingTask) {
+        const error = new Error('해당하는 세부 태스크를 찾을 수 없습니다.');
+        error.status = 404;
+        throw error;
+      }
+
+      // 상태 업데이트(프리지마 모델명은 대소문자 구분!)
+      const updatedTask = await prisma.SubTask.update({
+        where: { id: parseInt(subTaskId) },
+        data: {
+          status: status === 'COMPLETE' ? 'COMPLETED' : 'PENDING',
+          updatedAt: new Date()
+        },
+      });
+
+      return updatedTask;
+    } catch (error) {
+      console.error('Error updating subtask status:', error);
+      throw error;
+    }
+  }
+
+  async getTaskDetail(taskId) {
+    const task = await taskRepository.findTaskDetail(taskId);
+    
+    if (!task) {
+      throw new NotFoundError("과제를 찾을 수 없음");
+    }
+
+    return task;
+  }
+
+  async getTaskList(queryParams) {
+    const tasks = await taskRepository.findAllTasks(queryParams);
+
+    // 각 과제의 진행률을 미리 계산하여 객체에 추가
+    const tasksWithProgress = tasks.map(task => {
+        const totalSubTasks = task.subTasks?.length || 0;
+        const completedSubTasks = task.subTasks?.filter(
+            st => st.status === 'COMPLETED' || st.status === '완료'
+        ).length || 0;
+        
+        const progressRate = totalSubTasks > 0 
+            ? Math.round((completedSubTasks / totalSubTasks) * 100) 
+            : 0;
+
+        return { ...task, progressRate }; 
+    });
+
+    if (queryParams.sort === '진척도순') {
+        tasksWithProgress.sort((a, b) => b.progressRate - a.progressRate);
+    }
+
+    return tasksWithProgress;
+  }
+
+  // 과제 삭제
+  async removeTask(taskId) {
+    // 과제 존재 여부 확인
+    const currentTask = await taskRepository.findTaskById(taskId);
+    if (!currentTask) {
+      throw new NotFoundError("삭제하려는 과제가 존재하지 않습니다.");
+    }
+
+    // 과제 삭제 실행
+    return await taskRepository.deleteTask(taskId);
+  }
+  
+  // 세부 TASK 완료 처리 API 
+  async updateSubTaskStatus(subTaskId, status) {
+    try {
+      // 서브태스크 존재 여부 확인
+      const existingTask = await prisma.SubTask.findUnique({
+        where: { id: parseInt(subTaskId) },
+      });
+
+      if (!existingTask) {
+        const error = new Error('해당하는 세부 태스크를 찾을 수 없습니다.');
+        error.status = 404;
+        throw error;
+      }
+
+      // 상태 업데이트(프리지마 모델명은 대소문자 구분!)
+      const updatedTask = await prisma.SubTask.update({
+        where: { id: parseInt(subTaskId) },
+        data: {
+          status: status === 'COMPLETE' ? 'COMPLETED' : 'PENDING',
+          updatedAt: new Date()
+        },
+      });
+
+      return updatedTask;
+    } catch (error) {
+      console.error('Error updating subtask status:', error);
+      throw error;
+    }
+  }
+
+  // 세부task 날짜 변경 API
+  async updateSubTaskDeadline(subTaskId, deadline) {
+    try {
+      // 서브태스크와 상위 태스크 정보 조회
+      const existingTask = await prisma.SubTask.findUnique({
+        where: { id: parseInt(subTaskId) },
+        include: {
+          task: {
+            select: {
+              deadline: true
+            }
+          }
+        }
+      });
+
+      if (!existingTask) {
+        const error = new Error('해당하는 세부 태스크를 찾을 수 없습니다.');
+        error.status = 404;
+        throw error;
+      }
+
+      const newDeadline = new Date(deadline);
+      const parentEndDate = new Date(existingTask.task.deadline);
+
+      // 부모 태스크의 마감일을 초과하는지 확인
+      if (newDeadline > parentEndDate) {
+        const error = new Error('부모 Task의 마감일을 초과할 수 없습니다.');
+        error.status = 400;
+        throw error;
+      }
+
+      // 마감일 업데이트
+      const updatedTask = await prisma.SubTask.update({
+        where: { id: parseInt(subTaskId) },
+        data: {
+          endDate: newDeadline,
+          updatedAt: new Date()
+        },
+      });
+
+      return updatedTask;
+    } catch (error) {
+      console.error('Error updating subtask deadline:', error);
+      throw error;
+    }
+  }
+
+  // 세부 TASK 담당자 설정 API
+  async setSubTaskAssignee(subTaskId, assigneeId) {
+    console.log('Service - subTaskId:', subTaskId, 'assigneeId:', assigneeId);
+    
+    try {
+      // ID 유효성 검사
+      const parsedSubTaskId = parseInt(subTaskId);
+      if (isNaN(parsedSubTaskId)) {
+        const error = new Error('유효하지 않은 세부 태스크 ID입니다.');
+        error.status = 400;
+        throw error;
+      }
+      
+      // 서브태스크와 관련된 Task, Member 정보 조회
+      const existingTask = await prisma.subTask.findUnique({
+        where: { id: parsedSubTaskId },
+        include: {
+          task: {
+            include: {
+              members: {
+                include: {
+                  user: true
+                }
+              },
+              folder: true
+            }
+          },
+          assignee: true
+        }
+      });
+
+      console.log('Existing task with members:', JSON.stringify(existingTask, null, 2));
+
+      if (!existingTask) {
+        const error = new Error('해당하는 세부 태스크를 찾을 수 없습니다.');
+        error.status = 404;
+        throw error;
+      }
+
+      const task = existingTask.task;
+      const isTeamTask = task.type === 'TEAM';
+
+      // assigneeId가 있는 경우에만 멤버 확인
+      if (assigneeId) {
+        const parsedAssigneeId = parseInt(assigneeId);
+        if (isNaN(parsedAssigneeId)) {
+          const error = new Error('유효하지 않은 담당자 ID입니다.');
+          error.status = 400;
+          throw error;
+        }
+
+        if (isTeamTask) {
+          // 팀 과제인 경우: 팀 멤버인지 확인
+          const isTeamMember = task.members.some(
+            member => member.userId === parsedAssigneeId
+          );
+
+          console.log('Is team member:', isTeamMember, 'Team members:', task.members);
+
+          if (!isTeamMember) {
+            const error = new Error('팀원만 담당자로 지정할 수 있습니다.');
+            error.status = 400;
+            throw error;
+          }
+        } else {
+          // 개인 과제인 경우: 본인만 담당자로 지정 가능
+          const taskOwner = task.members.find(member => member.role === false)?.user;
+          if (taskOwner && taskOwner.id !== parsedAssigneeId) {
+            const error = new Error('개인 과제는 본인만 담당자로 지정할 수 있습니다.');
+            error.status = 400;
+            throw error;
+          }
+        }
+      }
+
+      // 담당자 업데이트 (assigneeId가 null이면 담당자 해제)
+      const updatedTask = await prisma.subTask.update({
+        where: { id: parsedSubTaskId },
+        data: {
+          assigneeId: assigneeId ? parseInt(assigneeId) : null,
+          updatedAt: new Date()
+        },
+        select: {
+          id: true,
+          assigneeId: true
+        }
+      });
+
+      console.log('Updated task:', updatedTask);
+
+      return {
+        subTaskId: updatedTask.id,
+        assigneeId: updatedTask.assigneeId
+      };
+    } catch (error) {
+      console.error('Error in setSubTaskAssignee service:', {
+        message: error.message,
+        stack: error.stack,
+        status: error.status
+      });
+      
+      if (error.status) {
+        throw error;
+      }
+      error.status = 500;
+      error.message = '서버 내부 오류가 발생했습니다.';
+      throw error;
+    }
+  }
+}
+
+export default new TaskService();

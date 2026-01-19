@@ -1,0 +1,251 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+//소셜로그인 Provider
+enum Provider {
+  KAKAO
+  // 필요한 소셜 로그인 추가
+}
+
+// 과제 상태
+enum SubTaskStatus {
+  PENDING
+  PROGRESS
+  COMPLETED
+}
+
+enum TaskStatus {
+  PENDING
+  PROGRESS
+  COMPLETED
+}
+
+enum TaskType {
+  PERSONAL
+  TEAM
+}
+
+model TaskPirority {
+  id        Int       @id @default(autoincrement()) @map("priority_id")
+  userId    Int       @map("user_id")
+  taskId    Int       @map("task_id")
+  rank      Int
+  createdAt DateTime  @default(now()) @map("created_at") @db.DateTime
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.DateTime
+
+  // 관계 설정 (Relations)
+  user User @relation("UserTaskPriorities", fields: [userId], references: [id], onDelete: Restrict)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade) // 과제 삭제 시 우선순위도 삭제됨
+
+  @@unique([userId, taskId])
+  @@map("TaskPirority")
+}
+
+// 사용자 (User)
+model User {
+  id           Int     @id @default(autoincrement()) @map("user_id")
+  nickname     String  @db.VarChar(10)
+  phoneNum     String  @map("phone_num") @db.VarChar(15)
+  email        String  @unique @db.VarChar(50)
+  profileImage String? @map("profile_image") @db.VarChar(200)
+  password     String? @db.VarChar(50)
+
+  // 소셜 로그인 관련
+  provider   Provider?
+  providerId String?   @map("provider_id") @db.VarChar(10)
+
+  // 시간 관련 (Image: date 타입)
+  createdAt DateTime  @default(now()) @map("created_at") @db.DateTime
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.DateTime
+  deletedAt DateTime? @map("deleted_at") @db.DateTime
+
+  //알람 관련
+  deadlineAlarm Int @default(24) @map("deadline_alarm") // 마감 알람 설정 시간(기본값: 24시간)
+  taskAlarm     Int @default(24) @map("task_alarm") // 과제 알람 설정 시간(기본값: 24시간)
+
+  // 관계 설정 (Relations)
+  alarms         UserAlarm[]    @relation("UserAlarms")
+  folders        Folder[]       @relation("UserFolders") // 유저가 가진 폴더들 
+  memberships    Member[]       @relation("UserMembers") // 유저가 참여한 팀(멤버) 기록 (팀과제일 경우)
+  comments       Comment[]      @relation("UserComments") // 유저가 쓴 댓글들
+  SubTasks       SubTask[]      @relation("Assignee") // 유저에게 할당된 세부과제 (개인과제일 경우 모두 자신에게 할당됨)
+  taskPriorities TaskPirority[] @relation("UserTaskPriorities") // 유저의 과제 우선순위들
+
+  @@unique([provider, providerId])
+  @@index([deletedAt])
+  @@map("User") // 실제 DB 테이블 이름
+}
+
+// 유저 알림 (UserAlarm)
+model UserAlarm {
+  id     Int @id @default(autoincrement()) @map("alarm_id")
+  userId Int @map("user_id")
+
+  //어디서 온 알람인지? => 비정규화 방식으로 taskID도 같이 저장 Task 정보 바로 접근 가능하기 때문.
+  taskId    Int? @map("task_id") // 과제 id 과제 알람일 수도 있고 아닐 수도 있으니 nullable 고려
+  subTaskId Int? @map("sub_task_id") // 세부과제 id 세부과제알람일 수도 있고 아닐 수도 있으니 nullable 고려
+
+  title        String  @db.VarChar(30) //알람 제목
+  alarmContent String  @map("alarm_content") @db.VarChar(50) //알람 내용
+  isRead       Boolean @default(false) @map("is_read") // 0: off, 1: on
+
+  //시간 관련
+  alarmDate DateTime @map("alarm_date") @db.DateTime // 알람 보낼 시간(기본값: 24시간 후)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime // 알람 생성 시간
+
+  // 관계 설정 (Relations)
+  user    User     @relation("UserAlarms", fields: [userId], references: [id], onDelete: Restrict) // 유저와 연결
+  task    Task?    @relation(fields: [taskId], references: [id], onDelete: Cascade) // 과제와 연결 (삭제 시 알람도 삭제됨)
+  subTask SubTask? @relation(fields: [subTaskId], references: [id], onDelete: Cascade) // 세부과제와 연결 (삭제 시 알람도 삭제됨)
+
+  @@map("UserAlarm")
+}
+
+// 폴더 (Folder)
+model Folder {
+  id          Int      @id @default(autoincrement()) @map("folder_id")
+  userId      Int      @map("user_id")
+  folderTitle String   @map("folder_title") @db.VarChar(100)
+  color       String   @db.VarChar(7)
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime
+
+  // 관계 설정 (Relations)
+  user  User   @relation("UserFolders", fields: [userId], references: [id], onDelete: Restrict) // 유저와 연결 (삭제 시 폴더는 그대로 남아있음)
+  tasks Task[] // 폴더에 속한 과제들
+
+  @@map("Folder")
+}
+
+// 과제 (Task)
+model Task {
+  id              Int        @id @default(autoincrement()) @map("task_id")
+  folderId        Int?       @map("folder_id") // 처음 과제를 생성하면 폴더에 과제가 안들어가있으므로 nullable 고려
+  title           String     @db.VarChar(30)
+  deadline        DateTime   @db.Date
+  type            TaskType // Team, Personal
+  status          TaskStatus // PENDING, PROGRESS, COMPLETED
+  isAlarm         Boolean    @default(true) @map("is_alarm") // true: on, false: off => 생성 시 true로 설정됨.
+  createdAt       DateTime   @default(now()) @map("created_at") @db.DateTime
+  updatedAt       DateTime?  @updatedAt @map("updated_at") @db.DateTime
+  inviteCode      String?    @map("invite_code") @db.VarChar(50) // 팀과제 초대 코드
+  inviteExpiredAt DateTime?  @map("invite_expired") @db.DateTime // 팀과제 초대 코드 만료 시간
+
+  // 관계 설정 (Relations)
+  folder         Folder?         @relation(fields: [folderId], references: [id], onDelete: Cascade) // 폴더와 연결 (삭제 시 과제도 삭제됨)
+  members        Member[]
+  subTasks       SubTask[]
+  references     Reference[]
+  logs           Log[]
+  communications Communication[]
+  userAlarms     UserAlarm[]
+  priorities     TaskPirority[] // 과제 우선순위
+
+  @@map("Task")
+}
+
+// 팀원 (Member) - N:M 매핑 테이블
+model Member {
+  id        Int      @id @default(autoincrement()) @map("member_id")
+  userId    Int      @map("user_id") // 유저 id (팀과제일 경우 멤버에 속한 유저 id), 개인과제일 경우 자기 자신의 id, 멤버에서 삭제 시 null
+  taskId    Int      @map("task_id") // 과제 id
+  role      Boolean // 0: owner(false), 1: member(true) (이미지 기준)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime
+
+  // 관계 설정 (Relations)
+  user User @relation("UserMembers", fields: [userId], references: [id], onDelete: Restrict) // 유저와 연결 (삭제 시 멤버는 그대로 남아있음)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade) // 과제와 연결 (삭제 시 멤버도 삭제됨)
+
+  @@unique([userId, taskId])
+  @@map("Member")
+}
+
+// 세부 과제 (SubTask)
+model SubTask {
+  id         Int  @id @default(autoincrement()) @map("sub_task_id")
+  assigneeId Int? @map("assignee_id") // 담당자 id (개인과제일 경우 모두 자신에게 할당됨), 처음 세부과제 생성 시 담당자 없음.
+  taskId     Int  @map("task_id") // 과제 id
+
+  title     String        @db.VarChar(30) // 세부과제 제목
+  endDate   DateTime      @map("end_date") @db.Date // 세부과제 완료 일자 => 생성 시 설정되어야 함.
+  status    SubTaskStatus @default(PENDING) // PENDING, PROGRESS, COMPLETED => 생성 시 PENDING으로 설정됨.
+  isAlarm   Boolean       @default(true) @map("is_alarm") // true: on, false: off => 생성 시 true로 설정됨.
+  createdAt DateTime      @default(now()) @map("created_at") @db.DateTime // 세부과제 생성 일자
+  updatedAt DateTime?     @updatedAt @map("updated_at") @db.DateTime // 세부과제 수정 일자
+
+  // 관계 설정 (Relations)
+  task       Task        @relation(fields: [taskId], references: [id], onDelete: Cascade) // 과제와 연결 (삭제 시 세부과제도 삭제됨)
+  assignee   User?       @relation("Assignee", fields: [assigneeId], references: [id], onDelete: Restrict) // 담당자와 연결 (삭제 시 담당자는 그대로 남아있음)
+  comments   Comment[]
+  userAlarms UserAlarm[]
+
+  @@map("SubTask")
+}
+
+// 댓글 (Comment)
+model Comment {
+  id        Int @id @default(autoincrement()) @map("comment_id")
+  subTaskId Int @map("sub_task_id")
+  userId    Int @map("user_id") //작성자 id
+
+  content   String   @db.Text // 댓글 내용
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime
+
+  // 관계 설정 (Relations)
+  subTask SubTask @relation(fields: [subTaskId], references: [id], onDelete: Cascade) // 세부과제와 연결 (삭제 시 댓글도 삭제됨)
+  user    User    @relation("UserComments", fields: [userId], references: [id], onDelete: Restrict) // 유저와 연결 (삭제 시 댓글은 그대로 남아있음)
+
+  @@map("Comment")
+}
+
+// 자료 (Reference)
+model Reference {
+  id        Int       @id @default(autoincrement()) @map("data_id")
+  taskId    Int       @map("task_id") // 과제 id
+  name      String    @db.VarChar(16) // 자료 이름
+  url       String?   @db.VarChar(255) // 자료 링크
+  fileUrl   String?   @map("file_url") @db.VarChar(255) // 자료 파일 url
+  createdAt DateTime  @default(now()) @map("created_at") @db.DateTime // 자료 생성 일자
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.DateTime // 자료 수정 일자
+
+  // 관계 설정 (Relations)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade) // 과제와 연결 (삭제 시 자료도 삭제됨)
+
+  @@map("Reference")
+}
+
+// 회의록 (Log)
+model Log {
+  id         Int       @id @default(autoincrement()) @map("log_id")
+  taskId     Int       @map("task_id") // 과제 id
+  date       DateTime  @db.Date // 회의 날짜
+  agenda     String?   @db.Text // 회의 안건
+  conclusion String?   @db.Text // 회의 결론
+  discussion String?   @db.Text // 회의 논의
+  createdAt  DateTime  @default(now()) @map("created_at") @db.DateTime // 회의록 생성 일자
+  updatedAt  DateTime? @updatedAt @map("updated_at") @db.DateTime // 회의록 수정 일자
+
+  // 관계 설정 (Relations)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade) // 과제와 연결 (삭제 시 회의록도 삭제됨)
+
+  @@map("Log")
+}
+
+// 커뮤니케이션 (Communication)
+model Communication {
+  id        Int       @id @default(autoincrement()) @map("comu_id")
+  taskId    Int       @map("task_id")
+  name      String    @db.VarChar(16)
+  url       String    @db.VarChar(255)
+  createdAt DateTime  @default(now()) @map("created_at") @db.DateTime
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.DateTime
+
+  // 관계 설정 (Relations)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade) // 과제와 연결 (삭제 시 커뮤니케이션도 삭제됨)
+
+  @@map("Communication")
+}
