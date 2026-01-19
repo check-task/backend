@@ -5,8 +5,11 @@ import commentRouter from "./comment.route.js";
 import taskRouter from "./task.route.js";
 import modalRouter from "./modal.route.js";
 import folderRouter from "./folder.route.js";
-
+import kakaoAuthRouter from "./kakao_auth.route.js"
 const router = express.Router();
+
+//kakao
+router.use("/auth",kakaoAuthRouter)
 
 // 각 도메인별 라우터 등록
 router.use("/user/folder", folderRouter);

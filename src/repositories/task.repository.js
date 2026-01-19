@@ -21,6 +21,45 @@ class TaskRepository {
     return await tx.task.update({ where: { id }, data });
   }
 
+  // 과제 세부 사항 조회
+  async findTaskDetail(id) {
+    return await prisma.task.findUnique({
+      where: { id },
+      nclude: {
+        subTasks: {
+          include: {
+            _count: {
+              select: { comments: true } 
+            }
+          }
+        },
+        references: true,
+        logs: true, 
+        communications: true 
+      }
+    });
+  }
+
+  // 과제 목록 조회
+  async findAllTasks({ type, folderId, sort }) {
+    const query = {
+        where: {},
+        include: {
+            folder: true,
+            subTasks: true 
+        }
+    };
+
+    if (type) query.where.type = type === "팀" ? "TEAM" : "INDIVIDUAL";
+    if (folderId) query.where.folderId = parseInt(folderId);
+
+    if (sort === '마감일순' || !sort) {
+        query.orderBy = { deadline: 'asc' };
+    }
+
+    return await prisma.task.findMany(query);
+}
+
   // 세부 과제 일괄 삭제
   async deleteAllSubTasks(taskId, tx) {
     return await tx.subTask.deleteMany({ where: { taskId } });

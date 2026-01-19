@@ -1,8 +1,11 @@
 import taskService from "../services/task.service.js";
 import { createTaskRequestDTO } from "../dtos/task.dto.js";
 import { updateTaskRequestDTO } from "../dtos/task.dto.js";
+import { taskDetailResponseDTO } from "../dtos/task.dto.js";
+import { taskListResponseDTO } from "../dtos/task.dto.js";
 
 class TaskController {
+  // 과제 생성
   async createTask(req, res, next) {
     try {
       const taskRequest = createTaskRequestDTO(req.body);
@@ -19,6 +22,8 @@ class TaskController {
     }
   }
 
+
+  // 과제 수정
   async updateTask(req, res, next) {
     try {
       const { taskId } = req.params;
@@ -36,6 +41,7 @@ class TaskController {
     }
   }
 
+  // 과제 삭제
   async deleteTask(req, res, next) {
     try {
       const { taskId } = req.params;
@@ -48,6 +54,45 @@ class TaskController {
       });
     } catch (error) {
       next(error);
+    }
+  }
+
+  // 과제 세부 사항 조회
+  async getTaskDetail(req, res, next) {
+    try {
+      const { taskId } = req.params;
+      const task = await taskService.getTaskDetail(parseInt(taskId));
+
+      res.status(200).json({
+        resultType: "SUCCESS", 
+        message: "서버가 요청을 성공적으로 처리하였습니다.", 
+        data: taskDetailResponseDTO(task) 
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // 과제 목록 조회
+  async getTasks(req, res, next) {
+    try {
+        console.log("실제 들어온 쿼리:", req.query);
+        
+        const queryParams = {
+            type: req.query.type,
+            sort: req.query.sort,
+            folderId: req.query.folderId || req.query.folder_id || req.query.folderld,
+        };
+
+        const tasks = await taskService.getTaskList(queryParams);
+
+        res.status(200).json({
+            resultType: "SUCCESS",
+            message: "서버가 요청을 성공적으로 처리하였습니다.",
+            data: taskListResponseDTO(tasks)
+        });
+    } catch (error) {
+        next(error);
     }
   }
   
@@ -131,3 +176,4 @@ class TaskController {
 }
 
 export default new TaskController();
+
