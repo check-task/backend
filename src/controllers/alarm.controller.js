@@ -160,3 +160,22 @@ export const handleAlarmUpdateSubtaskStatus = async (req, res) => {
   // 성공 응답 (이미지 명세에 맞게)
   return res.success(result, "세부과제에 대한 알림 여부를 변경하였습니다..");
 };
+
+// ✅ PATCH /v1/api/alarm/read/:alarmId - 알림 읽음 처리
+export const handleAlarmUpdateAlarmReadStatus = async (req, res) => {
+  const userId = req.user.id;
+  const alarmId = req.params.alarmId;
+  const isRead = req.body.isRead;
+
+  const parsedAlarmId = parseInt(alarmId);
+
+  // Service 호출
+  const result = await AlarmService.updateAlarmReadStatus(
+    userId,
+    parsedAlarmId,
+    isRead
+  );
+
+  // 성공 응답 (이미지 명세에 맞게)
+  return res.success(result, "알림 읽음 처리 성공");
+};

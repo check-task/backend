@@ -3,6 +3,7 @@ import {
   handleAlarmDelete,
   handleAlarmDeleteAll,
   handleAlarmList,
+  handleAlarmUpdateAlarmReadStatus,
   handleAlarmUpdateDeadline,
   handleAlarmUpdateSubtaskStatus,
   handleAlarmUpdateTask,
@@ -36,5 +37,6 @@ router.patch(
 router.patch("/task/:taskId", authenticate, handleAlarmUpdateTaskStatus);
 
 // PATCH /v1/api/alarm/read/:alarmId - 알림 읽음 처리
+router.patch("/read/:alarmId", authenticate, handleAlarmUpdateAlarmReadStatus);
 
 export default router;

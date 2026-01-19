@@ -7,9 +7,11 @@ import {
   updateTaskAlarm,
   updateTaskAlarmStatusRepository,
   updateSubtaskAlarmStatusRepository,
+  updateAlarmReadStatusRepository,
 } from "../repositories/alarm.repository.js";
 import {
   alarmListResponseDto,
+  updateAlarmReadStatusDto,
   updateDeadlineAlarmDto,
   updateSubtaskAlarmStatusDto,
   updateTaskAlarmDto,
@@ -201,4 +203,30 @@ export const updateSubtaskAlarmStatus = async (userId, subTaskId, isAlarm) => {
 
   // DTO 변환
   return updateSubtaskAlarmStatusDto(updatedSubTask);
+};
+
+// 알림 읽음 처리
+export const updateAlarmReadStatus = async (userId, alarmId, isRead) => {
+  // 알림 존재 여부 확인
+  const alarm = await findAlarmById(alarmId);
+  if (!alarm) {
+    throw new NotFoundError("ALARM_NOT_FOUND", "알림을 찾을 수 없습니다.");
+  }
+  // 알림 소유자 확인 (본인의 알림인지)
+  if (alarm.userId !== userId) {
+    throw new ForbiddenError(
+      "ALARM_ACCESS_DENIED",
+      "해당 알림에 접근할 권한이 없습니다."
+    );
+  }
+  if (typeof isRead !== "boolean") {
+    throw new BadRequestError(
+      "INVALID_BODY",
+      "Body의 isRead 데이터는 boolean 형식으로 보내야합니다."
+    );
+  }
+
+  // 알림 읽음 처리 (Repository 호출)
+  const updatedAlarm = await updateAlarmReadStatusRepository(alarmId, isRead);
+  return updateAlarmReadStatusDto({ userId, ...updatedAlarm });
 };
