@@ -25,7 +25,7 @@ class TaskRepository {
   async findTaskDetail(id) {
     return await prisma.task.findUnique({
       where: { id },
-      nclude: {
+      include: {
         subTasks: {
           include: {
             _count: {

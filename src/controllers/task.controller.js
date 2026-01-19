@@ -76,7 +76,7 @@ class TaskController {
   // 과제 목록 조회
   async getTasks(req, res, next) {
     try {
-        console.log("실제 들어온 쿼리:", req.query);
+        console.log("쿼리 내용:", req.query);
         
         const queryParams = {
             type: req.query.type,
