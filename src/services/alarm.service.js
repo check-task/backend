@@ -106,6 +106,13 @@ export const updateTask = async (userId, taskAlarm) => {
 
 // ✅ 과제 알림 여부 설정
 export const updateTaskAlarmStatus = async (userId, taskId, isAlarm) => {
+  if (!taskId || isNaN(parseInt(taskId))) {
+    throw new BadRequestError(
+      "INVALID_PARAMS",
+      "params는 숫자로 보내야합니다."
+    );
+  }
+
   // taskId가 유효한 숫자인지 확인
   if (!Number.isInteger(taskId) || taskId <= 0) {
     throw new BadRequestError(
@@ -137,6 +144,13 @@ export const updateTaskAlarmStatus = async (userId, taskId, isAlarm) => {
     throw new ForbiddenError(
       "TASK_ACCESS_DENIED",
       "해당 과제에 접근할 권한이 없습니다."
+    );
+  }
+
+  if (typeof isAlarm !== "boolean") {
+    throw new BadRequestError(
+      "INVALID_BODY",
+      "Body의 isAlarm 데이터는 boolean 형식으로 보내야합니다."
     );
   }
 
@@ -185,6 +199,13 @@ export const updateSubtaskAlarmStatus = async (userId, subTaskId, isAlarm) => {
     throw new ForbiddenError(
       "SUBTASK_ACCESS_DENIED",
       "해당 세부과제에 접근할 권한이 없습니다."
+    );
+  }
+
+  if (typeof isAlarm !== "boolean") {
+    throw new BadRequestError(
+      "INVALID_BODY",
+      "Body의 isAlarm 데이터는 boolean 형식으로 보내야합니다."
     );
   }
   //  세부과제 알림 여부 설정 (Repository 호출)

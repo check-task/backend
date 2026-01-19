@@ -97,23 +97,7 @@ export const handleAlarmUpdateTaskStatus = async (req, res) => {
   const taskId = req.params.taskId;
   const isAlarm = req.body.isAlarm;
 
-  // 400 에러: 파라미터가 숫자가 아닌 경우
-  if (!taskId || isNaN(parseInt(taskId))) {
-    throw new BadRequestError(
-      "INVALID_PARAMS",
-      "params는 숫자로 보내야합니다."
-    );
-  }
-
   const parsedTaskId = parseInt(taskId);
-
-  // isAlarm 검증
-  if (typeof isAlarm !== "boolean") {
-    throw new BadRequestError(
-      "INVALID_BODY",
-      "Body의 isAlarm 데이터는 boolean 형식으로 보내야합니다."
-    );
-  }
 
   // Service 호출
   const result = await AlarmService.updateTaskAlarmStatus(
@@ -132,23 +116,7 @@ export const handleAlarmUpdateSubtaskStatus = async (req, res) => {
   const subTaskId = req.params.subtaskId;
   const isAlarm = req.body.isAlarm;
 
-  // 400 에러: 파라미터가 숫자가 아닌 경우
-  if (!subTaskId || isNaN(parseInt(subTaskId))) {
-    throw new BadRequestError(
-      "INVALID_PARAMETER",
-      "params는 숫자로 보내야합니다."
-    );
-  }
-
   const parsedSubTaskId = parseInt(subTaskId);
-
-  // isAlarm 검증
-  if (typeof isAlarm !== "boolean") {
-    throw new BadRequestError(
-      "INVALID_BODY",
-      "Body의 isAlarm 데이터는 boolean 형식으로 보내야합니다."
-    );
-  }
 
   // Service 호출
   const result = await AlarmService.updateSubtaskAlarmStatus(
