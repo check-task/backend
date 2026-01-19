@@ -43,4 +43,41 @@ export class CommentRepository {
       },
     });
   }
+
+  // 댓글 조회
+  static async findCommentById(commentId) {
+    return prisma.comment.findUnique({
+      where: { id: parseInt(commentId) },
+      include: {
+        user: {
+          select: {
+            id: true,
+            nickname: true,
+          },
+        },
+      },
+    });
+  }
+
+  // 댓글 수정
+  static async updateComment(commentId, content) {
+    return prisma.comment.update({
+      where: { id: parseInt(commentId) },
+      data: { content },
+      include: {
+        user: {
+          select: {
+            id: true,
+            nickname: true,
+          },
+        },
+        subTask: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+    });
+  }
 }

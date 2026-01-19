@@ -1,24 +1,10 @@
 import taskService from "../services/task.service.js";
 import { createTaskRequestDTO } from "../dtos/task.dto.js";
 import { updateTaskRequestDTO } from "../dtos/task.dto.js";
+import { taskDetailResponseDTO } from "../dtos/task.dto.js";
+import { taskListResponseDTO } from "../dtos/task.dto.js";
 
-class TaskController { // 완료된 과제 조회
-  async getCompletedTasks(req, res, next) {
-    try {
-      const userId = req.user.id; 
-      
-      const result = await taskService.getCompletedTasks(userId);
-
-      res.status(200).json({
-        resultType: "SUCCESS",
-        message: "완료된 과제 조회에 성공하였습니다.",
-        data: result
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
+class TaskController {
   async createTask(req, res, next) {
     try {
       const taskRequest = createTaskRequestDTO(req.body);
@@ -35,6 +21,8 @@ class TaskController { // 완료된 과제 조회
     }
   }
 
+
+  // 과제 수정
   async updateTask(req, res, next) {
     try {
       const { taskId } = req.params;
@@ -52,6 +40,7 @@ class TaskController { // 완료된 과제 조회
     }
   }
 
+  // 과제 삭제
   async deleteTask(req, res, next) {
     try {
       const { taskId } = req.params;
@@ -64,6 +53,45 @@ class TaskController { // 완료된 과제 조회
       });
     } catch (error) {
       next(error);
+    }
+  }
+
+  // 과제 세부 사항 조회
+  async getTaskDetail(req, res, next) {
+    try {
+      const { taskId } = req.params;
+      const task = await taskService.getTaskDetail(parseInt(taskId));
+
+      res.status(200).json({
+        resultType: "SUCCESS", 
+        message: "서버가 요청을 성공적으로 처리하였습니다.", 
+        data: taskDetailResponseDTO(task) 
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // 과제 목록 조회
+  async getTasks(req, res, next) {
+    try {
+        console.log("쿼리 내용:", req.query);
+        
+        const queryParams = {
+            type: req.query.type,
+            sort: req.query.sort,
+            folderId: req.query.folderId || req.query.folder_id || req.query.folderld,
+        };
+
+        const tasks = await taskService.getTaskList(queryParams);
+
+        res.status(200).json({
+            resultType: "SUCCESS",
+            message: "서버가 요청을 성공적으로 처리하였습니다.",
+            data: taskListResponseDTO(tasks)
+        });
+    } catch (error) {
+        next(error);
     }
   }
   
@@ -147,3 +175,4 @@ class TaskController { // 완료된 과제 조회
 }
 
 export default new TaskController();
+

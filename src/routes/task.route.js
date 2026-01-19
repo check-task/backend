@@ -1,20 +1,25 @@
 import express from "express";
 import taskController from "../controllers/task.controller.js";
-import  authenticate  from "../middlewares/authenticate.middleware.js";
 
 const router = express.Router();
 
 // 완료된 과제
 router.get("/completed", authenticate, taskController.getCompletedTasks);
 
-// GET /api/v1/task -- 과제 생성
-router.get("/", taskController.createTask);
+// POST /api/v1/task -- 과제 생성
+router.post("/", authenticate, taskController.createTask);
 
-// PATCH /api/v1/task/:taskId
-router.patch("/:taskId", taskController.updateTask);
+// PATCH /api/v1/task/:taskId -- 과제 수정
+router.patch("/:taskId", authenticate, taskController.updateTask);
 
-// DELETE /api/v1/task/:taskId
-router.delete("/:taskId", taskController.deleteTask);
+// DELETE /api/v1/task/:taskId -- 과제 삭제
+router.delete("/:taskId", authenticate, taskController.deleteTask);
+
+// GET /api/v1/task/:taskId -- 과제 세부 사항 조회
+router.get("/:taskId", authenticate, taskController.getTaskDetail);
+
+// GET /api/v1/task?sort=우선순위 -- 과제 목록 조회
+router.get("/", authenticate, taskController.getTasks);
 
 // 세부 TASK 완료 처리 API 
 // 세부 TASK 상태 업데이트

@@ -4,6 +4,7 @@ export const createTaskRequestDTO = (data) => {
     folderId: data.folderId,
     deadline: new Date(data.deadline),
     type: data.type === "팀" ? "TEAM" : "PERSONAL", 
+    status: "PENDING",
     subTasks: (data.subTasks || []).map(st => ({
       title: st.title,
       endDate: new Date(st.deadline) 
@@ -24,23 +25,5 @@ export const updateTaskRequestDTO = (data) => {
       status: st.status || "PENDING"
     })),
     references: data.references || []
-  };
-};
-
-export const responseFromCompletedTasks = (tasks) => {
-  return {
-    tasks: tasks.map((task) => ({
-      taskId: task.id,
-      title: task.title,
-      deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : null,
-      
-      type: task.type === "TEAM" ? "팀" : "개인", 
-      
-      status: task.status,
-      
-      folderId: task.folder ? task.folder.id : null,
-      folderTitle: task.folder ? task.folder.folderTitle : null,
-      color: task.folder ? task.folder.color : null,
-    })),
   };
 };
