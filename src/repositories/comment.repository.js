@@ -44,6 +44,35 @@ export class CommentRepository {
     });
   }
 
+  // 댓글 조회 (ID로)
+  static async findCommentById(commentId) {
+    return prisma.comment.findUnique({
+      where: { id: parseInt(commentId) },
+      include: {
+        user: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+  }
+
+  // 댓글 삭제
+  static async deleteComment(commentId) {
+    const comment = await this.findCommentById(commentId);
+    if (!comment) {
+      throw new Error('Comment not found');
+    }
+    return prisma.comment.delete({
+      where: { id: parseInt(commentId) },
+      include: {
+        user: { select: { id: true } },
+        subTask: { select: { id: true } }
+      }
+    });
+  }
+
   // 댓글 조회
   static async findCommentById(commentId) {
     return prisma.comment.findUnique({
