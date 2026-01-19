@@ -96,6 +96,33 @@ class TaskController {
     }
   }
   
+  // 팀원 정보 수정
+  async updateTeamMember(req, res, next) {
+    try {
+      const {taskId, memberId} = req.params;
+      const {role} = req.body;
+
+      const result = await taskService.modifyMemberRole(
+          parseInt(taskId), 
+          parseInt(memberId), 
+          role
+      );
+
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "요청이 성공적으로 처리되었습니다.",
+        data: {
+            member_id: result.id, 
+            user_id: result.userId,
+            task_id: result.taskId, 
+            role: result.role ? 1 : 0,
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // 세부 TASK 완료 처리 API 
   async updateSubTaskStatus(req, res, next) {
     try {

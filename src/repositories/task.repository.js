@@ -58,7 +58,37 @@ class TaskRepository {
     }
 
     return await prisma.task.findMany(query);
-}
+  }
+  // 멤버 존재 여부 확인
+  async findMemberInTask (taskId, memberId) {
+    return await prisma.member.findFirst({
+      where: {
+        id: memberId,
+        taskId: taskId
+      }
+    });
+  }
+
+  // 대상 멤버 제외 역할 member로 전환
+  async resetOtherMembersRole(taskId, excludeMemberId, tx = prisma) {
+    return await tx.member.updateMany({
+      where: {
+        taskId: taskId,
+        id: { not: excludeMemberId } // 대상 멤버는 제외
+      },
+      data: { 
+        role: true 
+      }
+    });
+  }
+
+  // 멤버 역할 업데이트
+  async updateMemberRole(memberId, isMember) {
+    return await prisma.member.update({
+      where: {id: memberId},
+      data: {role: isMember}
+    });
+  }
 
   // 세부 과제 일괄 삭제
   async deleteAllSubTasks(taskId, tx) {

@@ -19,6 +19,9 @@ router.get("/:taskId", authenticate, taskController.getTaskDetail);
 // GET /api/v1/task?sort=우선순위 -- 과제 목록 조회
 router.get("/", authenticate, taskController.getTasks);
 
+// PATCH /api/v1/task/:taskId/member/:memberId -- 팀원 정보 수정
+router.patch("/:taskId/member/:memberId", authenticate, taskController.updateTeamMember);
+
 // 세부 TASK 완료 처리 API 
 // 세부 TASK 상태 업데이트
 router.patch(
