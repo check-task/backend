@@ -151,6 +151,116 @@ class TaskService {
       throw error;
     }
   }
+
+  // 세부 TASK 담당자 설정 API
+  async setSubTaskAssignee(subTaskId, assigneeId) {
+    console.log('Service - subTaskId:', subTaskId, 'assigneeId:', assigneeId);
+    
+    try {
+      // ID 유효성 검사
+      const parsedSubTaskId = parseInt(subTaskId);
+      if (isNaN(parsedSubTaskId)) {
+        const error = new Error('유효하지 않은 세부 태스크 ID입니다.');
+        error.status = 400;
+        throw error;
+      }
+      
+      // 서브태스크와 관련된 Task, Member 정보 조회
+      const existingTask = await prisma.subTask.findUnique({
+        where: { id: parsedSubTaskId },
+        include: {
+          task: {
+            include: {
+              members: {
+                include: {
+                  user: true
+                }
+              },
+              folder: true
+            }
+          },
+          assignee: true
+        }
+      });
+
+      console.log('Existing task with members:', JSON.stringify(existingTask, null, 2));
+
+      if (!existingTask) {
+        const error = new Error('해당하는 세부 태스크를 찾을 수 없습니다.');
+        error.status = 404;
+        throw error;
+      }
+
+      const task = existingTask.task;
+      const isTeamTask = task.type === 'TEAM';
+
+      // assigneeId가 있는 경우에만 멤버 확인
+      if (assigneeId) {
+        const parsedAssigneeId = parseInt(assigneeId);
+        if (isNaN(parsedAssigneeId)) {
+          const error = new Error('유효하지 않은 담당자 ID입니다.');
+          error.status = 400;
+          throw error;
+        }
+
+        if (isTeamTask) {
+          // 팀 과제인 경우: 팀 멤버인지 확인
+          const isTeamMember = task.members.some(
+            member => member.userId === parsedAssigneeId
+          );
+
+          console.log('Is team member:', isTeamMember, 'Team members:', task.members);
+
+          if (!isTeamMember) {
+            const error = new Error('팀원만 담당자로 지정할 수 있습니다.');
+            error.status = 400;
+            throw error;
+          }
+        } else {
+          // 개인 과제인 경우: 본인만 담당자로 지정 가능
+          const taskOwner = task.members.find(member => member.role === false)?.user;
+          if (taskOwner && taskOwner.id !== parsedAssigneeId) {
+            const error = new Error('개인 과제는 본인만 담당자로 지정할 수 있습니다.');
+            error.status = 400;
+            throw error;
+          }
+        }
+      }
+
+      // 담당자 업데이트 (assigneeId가 null이면 담당자 해제)
+      const updatedTask = await prisma.subTask.update({
+        where: { id: parsedSubTaskId },
+        data: {
+          assigneeId: assigneeId ? parseInt(assigneeId) : null,
+          updatedAt: new Date()
+        },
+        select: {
+          id: true,
+          assigneeId: true
+        }
+      });
+
+      console.log('Updated task:', updatedTask);
+
+      return {
+        subTaskId: updatedTask.id,
+        assigneeId: updatedTask.assigneeId
+      };
+    } catch (error) {
+      console.error('Error in setSubTaskAssignee service:', {
+        message: error.message,
+        stack: error.stack,
+        status: error.status
+      });
+      
+      if (error.status) {
+        throw error;
+      }
+      error.status = 500;
+      error.message = '서버 내부 오류가 발생했습니다.';
+      throw error;
+    }
+  }
 }
 
 export default new TaskService();

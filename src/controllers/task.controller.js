@@ -100,6 +100,34 @@ class TaskController {
       next(error);
     }
   }
+
+  // 세부 TASK 담당자 설정 API
+  async setSubTaskAssignee(req, res, next) {
+    try {
+      const { subTaskId } = req.params;
+      const { assigneeId } = req.body;
+
+      console.log('Request - subTaskId:', subTaskId, 'assigneeId:', assigneeId);
+
+      const result = await taskService.setSubTaskAssignee(parseInt(subTaskId), assigneeId);
+
+      console.log('Service result:', result);
+
+      const responseData = {
+        resultType: 'SUCCESS',
+        message: '담당자가 지정되었습니다.',
+        data: {
+          sub_task_id: result.subTaskId,
+          assignee_id: result.assigneeId
+        }
+      };
+
+      return res.status(200).json(responseData);
+    } catch (error) {
+      console.error('Error in setSubTaskAssignee:', error);
+      next(error);
+    }
+  }
 }
 
 export default new TaskController();

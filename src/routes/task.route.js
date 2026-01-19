@@ -26,4 +26,10 @@ router.patch(
   taskController.updateSubTaskDeadline
 );
 
+// 세부 TASK 담당자 설정 API
+router.patch(
+  '/subtask/:subTaskId/assignee',
+  taskController.setSubTaskAssignee
+);
+
 export default router;
