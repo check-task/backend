@@ -30,6 +30,22 @@ enum TaskType {
   TEAM
 }
 
+model TaskPirority {
+  id        Int       @id @default(autoincrement()) @map("priority_id")
+  userId    Int       @map("user_id")
+  taskId    Int       @map("task_id")
+  rank      Int
+  createdAt DateTime  @default(now()) @map("created_at") @db.DateTime
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.DateTime
+
+  // 관계 설정 (Relations)
+  user User @relation("UserTaskPriorities", fields: [userId], references: [id], onDelete: Restrict)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade) // 과제 삭제 시 우선순위도 삭제됨
+
+  @@unique([userId, taskId])
+  @@map("TaskPirority")
+}
+
 // 사용자 (User)
 model User {
   id           Int     @id @default(autoincrement()) @map("user_id")
@@ -53,11 +69,12 @@ model User {
   taskAlarm     Int @default(24) @map("task_alarm") // 과제 알람 설정 시간(기본값: 24시간)
 
   // 관계 설정 (Relations)
-  alarms      UserAlarm[] @relation("UserAlarms")
-  folders     Folder[]    @relation("UserFolders") // 유저가 가진 폴더들 
-  memberships Member[]    @relation("UserMembers") // 유저가 참여한 팀(멤버) 기록 (팀과제일 경우)
-  comments    Comment[]   @relation("UserComments") // 유저가 쓴 댓글들
-  SubTasks    SubTask[]   @relation("Assignee") // 유저에게 할당된 세부과제 (개인과제일 경우 모두 자신에게 할당됨)
+  alarms         UserAlarm[]    @relation("UserAlarms")
+  folders        Folder[]       @relation("UserFolders") // 유저가 가진 폴더들 
+  memberships    Member[]       @relation("UserMembers") // 유저가 참여한 팀(멤버) 기록 (팀과제일 경우)
+  comments       Comment[]      @relation("UserComments") // 유저가 쓴 댓글들
+  SubTasks       SubTask[]      @relation("Assignee") // 유저에게 할당된 세부과제 (개인과제일 경우 모두 자신에게 할당됨)
+  taskPriorities TaskPirority[] @relation("UserTaskPriorities") // 유저의 과제 우선순위들
 
   @@unique([provider, providerId])
   @@index([deletedAt])
@@ -126,6 +143,7 @@ model Task {
   logs           Log[]
   communications Communication[]
   userAlarms     UserAlarm[]
+  priorities     TaskPirority[] // 과제 우선순위
 
   @@map("Task")
 }

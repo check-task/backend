@@ -10,6 +10,9 @@ router.get("/completed", authenticate, taskController.getCompletedTasks);
 // POST /api/v1/task -- 과제 생성
 router.post("/", authenticate, taskController.createTask);
 
+// PATCH /api/v1/task/priority -- 우선 순위 변경
+router.patch("/priority", authenticate, taskController.updateTaskPriorities);
+
 // PATCH /api/v1/task/:taskId -- 과제 수정
 router.patch("/:taskId", authenticate, taskController.updateTask);
 
@@ -21,6 +24,9 @@ router.get("/:taskId", authenticate, taskController.getTaskDetail);
 
 // GET /api/v1/task?sort=우선순위 -- 과제 목록 조회
 router.get("/", authenticate, taskController.getTasks);
+
+// PATCH /api/v1/task/:taskId/member/:memberId -- 팀원 정보 수정
+router.patch("/:taskId/member/:memberId", authenticate, taskController.updateTeamMember);
 
 // 세부 TASK 완료 처리 API 
 // 세부 TASK 상태 업데이트
@@ -41,6 +47,13 @@ router.patch(
 router.patch(
   '/subtask/:subTaskId/assignee',
   taskController.setSubTaskAssignee
+);
+
+// 초대 링크 생성 API
+router.post(
+  '/:taskId/invitation',
+  authenticate,
+  taskController.generateInviteCode
 );
 
 export default router;

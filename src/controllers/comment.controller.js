@@ -170,6 +170,36 @@ const createCommentService = async (subTaskId, createCommentDto) => {
   }
 };
 
+// 댓글 삭제 서비스 함수
+const deleteCommentService = async (commentId, userId) => {
+  try {
+    // 댓글 존재 여부 및 소유자 확인
+    const comment = await prisma.comment.findUnique({
+      where: { id: parseInt(commentId) },
+      include: { user: { select: { id: true } } }
+    });
+
+    if (!comment) {
+      throw new NotFoundError('COMMENT_NOT_FOUND', '댓글을 찾을 수 없습니다.');
+    }
+
+    // 댓글 작성자만 삭제 가능
+    if (comment.user.id !== userId) {
+      const error = new Error('삭제 권한이 없습니다.');
+      error.status = 403;
+      throw error;
+    }
+
+    // 댓글 삭제
+    await prisma.comment.delete({
+      where: { id: parseInt(commentId) }
+    });
+  } catch (error) {
+    console.error('Delete Comment Service Error:', error);
+    throw error;
+  }
+};
+
 // 컨트롤러
 export const createCommentController = async (req, res, next) => {
   try {
@@ -230,5 +260,49 @@ export const updateCommentController = async (req, res, next) => {
   } catch (error) {
     console.error('Update Comment Controller Error:', error);
     next(error);
+  }
+};
+
+// 댓글 삭제 컨트롤러
+export const deleteCommentController = async (req, res, next) => {
+  try {
+    const { commentId } = req.params;
+    const userId = req.user.id; // 인증 미들웨어에서 설정된 사용자 ID
+
+    // 서비스 레이어 호출
+    await deleteCommentService(commentId, userId);
+
+    // 성공 응답
+    res.status(200).json({
+      resultType: 'SUCCESS',
+      message: '댓글이 삭제되었습니다.',
+      data: null
+    });
+  } catch (error) {
+    console.error('Delete Comment Controller Error:', error);
+    
+    // 에러 유형에 따라 적절한 상태 코드와 메시지 설정
+    if (error.status === 403) {
+      return res.status(403).json({
+        resultType: 'ERROR',
+        message: '삭제 권한이 없습니다.'
+      });
+    } else if (error.name === 'NotFoundError') {
+      return res.status(404).json({
+        resultType: 'ERROR',
+        message: '댓글을 찾을 수 없습니다.'
+      });
+    } else if (error.name === 'BadRequestError') {
+      return res.status(400).json({
+        resultType: 'ERROR',
+        message: error.message || '잘못된 요청입니다.'
+      });
+    }
+    
+    // 기타 서버 에러
+    res.status(500).json({
+      resultType: 'ERROR',
+      message: '서버 내부 오류가 발생했습니다.'
+    });
   }
 };
