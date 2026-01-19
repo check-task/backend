@@ -118,3 +118,20 @@ export const updateSubtaskAlarmStatusRepository = async (
     },
   });
 };
+
+//  알림 읽음 처리
+export const updateAlarmReadStatusRepository = async (alarmId) => {
+  return await prisma.userAlarm.update({
+    where: { id: alarmId },
+    data: { isRead: true },
+    select: {
+      id: true,
+      userId: true,
+      taskId: true,
+      subTaskId: true,
+      title: true,
+      alarmContent: true,
+      isRead: true,
+    },
+  });
+};

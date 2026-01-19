@@ -35,4 +35,6 @@ router.patch(
 // PATCH /v1/api/alarm/task/:taskId - 과제 알림 여부 수정
 router.patch("/task/:taskId", authenticate, handleAlarmUpdateTaskStatus);
 
+// PATCH /v1/api/alarm/read/:alarmId - 알림 읽음 처리
+
 export default router;

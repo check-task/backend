@@ -78,26 +78,6 @@ export const deleteAlarm = async (userId, alarmId) => {
 
 // 전체 알림 삭제
 export const deleteAllAlarms = async (userId) => {
-  // 유저 검증 (임시 - 로그인 미들웨어 생성 후 삭제 예정)
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      deletedAt: true,
-    },
-  });
-
-  if (!user) {
-    throw new NotFoundError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
-  }
-
-  if (user.deletedAt !== null) {
-    throw new ForbiddenError(
-      "USER_DELETED",
-      "탈퇴한 유저는 알림을 삭제할 수 없습니다."
-    );
-  }
-
   // 유저의 모든 알림 삭제
   await deleteAllAlarmsByUserId(userId);
 
@@ -110,11 +90,7 @@ export const updateDeadline = async (userId, deadlineAlarm) => {
   const updatedUser = await updateDeadlineAlarm(userId, deadlineAlarm);
 
   // DTO 변환
-  return updateDeadlineAlarmDto({
-    userId: updatedUser.id,
-    nickname: updatedUser.nickname,
-    deadlineAlarm: updatedUser.deadlineAlarm,
-  });
+  return updateDeadlineAlarmDto({ userId, ...updatedUser });
 };
 
 // Task 마감 알림 수정
@@ -123,11 +99,7 @@ export const updateTask = async (userId, taskAlarm) => {
   const updatedUser = await updateTaskAlarm(userId, taskAlarm);
 
   // DTO 변환
-  return updateTaskAlarmDto({
-    userId: updatedUser.id,
-    nickname: updatedUser.nickname,
-    taskAlarm: updatedUser.taskAlarm,
-  });
+  return updateTaskAlarmDto({ userId, ...updatedUser });
 };
 
 // ✅ 과제 알림 여부 설정
@@ -170,13 +142,7 @@ export const updateTaskAlarmStatus = async (userId, taskId, isAlarm) => {
   const updatedTask = await updateTaskAlarmStatusRepository(taskId, isAlarm);
 
   // DTO 변환
-  return updateTaskAlarmStatusDto({
-    taskId: updatedTask.id,
-    title: updatedTask.title,
-    deadline: updatedTask.deadline,
-    isAlarm: updatedTask.isAlarm,
-    updatedAt: updatedTask.updatedAt,
-  });
+  return updateTaskAlarmStatusDto(updatedTask);
 };
 
 // ✅ 세부과제 알림 여부 설정
@@ -234,13 +200,5 @@ export const updateSubtaskAlarmStatus = async (userId, subTaskId, isAlarm) => {
   }
 
   // DTO 변환
-  return updateSubtaskAlarmStatusDto({
-    subTaskId: updatedSubTask.id,
-    assigneeId: updatedSubTask.assigneeId,
-    taskId: updatedSubTask.taskId,
-    title: updatedSubTask.title,
-    endDate: updatedSubTask.endDate,
-    isAlarm: updatedSubTask.isAlarm,
-    updatedAt: updatedSubTask.updatedAt,
-  });
+  return updateSubtaskAlarmStatusDto(updatedSubTask);
 };
