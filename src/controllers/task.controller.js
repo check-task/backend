@@ -95,6 +95,24 @@ class TaskController {
         next(error);
     }
   }
+
+  // 우선 순위 변경
+  async updateTaskPriorities(req, res, next) {
+    try {
+        const userId = req.user.id; 
+        const { orderedTasks } = req.body; 
+
+        await taskService.updatePriorities(userId, orderedTasks);
+
+        res.status(200).json({
+          resultType: "SUCCESS",
+          message: "과제 우선순위가 일괄 변경되었습니다.",
+          data: null
+        });
+    } catch (error) {
+        next(error);
+    }
+  }
   
   // 팀원 정보 수정
   async updateTeamMember(req, res, next) {

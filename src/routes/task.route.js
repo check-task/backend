@@ -7,6 +7,9 @@ const router = express.Router();
 // POST /api/v1/task -- 과제 생성
 router.post("/", authenticate, taskController.createTask);
 
+// PATCH /api/v1/task/priority -- 우선 순위 변경
+router.patch("/priority", authenticate, taskController.updateTaskPriorities);
+
 // PATCH /api/v1/task/:taskId -- 과제 수정
 router.patch("/:taskId", authenticate, taskController.updateTask);
 
