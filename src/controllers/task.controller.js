@@ -83,8 +83,9 @@ class TaskController {
             sort: req.query.sort,
             folderId: req.query.folderId || req.query.folder_id || req.query.folderld,
         };
+        const userId = req.user.id;
 
-        const tasks = await taskService.getTaskList(queryParams);
+        const tasks = await taskService.getTaskList(userId, queryParams);
 
         res.status(200).json({
             resultType: "SUCCESS",
