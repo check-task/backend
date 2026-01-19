@@ -34,3 +34,31 @@ export const updateTaskAlarmDto = (data) => {
     },
   };
 };
+
+// 과제 알림 여부 설정
+export const updateTaskAlarmStatusDto = (data) => {
+  return {
+    task: {
+      taskId: data.taskId,
+      title: data.title,
+      deadline: data.deadline,
+      isAlarm: data.isAlarm,
+      updatedAt: data.updatedAt,
+    },
+  };
+};
+
+// 세부과제 알림 여부 설정
+export const updateSubtaskAlarmStatusDto = (data) => {
+  return {
+    subtask: {
+      subTaskId: data.subTaskId,
+      assigneeId: data.assigneeId,
+      taskId: data.taskId,
+      title: data.title,
+      endDate: data.endDate,
+      isAlarm: data.isAlarm,
+      updatedAt: data.updatedAt,
+    },
+  };
+};

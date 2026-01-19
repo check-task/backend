@@ -5,35 +5,18 @@ import {
   deleteAllAlarmsByUserId,
   updateDeadlineAlarm,
   updateTaskAlarm,
+  updateTaskAlarmStatusRepository,
 } from "../repositories/alarm.repository.js";
 import {
   alarmListResponseDto,
   updateDeadlineAlarmDto,
   updateTaskAlarmDto,
+  updateTaskAlarmStatusDto,
 } from "../dtos/alarm.dto.js";
 import { NotFoundError, ForbiddenError } from "../errors/custom.error.js";
 import prisma from "../db.config.js";
 
 export const getAlarms = async (userId, cursor, limit, orderBy, order) => {
-  //미들웨어 생성 전 유저 검증 로직 service에서 처리 => 미들웨어 생성 후 삭제 예정 (9~24줄)
-  // 유저 존재 및 탈퇴 여부 확인
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      deletedAt: true,
-    },
-  });
-  if (!user) {
-    throw new NotFoundError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
-  }
-  if (user.deletedAt !== null) {
-    throw new ForbiddenError(
-      "USER_DELETED",
-      "탈퇴한 유저는 알림을 조회할 수 없습니다."
-    );
-  }
-
   // 알람 조회
   const alarms = await findAlarmsByUserId(userId, {
     cursor,
@@ -63,26 +46,6 @@ export const getAlarms = async (userId, cursor, limit, orderBy, order) => {
 
 // 개별 알림 삭제
 export const deleteAlarm = async (userId, alarmId) => {
-  // 유저 검증 (임시 - 로그인 미들웨어 생성 후 삭제 예정)
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      deletedAt: true,
-    },
-  });
-
-  if (!user) {
-    throw new NotFoundError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
-  }
-
-  if (user.deletedAt !== null) {
-    throw new ForbiddenError(
-      "USER_DELETED",
-      "탈퇴한 유저는 알림을 삭제할 수 없습니다."
-    );
-  }
-
   // 알림 존재 여부 확인
   const alarm = await findAlarmById(alarmId);
 
@@ -137,26 +100,6 @@ export const deleteAllAlarms = async (userId) => {
 
 // 최종 마감 알림 수정
 export const updateDeadline = async (userId, deadlineAlarm) => {
-  // 유저 검증 (임시 - 로그인 미들웨어 생성 후 삭제 예정)
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      deletedAt: true,
-    },
-  });
-
-  if (!user) {
-    throw new NotFoundError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
-  }
-
-  if (user.deletedAt !== null) {
-    throw new ForbiddenError(
-      "USER_DELETED",
-      "탈퇴한 유저는 알림을 수정할 수 없습니다."
-    );
-  }
-
   // 최종 마감 알림 수정 (Repository 호출)
   const updatedUser = await updateDeadlineAlarm(userId, deadlineAlarm);
 
@@ -170,25 +113,6 @@ export const updateDeadline = async (userId, deadlineAlarm) => {
 
 // Task 마감 알림 수정
 export const updateTask = async (userId, taskAlarm) => {
-  // 유저 검증 (임시 - 로그인 미들웨어 생성 후 삭제 예정)
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      deletedAt: true,
-    },
-  });
-  if (!user) {
-    throw new NotFoundError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
-  }
-
-  if (user.deletedAt !== null) {
-    throw new ForbiddenError(
-      "USER_DELETED",
-      "탈퇴한 유저는 알림을 수정할 수 없습니다."
-    );
-  }
-
   // Task 마감 알림 수정 (Repository 호출)
   const updatedUser = await updateTaskAlarm(userId, taskAlarm);
 
@@ -197,5 +121,54 @@ export const updateTask = async (userId, taskAlarm) => {
     userId: updatedUser.id,
     nickname: updatedUser.nickname,
     taskAlarm: updatedUser.taskAlarm,
+  });
+};
+
+// 과제 알림 여부 설정
+export const updateTaskAlarmStatus = async (userId, taskId, isAlarm) => {
+  // taskId가 유효한 숫자인지 확인
+  if (!Number.isInteger(taskId) || taskId <= 0) {
+    throw new BadRequestError(
+      "INVALID_TASK_ID",
+      "유효하지 않은 과제 ID입니다."
+    );
+  }
+  // 과제 존재 여부 및 소유권 확인
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: {
+      members: {
+        where: { userId: userId },
+      },
+    },
+  });
+
+  if (!task) {
+    throw new NotFoundError("TASK_NOT_FOUND", "과제를 찾을 수 없습니다.");
+  }
+
+  // 개인 과제인 경우 본인만, 팀 과제인 경우 멤버만 수정 가능
+  const isOwner = task.members.some(
+    (m) => m.userId === userId && m.role === false
+  );
+  const isMember = task.members.some((m) => m.userId === userId);
+
+  if (!isOwner && !isMember) {
+    throw new ForbiddenError(
+      "TASK_ACCESS_DENIED",
+      "해당 과제에 접근할 권한이 없습니다."
+    );
+  }
+
+  // 과제 알림 여부 설정 (Repository 호출)
+  const updatedTask = await updateTaskAlarmStatusRepository(taskId, isAlarm);
+
+  // DTO 변환
+  return updateTaskAlarmStatusDto({
+    taskId: updatedTask.id,
+    title: updatedTask.title,
+    deadline: updatedTask.deadline,
+    isAlarm: updatedTask.isAlarm,
+    updatedAt: updatedTask.updatedAt,
   });
 };
