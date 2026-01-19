@@ -26,6 +26,7 @@ router.patch("/:taskId/member/:memberId", authenticate, taskController.updateTea
 // 세부 TASK 상태 업데이트
 router.patch(
   '/subtask/:subTaskId/status',
+  authenticate,
   taskController.updateSubTaskStatus
 );
 
@@ -33,12 +34,14 @@ router.patch(
 // 세부 TASK 마감일 변경
 router.patch(
   '/subtask/:subTaskId/deadline',
+  authenticate,
   taskController.updateSubTaskDeadline
 );
 
 // 세부 TASK 담당자 설정 API
 router.patch(
   '/subtask/:subTaskId/assignee',
+  authenticate,
   taskController.setSubTaskAssignee
 );
 
