@@ -3,8 +3,14 @@ import {
   findAlarmsByUserId,
   findAlarmById,
   deleteAllAlarmsByUserId,
+  updateDeadlineAlarm,
+  updateTaskAlarm,
 } from "../repositories/alarm.repository.js";
-import { alarmListResponseDTO } from "../dtos/alarm.dto.js";
+import {
+  alarmListResponseDto,
+  updateDeadlineAlarmDto,
+  updateTaskAlarmDto,
+} from "../dtos/alarm.dto.js";
 import { NotFoundError, ForbiddenError } from "../errors/custom.error.js";
 import prisma from "../db.config.js";
 
@@ -44,7 +50,7 @@ export const getAlarms = async (userId, cursor, limit, orderBy, order) => {
     hasNextPage && data.length > 0 ? data[data.length - 1].id : null;
 
   // DTO 변환
-  const responseData = alarmListResponseDTO(data);
+  const responseData = alarmListResponseDto(data);
 
   return {
     ...responseData,
@@ -127,4 +133,69 @@ export const deleteAllAlarms = async (userId) => {
   await deleteAllAlarmsByUserId(userId);
 
   return null; // 성공 시 data는 null
+};
+
+// 최종 마감 알림 수정
+export const updateDeadline = async (userId, deadlineAlarm) => {
+  // 유저 검증 (임시 - 로그인 미들웨어 생성 후 삭제 예정)
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      deletedAt: true,
+    },
+  });
+
+  if (!user) {
+    throw new NotFoundError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
+  }
+
+  if (user.deletedAt !== null) {
+    throw new ForbiddenError(
+      "USER_DELETED",
+      "탈퇴한 유저는 알림을 수정할 수 없습니다."
+    );
+  }
+
+  // 최종 마감 알림 수정 (Repository 호출)
+  const updatedUser = await updateDeadlineAlarm(userId, deadlineAlarm);
+
+  // DTO 변환
+  return updateDeadlineAlarmDto({
+    userId: updatedUser.id,
+    nickname: updatedUser.nickname,
+    deadlineAlarm: updatedUser.deadlineAlarm,
+  });
+};
+
+// Task 마감 알림 수정
+export const updateTask = async (userId, taskAlarm) => {
+  // 유저 검증 (임시 - 로그인 미들웨어 생성 후 삭제 예정)
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      deletedAt: true,
+    },
+  });
+  if (!user) {
+    throw new NotFoundError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
+  }
+
+  if (user.deletedAt !== null) {
+    throw new ForbiddenError(
+      "USER_DELETED",
+      "탈퇴한 유저는 알림을 수정할 수 없습니다."
+    );
+  }
+
+  // Task 마감 알림 수정 (Repository 호출)
+  const updatedUser = await updateTaskAlarm(userId, taskAlarm);
+
+  // DTO 변환
+  return updateTaskAlarmDto({
+    userId: updatedUser.id,
+    nickname: updatedUser.nickname,
+    taskAlarm: updatedUser.taskAlarm,
+  });
 };
