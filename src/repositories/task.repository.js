@@ -4,14 +4,17 @@ class TaskRepository {
   async getCompletedTasks(userId) {
     return await prisma.task.findMany({
       where: {
-        userId: userId,
+        folder: {
+          userId: userId,
+        },
+        
         status: 'COMPLETED',
       },
       include: {
         folder: true,
       },
       orderBy: {
-        deadline: 'asc', // 마감일 가까운 순 정렬
+        deadline: 'asc',
       },
     });
   }
@@ -65,7 +68,7 @@ class TaskRepository {
         }
     };
 
-    if (type) query.where.type = type === "팀" ? "TEAM" : "INDIVIDUAL";
+    if (type) query.where.type = type === "팀" ? "TEAM" : "PERSONAL";
     if (folderId) query.where.folderId = parseInt(folderId);
 
     if (sort === '마감일순' || !sort) {

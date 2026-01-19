@@ -15,6 +15,7 @@ class TaskService {
 
     return responseFromCompletedTasks(tasks);
   }
+  
   // 과제 등록
   async registerTask(data) {
     const { subTasks, references, folderId, ...taskData } = data;
