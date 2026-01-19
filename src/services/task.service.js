@@ -337,6 +337,47 @@ class TaskService {
       throw error;
     }
   }
+
+  // 초대 코드 생성
+  async generateInviteCode(taskId, userId) {
+    // 과제 존재 여부 확인
+    const task = await taskRepository.findTaskById(taskId);
+    if (!task) {
+      throw new NotFoundError("과제를 찾을 수 없습니다.");
+    }
+
+    // 사용자가 해당 과제의 멤버인지 확인
+    const isMember = await prisma.member.findFirst({
+      where: {
+        taskId,
+        userId,
+        role: false // owner만 초대 링크를 생성할 수 있음 (role: false가 owner)
+      }
+    });
+
+    if (!isMember) {
+      throw new ForbiddenError("초대 링크를 생성할 권한이 없습니다.");
+    }
+
+    // 랜덤한 8자리 초대 코드 생성 (대문자 + 숫자)
+    const inviteCode = Array(8)
+      .fill(0)
+      .map(() => {
+        const random = Math.random() * 36 | 0;
+        return random.toString(36).toUpperCase();
+      })
+      .join('');
+
+    // 트랜잭션으로 초대 코드 업데이트
+    const result = await prisma.$transaction(async (tx) => {
+      return await taskRepository.updateTaskInviteCode(taskId, inviteCode, tx);
+    });
+
+    return {
+      invite_code: result.inviteCode,
+      invite_expired: result.inviteExpiredAt
+    };
+  }
 }
 
 export default new TaskService();
