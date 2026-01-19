@@ -1,5 +1,5 @@
 import taskRepository from "../repositories/task.repository.js";
-import { BadRequestError, NotFoundError } from "../errors/custom.error.js";
+import { BadRequestError, NotFoundError, ForbiddenError } from "../errors/custom.error.js";
 import { prisma } from "../db.config.js";
 
 class TaskService {
