@@ -40,4 +40,24 @@ export class CommentService {
     const updatedComment = await CommentRepository.updateComment(commentId, content);
     return CommentResponseDto.from(updatedComment);
   }
+
+  // 댓글 삭제
+  static async deleteComment(commentId, userId) {
+    // 댓글 존재 여부 확인
+    const comment = await CommentRepository.findCommentById(commentId);
+    if (!comment) {
+      throw new NotFoundError('COMMENT_NOT_FOUND', '댓글을 찾을 수 없습니다.');
+    }
+
+    // 댓글 작성자만 삭제 가능
+    if (comment.user.id !== userId) {
+      const error = new Error('삭제 권한이 없습니다.');
+      error.status = 403;
+      throw error;
+    }
+
+    // 댓글 삭제 (hard delete)
+    await CommentRepository.deleteComment(commentId);
+    return { message: '댓글이 삭제되었습니다.' };
+  }
 }
