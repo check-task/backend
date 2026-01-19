@@ -74,6 +74,32 @@ class TaskService {
     // 과제 삭제 실행
     return await taskRepository.deleteTask(taskId);
   }
+
+  // 과제 세부 사항 조회
+  async getTaskDetail(taskId) {
+    const task = await taskRepository.findTaskDetail(taskId);
+    
+    if (!task) {
+      throw new NotFoundError("과제를 찾을 수 없음");
+    }
+
+    return task;
+  }
+
+  // 과제 목록 조회
+  async getTaskList(userId, queryParams = {}) {
+    const { type, folderId, sort } = queryParams;
+
+    // 레포지토리의 findAllTasks 호출
+    const tasks = await taskRepository.findAllTasks({
+      userId,
+      type,
+      folderId,
+      sort
+    });
+
+    return tasks;
+  }
   
   // 세부 TASK 완료 처리 API 
   async updateSubTaskStatus(subTaskId, status) {
@@ -103,52 +129,6 @@ class TaskService {
       console.error('Error updating subtask status:', error);
       throw error;
     }
-  }
-
-  async getTaskDetail(taskId) {
-    const task = await taskRepository.findTaskDetail(taskId);
-    
-    if (!task) {
-      throw new NotFoundError("과제를 찾을 수 없음");
-    }
-
-    return task;
-  }
-
-  async getTaskList(queryParams) {
-    const tasks = await taskRepository.findAllTasks(queryParams);
-
-    // 각 과제의 진행률을 미리 계산하여 객체에 추가
-    const tasksWithProgress = tasks.map(task => {
-        const totalSubTasks = task.subTasks?.length || 0;
-        const completedSubTasks = task.subTasks?.filter(
-            st => st.status === 'COMPLETED' || st.status === '완료'
-        ).length || 0;
-        
-        const progressRate = totalSubTasks > 0 
-            ? Math.round((completedSubTasks / totalSubTasks) * 100) 
-            : 0;
-
-        return { ...task, progressRate }; 
-    });
-
-    if (queryParams.sort === '진척도순') {
-        tasksWithProgress.sort((a, b) => b.progressRate - a.progressRate);
-    }
-
-    return tasksWithProgress;
-  }
-
-  // 과제 삭제
-  async removeTask(taskId) {
-    // 과제 존재 여부 확인
-    const currentTask = await taskRepository.findTaskById(taskId);
-    if (!currentTask) {
-      throw new NotFoundError("삭제하려는 과제가 존재하지 않습니다.");
-    }
-
-    // 과제 삭제 실행
-    return await taskRepository.deleteTask(taskId);
   }
   
   // 세부 TASK 완료 처리 API 

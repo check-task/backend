@@ -83,8 +83,9 @@ class TaskController {
             sort: req.query.sort,
             folderId: req.query.folderId || req.query.folder_id || req.query.folderld,
         };
+        const userId = req.user.id;
 
-        const tasks = await taskService.getTaskList(queryParams);
+        const tasks = await taskService.getTaskList(userId, queryParams);
 
         res.status(200).json({
             resultType: "SUCCESS",
@@ -95,7 +96,52 @@ class TaskController {
         next(error);
     }
   }
+
+  // 우선 순위 변경
+  async updateTaskPriorities(req, res, next) {
+    try {
+        const userId = req.user.id; 
+        const { orderedTasks } = req.body; 
+
+        await taskService.updatePriorities(userId, orderedTasks);
+
+        res.status(200).json({
+          resultType: "SUCCESS",
+          message: "과제 우선순위가 일괄 변경되었습니다.",
+          data: null
+        });
+    } catch (error) {
+        next(error);
+    }
+  }
   
+  // 팀원 정보 수정
+  async updateTeamMember(req, res, next) {
+    try {
+      const {taskId, memberId} = req.params;
+      const {role} = req.body;
+
+      const result = await taskService.modifyMemberRole(
+          parseInt(taskId), 
+          parseInt(memberId), 
+          role
+      );
+
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "요청이 성공적으로 처리되었습니다.",
+        data: {
+            member_id: result.id, 
+            user_id: result.userId,
+            task_id: result.taskId, 
+            role: result.role ? 1 : 0,
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // 세부 TASK 완료 처리 API 
   async updateSubTaskStatus(req, res, next) {
     try {
