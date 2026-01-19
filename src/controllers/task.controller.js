@@ -184,7 +184,7 @@ class TaskController {
   }
 
   // 세부task 날짜 변경 API
-  async updateSubTaskDeadline(req, res, next){
+  async updateSubTaskDeadline(req, res, next) {
     try {
       const { subTaskId } = req.params;
       const { endDate } = req.body;
@@ -197,13 +197,26 @@ class TaskController {
         resultType: 'SUCCESS',
         message: '마감 기한이 변경되었습니다.',
         data: { 
-          sub_task_id: updatedTask.id, 
+          sub_task_id: updatedTask.id,
           end_date: updatedTask.endDate.toISOString().split('T')[0]
         }
       };
 
       return res.status(200).json(responseData);
     } catch (error) {
+      console.error('Error in updateSubTaskDeadline:', {
+        message: error.message,
+        stack: error.stack,
+        status: error.status,
+        errorCode: error.errorCode
+      });
+      
+      // 에러 객체에 상태 코드가 없으면 500으로 설정
+      if (!error.status) {
+        error.status = 500;
+        error.errorCode = 'INTERNAL_SERVER_ERROR';
+      }
+      
       next(error);
     }
   }
@@ -231,7 +244,22 @@ class TaskController {
 
       return res.status(200).json(responseData);
     } catch (error) {
-      console.error('Error in setSubTaskAssignee:', error);
+      console.error('Error in setSubTaskAssignee:', {
+        message: error.message,
+        stack: error.stack,
+        statusCode: error.statusCode || error.status,
+        errorCode: error.errorCode
+      });
+      
+      // 에러 객체에 상태 코드가 없으면 500으로 설정
+      if (!error.statusCode && !error.status) {
+        error.statusCode = 500;
+        error.errorCode = 'INTERNAL_SERVER_ERROR';
+      } else if (error.status) {
+        // 이전 버전과의 호환성을 위해 status가 있으면 statusCode로 복사
+        error.statusCode = error.status;
+      }
+      
       next(error);
     }
   }

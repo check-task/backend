@@ -40,12 +40,14 @@ router.patch(
 // 세부 TASK 마감일 변경
 router.patch(
   '/subtask/:subTaskId/deadline',
+  authenticate,
   taskController.updateSubTaskDeadline
 );
 
 // 세부 TASK 담당자 설정 API
 router.patch(
   '/subtask/:subTaskId/assignee',
+  authenticate,
   taskController.setSubTaskAssignee
 );
 
