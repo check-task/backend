@@ -4,6 +4,7 @@ import {
   handleAlarmDeleteAll,
   handleAlarmList,
   handleAlarmUpdateDeadline,
+  handleAlarmUpdateSubtaskStatus,
   handleAlarmUpdateTask,
   handleAlarmUpdateTaskStatus,
 } from "../controllers/alarm.controller.js";
@@ -25,8 +26,13 @@ router.patch("/deadline", authenticate, handleAlarmUpdateDeadline);
 // PATCH /v1/api/alarm/task - 과제 마감 알림 수정
 router.patch("/task", authenticate, handleAlarmUpdateTask);
 
+// PATCH /v1/api/alarm/subtask/:subTaskId - 세부과제 알림 여부 수정
+router.patch(
+  "/subtask/:subtaskId",
+  authenticate,
+  handleAlarmUpdateSubtaskStatus
+);
 // PATCH /v1/api/alarm/task/:taskId - 과제 알림 여부 수정
 router.patch("/task/:taskId", authenticate, handleAlarmUpdateTaskStatus);
-// PATCH /v1/api/alarm/subtask/:subTaskId - 세부과제 알림 여부 수정
 
 export default router;

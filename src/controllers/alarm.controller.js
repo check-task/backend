@@ -127,4 +127,36 @@ export const handleAlarmUpdateTaskStatus = async (req, res) => {
 };
 
 // ✅ PATCH /v1/api/alarm/subtask/:subTaskId - subtask 알림 여부 설정
-export const handleAlarmUpdateSubtaskStatus = async (req, res) => {};
+export const handleAlarmUpdateSubtaskStatus = async (req, res) => {
+  const userId = req.user.id;
+  const subTaskId = req.params.subtaskId;
+  const isAlarm = req.body.isAlarm;
+
+  // 400 에러: 파라미터가 숫자가 아닌 경우
+  if (!subTaskId || isNaN(parseInt(subTaskId))) {
+    throw new BadRequestError(
+      "INVALID_PARAMETER",
+      "params는 숫자로 보내야합니다."
+    );
+  }
+
+  const parsedSubTaskId = parseInt(subTaskId);
+
+  // isAlarm 검증
+  if (typeof isAlarm !== "boolean") {
+    throw new BadRequestError(
+      "INVALID_BODY",
+      "Body의 isAlarm 데이터는 boolean 형식으로 보내야합니다."
+    );
+  }
+
+  // Service 호출
+  const result = await AlarmService.updateSubtaskAlarmStatus(
+    userId,
+    parsedSubTaskId,
+    isAlarm
+  );
+
+  // 성공 응답 (이미지 명세에 맞게)
+  return res.success(result, "세부과제에 대한 알림 여부를 변경하였습니다..");
+};
