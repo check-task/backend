@@ -5,4 +5,6 @@ const userRouter = express.Router();
 
 userRouter.get('/me', authenticate, userController.getMyInfo);
 
+userRouter.patch('/profile', authenticate, userController.updateProfile);
+
 export default userRouter;
