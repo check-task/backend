@@ -55,3 +55,31 @@ export const deleteAllAlarmsByUserId = async (userId) => {
     where: { userId },
   });
 };
+
+// 최종 마감 알림 수정
+export const updateDeadlineAlarm = async (userId, deadlineAlarm) => {
+  // 업데이트 후 유저 정보 반환
+  return await prisma.user.update({
+    where: { id: userId },
+    data: { deadlineAlarm },
+    select: {
+      id: true,
+      nickname: true,
+      deadlineAlarm: true,
+    },
+  });
+};
+
+// 최종 과제 알림 수정
+export const updateTaskAlarm = async (userId, taskAlarm) => {
+  // 업데이트 후 유저 정보 반환
+  return await prisma.user.update({
+    where: { id: userId },
+    data: { taskAlarm },
+    select: {
+      id: true,
+      nickname: true,
+      taskAlarm: true,
+    },
+  });
+};

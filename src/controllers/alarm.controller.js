@@ -54,3 +54,43 @@ export const handleAlarmDeleteAll = async (req, res) => {
   // 성공 응답 (data는 null)
   return res.success(null, "알림 전체 삭제 성공");
 };
+
+// 최종 마감 알림 수정
+export const handleAlarmUpdateDeadline = async (req, res) => {
+  // userId (임시 - 로그인 미들웨어 생성 후 req.user.id 사용)
+  const userId = req.query.userId ? parseInt(req.query.userId) : 1;
+  const deadlineAlarm = req.body.deadlineAlarm;
+
+  // 400 에러: 파라미터가 숫자가 아닌 경우
+  if (!deadlineAlarm || isNaN(parseInt(deadlineAlarm))) {
+    throw new BadRequestError("INVALID_BODY", "Body의 데이터 형식이 다를 경우");
+  }
+
+  const parsedDeadlineAlarm = parseInt(deadlineAlarm);
+
+  // Service 호출
+  const result = await AlarmService.updateDeadline(userId, parsedDeadlineAlarm);
+
+  // 성공 응답 (이미지 명세에 맞게)
+  return res.success(result, "최종 마감 시간의 알림 전송 시간을 변경했습니다.");
+};
+
+// Task 마감 알림 수정
+export const handleAlarmUpdateTask = async (req, res) => {
+  // userId (임시 - 로그인 미들웨어 생성 후 req.user.id 사용)
+  const userId = req.query.userId ? parseInt(req.query.userId) : 1;
+  const taskAlarm = req.body.taskAlarm;
+
+  // 400 에러: 파라미터가 숫자가 아닌 경우
+  if (!taskAlarm || isNaN(parseInt(taskAlarm))) {
+    throw new BadRequestError("INVALID_BODY", "Body의 데이터 형식이 다를 경우");
+  }
+
+  const parsedTaskAlarm = parseInt(taskAlarm);
+
+  // Service 호출
+  const result = await AlarmService.updateTask(userId, parsedTaskAlarm);
+
+  // 성공 응답 (이미지 명세에 맞게)
+  return res.success(result, "과제 마감 시간의 알림 전송 시간을 변경했습니다.");
+};
