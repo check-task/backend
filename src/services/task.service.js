@@ -136,7 +136,8 @@ class TaskService {
 
       if (!existingTask) {
         const error = new Error('해당하는 세부 태스크를 찾을 수 없습니다.');
-        error.status = 404;
+        error.statusCode = 404;
+        error.errorCode = 'SUBTASK_NOT_FOUND';
         throw error;
       }
 
@@ -166,7 +167,8 @@ class TaskService {
 
       if (!existingTask) {
         const error = new Error('해당하는 세부 태스크를 찾을 수 없습니다.');
-        error.status = 404;
+        error.statusCode = 404;
+        error.errorCode = 'SUBTASK_NOT_FOUND';
         throw error;
       }
 
@@ -203,7 +205,8 @@ class TaskService {
 
       if (!existingTask) {
         const error = new Error('해당하는 세부 태스크를 찾을 수 없습니다.');
-        error.status = 404;
+        error.statusCode = 404;  
+        error.errorCode = 'SUBTASK_NOT_FOUND';
         throw error;
       }
 
@@ -213,7 +216,7 @@ class TaskService {
       // 부모 태스크의 마감일을 초과하는지 확인
       if (newDeadline > parentEndDate) {
         const error = new Error('부모 Task의 마감일을 초과할 수 없습니다.');
-        error.status = 400;
+        error.statusCode = 400;
         throw error;
       }
 
@@ -242,7 +245,7 @@ class TaskService {
       const parsedSubTaskId = parseInt(subTaskId);
       if (isNaN(parsedSubTaskId)) {
         const error = new Error('유효하지 않은 세부 태스크 ID입니다.');
-        error.status = 400;
+        error.statusCode = 400;
         throw error;
       }
       
@@ -268,7 +271,8 @@ class TaskService {
 
       if (!existingTask) {
         const error = new Error('해당하는 세부 태스크를 찾을 수 없습니다.');
-        error.status = 404;
+        error.statusCode = 404;
+        error.errorCode = 'SUBTASK_NOT_FOUND';
         throw error;
       }
 
@@ -280,7 +284,7 @@ class TaskService {
         const parsedAssigneeId = parseInt(assigneeId);
         if (isNaN(parsedAssigneeId)) {
           const error = new Error('유효하지 않은 담당자 ID입니다.');
-          error.status = 400;
+          error.statusCode = 400;
           throw error;
         }
 
@@ -294,7 +298,7 @@ class TaskService {
 
           if (!isTeamMember) {
             const error = new Error('팀원만 담당자로 지정할 수 있습니다.');
-            error.status = 400;
+            error.statusCode = 400;
             throw error;
           }
         } else {
@@ -302,7 +306,7 @@ class TaskService {
           const taskOwner = task.members.find(member => member.role === false)?.user;
           if (taskOwner && taskOwner.id !== parsedAssigneeId) {
             const error = new Error('개인 과제는 본인만 담당자로 지정할 수 있습니다.');
-            error.status = 400;
+            error.statusCode = 400;
             throw error;
           }
         }
@@ -331,13 +335,21 @@ class TaskService {
       console.error('Error in setSubTaskAssignee service:', {
         message: error.message,
         stack: error.stack,
-        status: error.status
+        statusCode: error.statusCode
       });
       
-      if (error.status) {
+      // 상태 코드가 이미 설정된 에러는 그대로 전파
+      if (error.statusCode) {
+        // 404 에러의 경우 errorCode가 없으면 추가
+        if (error.statusCode === 404 && !error.errorCode) {
+          error.errorCode = 'NOT_FOUND';
+        }
         throw error;
       }
-      error.status = 500;
+      
+      // 그 외의 에러는 500 에러로 처리
+      error.statusCode = 500;
+      error.errorCode = 'INTERNAL_SERVER_ERROR';
       error.message = '서버 내부 오류가 발생했습니다.';
       throw error;
     }
