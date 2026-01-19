@@ -1,5 +1,11 @@
 import { prisma } from "../db.config.js";
 
+export const getFolderById = async (folderId) => {
+  return await prisma.folder.findUnique({
+    where: { id: parseInt(folderId) },
+  });
+};
+
 // 1. 폴더 생성
 export const addFolder = async (userId, data) => {
   const newFolder = await prisma.folder.create({
