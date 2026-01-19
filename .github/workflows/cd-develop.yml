@@ -27,8 +27,8 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa 
           chmod 600 ~/.ssh/id_rsa
           
-          ssh -i ~/.ssh/id_rsa \ 
-            -o StrictHostKeyChecking=no \ 
+          ssh -i ~/.ssh/id_rsa \
+            -o StrictHostKeyChecking=no \
             $EC2_USER@$EC2_HOST << EOF
             # 에러 발생시 즉시 중단
             set -e
