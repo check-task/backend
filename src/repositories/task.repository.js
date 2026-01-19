@@ -41,24 +41,52 @@ class TaskRepository {
   }
 
   // 과제 목록 조회
-  async findAllTasks({ type, folderId, sort }) {
+  async findAllTasks({ userId, type, folderId, sort }) {
+    console.log("userid:", userId);
     const query = {
-        where: {},
-        include: {
-            folder: true,
-            subTasks: true 
+      where: {},
+      include: {
+        folder: true,
+        subTasks: true, 
+        priorities: {
+          where: { userId: userId } 
         }
+      }
     };
 
-    if (type) query.where.type = type === "팀" ? "TEAM" : "INDIVIDUAL";
-    if (folderId) query.where.folderId = parseInt(folderId);
-
-    if (sort === '마감일순' || !sort) {
-        query.orderBy = { deadline: 'asc' };
+    if (type) {
+      query.where.type = (type === "TEAM") ? "TEAM" : "PERSONAL";
+    }
+    if (folderId) {
+      query.where.folderId = parseInt(folderId);
     }
 
-    return await prisma.task.findMany(query);
+    if (sort === 'DEADLINE') {
+      query.orderBy = { deadline: 'asc' };
+    }
+
+    const tasks = await prisma.task.findMany(query);
+
+    const processedTasks = tasks.map(task => {
+      // 진행률 계산
+      const total = task.subTasks.length;
+      const completed = task.subTasks.filter(st => st.status === 'COMPLETED').length;
+      const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+      const myRank = task.priorities[0]?.rank ?? 999;
+
+      return { ...task, progress, myRank };
+    });
+
+    if (!sort || sort === 'PRIORITY') {
+      return processedTasks.sort((a, b) => a.myRank - b.myRank);
+    } else if (sort === 'PROGRASSRATE') {
+      return processedTasks.sort((a, b) => b.progress - a.progress);
+    }
+    
+    return processedTasks;
   }
+
   // 우선 순위 변경
   async upsertTaskPriority(userId, taskId, rank, tx = prisma) {
     return await tx.taskPirority.upsert({
