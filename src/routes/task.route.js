@@ -18,6 +18,15 @@ router.get("/:taskId", taskController.getTaskDetail);
 // GET /api/v1/task?sort=우선순위 -- 과제 목록 조회
 router.get("/", taskController.getTasks);
 
+// GET /api/v1/task -- 과제 생성
+router.get("/", taskController.createTask);
+
+// PATCH /api/v1/task/:taskId
+router.patch("/:taskId", taskController.updateTask);
+
+// DELETE /api/v1/task/:taskId
+router.delete("/:taskId", taskController.deleteTask);
+
 // 세부 TASK 완료 처리 API 
 // 세부 TASK 상태 업데이트
 router.patch(

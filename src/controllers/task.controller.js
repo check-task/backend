@@ -22,6 +22,7 @@ class TaskController {
     }
   }
 
+
   // 과제 수정
   async updateTask(req, res, next) {
     try {
@@ -147,3 +148,4 @@ class TaskController {
 }
 
 export default new TaskController();
+
