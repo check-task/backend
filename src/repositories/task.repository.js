@@ -1,4 +1,9 @@
 import { prisma } from "../db.config.js";
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone.js";
+import utc from "dayjs/plugin/utc.js";
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 class TaskRepository {
   async getCompletedTasks(userId) {
@@ -200,15 +205,17 @@ class TaskRepository {
 
   // 초대 코드 생성 및 업데이트
   async updateTaskInviteCode(taskId, inviteCode, tx = prisma) {
-    // 1년 후 만료일로 설정
-    const oneYearLater = new Date();
-    oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+    // 1일 후 만료일로 설정
+    // 1일 후 만료일로 설정 (한국 시간 기준)
+    const oneDayLater = dayjs().add(9, "hour").add(1, "day").toDate(); // 9시간 차이 보정 UTC +9시간
+    console.log("oneDayLater (KST):", oneDayLater);
+
 
     return await tx.task.update({
-      where: { id: taskId },
+      where: { id: taskId }, //팀과제만 가능 (개인과제는 초대 코드로 참여 불가)
       data: {
         inviteCode,
-        inviteExpiredAt: oneYearLater
+        inviteExpiredAt: oneDayLater
       },
       select: {
         inviteCode: true,
