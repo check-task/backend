@@ -96,7 +96,7 @@ model UserAlarm {
 
   //시간 관련
   alarmDate DateTime @map("alarm_date") @db.DateTime // 알람 보낼 시간(기본값: 24시간 후)
-  createdAt DateTime @default(now()) @map("created_at") @db.DateTime // 알람 생성 시간
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime // 알람 생성 시간 한국시간으로 
 
   // 관계 설정 (Relations)
   user    User     @relation("UserAlarms", fields: [userId], references: [id], onDelete: Restrict) // 유저와 연결

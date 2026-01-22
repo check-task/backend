@@ -22,12 +22,14 @@ class TaskController {
     }
   }
 
+  // 과제 생성
   async createTask(req, res, next) {
     try {
+      const userId = req.user.id; // 사용자 ID 가져오기
       const taskRequest = createTaskRequestDTO(req.body);
       
-      const result = await taskService.registerTask(taskRequest);
-
+      const result = await taskService.registerTask(userId, taskRequest);
+  
       res.status(201).json({
         resultType: "SUCCESS",
         message: "요청이 처리되어서 새로운 과제가 생성되었습니다.",
@@ -37,7 +39,6 @@ class TaskController {
       next(error); 
     }
   }
-
 
   // 과제 수정
   async updateTask(req, res, next) {
