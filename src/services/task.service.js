@@ -459,7 +459,11 @@ class TaskService {
     // 과제 존재 여부 확인
     const task = await taskRepository.findTaskById(taskId);
     if (!task) {
-      throw new NotFoundError("과제를 찾을 수 없습니다.");
+      throw new NotFoundError("TASK_NOT_FOUND", "과제를 찾을 수 없습니다.");
+    }
+
+    if (task.type === 'PERSONAL') {
+      throw new ForbiddenError("PERSONAL_TASK", "개인 과제는 초대 코드 생성이 불가능합니다.");
     }
 
     // 사용자가 해당 과제의 멤버인지 확인
@@ -472,7 +476,7 @@ class TaskService {
     });
 
     if (!isMember) {
-      throw new ForbiddenError("초대 링크를 생성할 권한이 없습니다.");
+      throw new ForbiddenError("NOT_MEMBER", "해당 과제에 참여한 멤버가 아닙니다.");
     }
 
     // 랜덤한 8자리 초대 코드 생성 (대문자 + 숫자)
@@ -494,7 +498,6 @@ class TaskService {
       invite_expired: result.inviteExpiredAt
     };
   }
-  // ... existing code ...
 
   // 초대 코드로 팀 참여
   async joinTaskByInviteCode(userId, inviteCode) {
@@ -502,7 +505,7 @@ class TaskService {
     const task = await prisma.task.findFirst({
       where: {
         inviteCode: inviteCode,
-        type: 'TEAM', // 팀 과제만 가능
+        type: 'TEAM', // 팀 과제만 가능 (개인 과제는 초대 코드로 참여 불가)
       },
     });
 
@@ -511,8 +514,8 @@ class TaskService {
     }
 
     // 초대 코드 만료일 확인
-    if (task.inviteExpiredAt && new Date() > new Date(task.inviteExpiredAt)) {
-      throw new BadRequestError("EXPIRED_INVITE_CODE", "만료된 초대 코드입니다.");
+    if (task.inviteExpiredAt && new Date(Date.now() + 9 * 60 * 60 * 1000) > new Date(task.inviteExpiredAt)) {
+      throw new ForbiddenError("EXPIRED_INVITE_CODE", "만료된 초대 코드입니다.");
     }
 
     // 이미 멤버인지 확인
@@ -524,7 +527,7 @@ class TaskService {
     });
 
     if (existingMember) {
-      throw new BadRequestError("ALREADY_MEMBER", "이미 팀 멤버입니다.");
+      throw new ForbiddenError("ALREADY_MEMBER", "이미 팀 멤버입니다.");
     }
 
     // 트랜잭션으로 멤버 추가 및 알림 생성
