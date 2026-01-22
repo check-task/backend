@@ -1,6 +1,7 @@
 import prisma from "../db.config.js";
 import dayjs from "dayjs";
 
+
 export const findAlarmsByUserId = async (userId, options = {}) => {
   // 기본값 적용
   const {
@@ -29,6 +30,36 @@ export const findAlarmsByUserId = async (userId, options = {}) => {
   });
 
   return alarms;
+};
+
+// 과제 알림 생성
+export const createTaskAlarm = async (userId, taskId, taskTitle, alarmDate, tx = prisma) => {
+  return await tx.userAlarm.create({
+    data: {
+      userId,
+      taskId,
+      title: "과제 생성 알림",
+      alarmContent: `${taskTitle} 과제가 생성되었습니다`,
+      alarmDate,
+      isRead: false,
+      createdAt: new Date(Date.now() + 9 * 60 * 60 * 1000),
+    },
+  });
+};
+// 세부과제 알림 생성
+export const createSubTaskAlarm = async (userId, taskId, subTaskId, subTaskTitle, alarmDate, tx = prisma) => {
+  return await tx.userAlarm.create({
+    data: {
+      userId,
+      taskId,
+      subTaskId,
+      title: "세부과제 생성 알림",
+      alarmContent: `${subTaskTitle} 세부과제가 생성되었습니다`,
+      alarmDate,
+      isRead: false,
+      createdAt: new Date(Date.now() + 9 * 60 * 60 * 1000),
+    },
+  });
 };
 
 // 개별 알림 삭제
@@ -132,6 +163,16 @@ export const updateAlarmReadStatusRepository = async (alarmId, isRead) => {
       title: true,
       alarmContent: true,
       isRead: true,
+    },
+  });
+};
+
+// 세부과제 알림 삭제 (특정 세부과제의 특정 사용자 알림 삭제)
+export const deleteSubTaskAlarm = async (userId, subTaskId) => {
+  return await prisma.userAlarm.deleteMany({
+    where: {
+      userId,
+      subTaskId,
     },
   });
 };

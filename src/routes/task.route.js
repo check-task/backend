@@ -57,5 +57,11 @@ router.post(
   authenticate,
   taskController.generateInviteCode
 );
+// 초대 코드로 팀 참여 API
+router.post(
+  '/join',
+  authenticate,
+  taskController.joinTaskByInviteCode
+);
 
 export default router;

@@ -7,7 +7,7 @@ class TaskRepository {
         folder: {
           userId: userId,
         },
-        
+
         status: 'COMPLETED',
       },
       include: {
@@ -47,13 +47,13 @@ class TaskRepository {
         subTasks: {
           include: {
             _count: {
-              select: { comments: true } 
+              select: { comments: true }
             }
           }
         },
         references: true,
-        logs: true, 
-        communications: true 
+        logs: true,
+        communications: true
       }
     });
   }
@@ -65,9 +65,9 @@ class TaskRepository {
       where: {},
       include: {
         folder: true,
-        subTasks: true, 
+        subTasks: true,
         priorities: {
-          where: { userId: userId } 
+          where: { userId: userId }
         }
       }
     };
@@ -101,32 +101,43 @@ class TaskRepository {
     } else if (sort === 'PROGRASSRATE') {
       return processedTasks.sort((a, b) => b.progress - a.progress);
     }
-    
+
     return processedTasks;
   }
 
   // 우선 순위 변경
   async upsertTaskPriority(userId, taskId, rank, tx = prisma) {
-    return await tx.taskPirority.upsert({
+    return await tx.taskPriority.upsert({
       where: {
-        userId_taskId: { 
+        userId_taskId: {
           userId: userId,
           taskId: taskId
         }
       },
       update: {
-        rank: rank 
+        rank: rank
       },
       create: {
         userId: userId,
         taskId: taskId,
-        rank: rank 
+        rank: rank
       }
     });
   }
 
+  // 멤버 생성
+  async createMember(userId, taskId, role, tx = prisma) {
+    return await tx.member.create({
+      data: {
+        userId,
+        taskId,
+        role: role ? true : false, // true: member, false: owner
+      },
+    });
+  }
+
   // 멤버 존재 여부 확인
-  async findMemberInTask (taskId, memberId) {
+  async findMemberInTask(taskId, memberId) {
     return await prisma.member.findFirst({
       where: {
         id: memberId,
@@ -142,8 +153,8 @@ class TaskRepository {
         taskId: taskId,
         id: { not: excludeMemberId } // 대상 멤버는 제외
       },
-      data: { 
-        role: true 
+      data: {
+        role: true
       }
     });
   }
@@ -151,8 +162,8 @@ class TaskRepository {
   // 멤버 역할 업데이트
   async updateMemberRole(memberId, isMember) {
     return await prisma.member.update({
-      where: {id: memberId},
-      data: {role: isMember}
+      where: { id: memberId },
+      data: { role: isMember }
     });
   }
 
@@ -192,7 +203,7 @@ class TaskRepository {
     // 1년 후 만료일로 설정
     const oneYearLater = new Date();
     oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
-    
+
     return await tx.task.update({
       where: { id: taskId },
       data: {
