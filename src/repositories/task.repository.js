@@ -62,7 +62,13 @@ class TaskRepository {
   async findAllTasks({ userId, type, folderId, sort }) {
     console.log("userid:", userId);
     const query = {
-      where: {},
+      where: {
+        members: {
+          some: {
+            userId: userId
+          }
+        }
+      },
       include: {
         folder: true,
         subTasks: true,
@@ -98,7 +104,7 @@ class TaskRepository {
 
     if (!sort || sort === 'PRIORITY') {
       return processedTasks.sort((a, b) => a.myRank - b.myRank);
-    } else if (sort === 'PROGRASSRATE') {
+    } else if (sort === 'PROGRESSRATE') {
       return processedTasks.sort((a, b) => b.progress - a.progress);
     }
 
