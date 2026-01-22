@@ -23,6 +23,7 @@ import {
   BadRequestError,
 } from "../errors/custom.error.js";
 import prisma from "../db.config.js";
+import { checkDeletedUser } from "../repositories/user.repository.js";
 
 export const getAlarms = async (userId, cursor, limit, orderBy, order) => {
   // 알람 조회
@@ -40,6 +41,15 @@ export const getAlarms = async (userId, cursor, limit, orderBy, order) => {
   const nextCursor =
     hasNextPage && data.length > 0 ? data[data.length - 1].id : null;
 
+  const user = await checkDeletedUser(userId);
+  if (user.deletedAt) {
+    throw new ForbiddenError("USER_DELETED", "탈퇴한 유저는 알림을 조회할 수 없습니다.");
+  }
+
+  if (!user) {
+    throw new NotFoundError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
+  }
+
   // DTO 변환
   const responseData = alarmListResponseDto(data);
 
@@ -56,6 +66,21 @@ export const getAlarms = async (userId, cursor, limit, orderBy, order) => {
 export const deleteAlarm = async (userId, alarmId) => {
   // 알림 존재 여부 확인
   const alarm = await findAlarmById(alarmId);
+  const user = await checkDeletedUser(userId);
+
+  if (user.deletedAt) {
+    throw new ForbiddenError(
+      "USER_DELETED",
+      "탈퇴한 유저는 알림을 삭제할 수 없습니다."
+    );
+  }
+
+  if (!userId) {
+    throw new NotFoundError(
+      "USER_NOT_FOUND",
+      "사용자를 찾을 수 없습니다."
+    );
+  }
 
   if (!alarm) {
     throw new NotFoundError(
@@ -80,6 +105,12 @@ export const deleteAlarm = async (userId, alarmId) => {
 
 // 전체 알림 삭제
 export const deleteAllAlarms = async (userId) => {
+  if (!userId) {
+    throw new NotFoundError(
+      "USER_NOT_FOUND",
+      "사용자를 찾을 수 없습니다."
+    );
+  }
   // 유저의 모든 알림 삭제
   await deleteAllAlarmsByUserId(userId);
 
@@ -98,6 +129,11 @@ export const updateDeadline = async (userId, deadlineAlarm) => {
 // Task 마감 알림 수정
 export const updateTask = async (userId, taskAlarm) => {
   // Task 마감 알림 수정 (Repository 호출)
+
+  if (!userId) {
+    throw new NotFoundError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
+  }
+
   const updatedUser = await updateTaskAlarm(userId, taskAlarm);
 
   // DTO 변환
@@ -230,6 +266,7 @@ export const updateSubtaskAlarmStatus = async (userId, subTaskId, isAlarm) => {
 export const updateAlarmReadStatus = async (userId, alarmId, isRead) => {
   // 알림 존재 여부 확인
   const alarm = await findAlarmById(alarmId);
+
   if (!alarm) {
     throw new NotFoundError("ALARM_NOT_FOUND", "알림을 찾을 수 없습니다.");
   }
@@ -243,7 +280,7 @@ export const updateAlarmReadStatus = async (userId, alarmId, isRead) => {
   if (typeof isRead !== "boolean") {
     throw new BadRequestError(
       "INVALID_BODY",
-      "Body의 isRead 데이터는 boolean 형식으로 보내야합니다."
+      "Body의 isRead 데이터는 Boolean 형식으로 보내야합니다."
     );
   }
 
