@@ -6,6 +6,10 @@ import { stateHandler } from "./middlewares/state.middleware.js";
 import { corsOptions } from "./config/cors.config.js";
 import apiRouter from "./routes/index.js";
 import prisma from "./db.config.js";
+import { swaggerHandler } from "./middlewares/swagger.middleware.js";
+import swaggerUi from "swagger-ui-express";
+import YAML from "yamljs";
+import path from "path";
 
 dotenv.config();
 
@@ -26,8 +30,16 @@ app.get("/", (req, res) => {
   return res.success("아싸 나이스 성공~");
 });
 
+//swagger
+const swaggerDocument = YAML.load(
+  path.join(process.cwd(), "src/swagger/swagger.yml")
+);
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+app.get("/openapi.json", swaggerHandler);
+
 // API 라우터 등록
-app.use("/api/v1", apiRouter); // 모든 API는 /api prefix를 가짐
+app.use("/api/v1", apiRouter);
 
 app.use(errorHandler);
 
