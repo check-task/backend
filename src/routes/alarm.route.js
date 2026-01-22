@@ -14,11 +14,14 @@ import authenticate from "../middlewares/authenticate.middleware.js";
 const router = express.Router();
 
 // GET /v1/api/alarm - 알람 목록 조회
+
 router.get("/", authenticate, handleAlarmList);
 
 // DELETE /v1/api/alarm/:alarmId - 개별 알림 삭제
+
 router.delete("/:alarmId", authenticate, handleAlarmDelete);
 // DELETE /v1/api/alarm - 전체 알림 삭제 (모든 알림)
+
 router.delete("/", authenticate, handleAlarmDeleteAll);
 
 // PATCH /v1/api/alarm/settings/deadline - 최종 마감 알림 수정

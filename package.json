@@ -45,7 +45,11 @@
     "multer": "^2.0.2",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
-    "passport-kakao": "^1.0.1"
+    "passport-kakao": "^1.0.1",
+    "path": "^0.12.7",
+    "swagger-autogen": "^2.23.7",
+    "swagger-ui-express": "^5.0.1",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.971.0",
