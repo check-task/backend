@@ -494,6 +494,74 @@ class TaskService {
       invite_expired: result.inviteExpiredAt
     };
   }
+  // ... existing code ...
+
+  // 초대 코드로 팀 참여
+  async joinTaskByInviteCode(userId, inviteCode) {
+    // 초대 코드로 과제 찾기
+    const task = await prisma.task.findFirst({
+      where: {
+        inviteCode: inviteCode,
+        type: 'TEAM', // 팀 과제만 가능
+      },
+    });
+
+    if (!task) {
+      throw new NotFoundError("INVALID_INVITE_CODE", "유효하지 않은 초대 코드입니다.");
+    }
+
+    // 초대 코드 만료일 확인
+    if (task.inviteExpiredAt && new Date() > new Date(task.inviteExpiredAt)) {
+      throw new BadRequestError("EXPIRED_INVITE_CODE", "만료된 초대 코드입니다.");
+    }
+
+    // 이미 멤버인지 확인
+    const existingMember = await prisma.member.findFirst({
+      where: {
+        taskId: task.id,
+        userId: userId,
+      },
+    });
+
+    if (existingMember) {
+      throw new BadRequestError("ALREADY_MEMBER", "이미 팀 멤버입니다.");
+    }
+
+    // 트랜잭션으로 멤버 추가 및 알림 생성
+    return await prisma.$transaction(async (tx) => {
+      // 멤버 추가 (role: true = member)
+      const newMember = await taskRepository.createMember(userId, task.id, true, tx);
+
+      // 과제 알림이 켜져있으면 알림 생성
+      if (task.isAlarm) {
+        const user = await tx.user.findUnique({
+          where: { id: userId },
+          select: { taskAlarm: true },
+        });
+
+        if (user) {
+          const alarmHours = user.taskAlarm || 24;
+          const alarmDate = calculateAlarmDate(task.deadline, alarmHours);
+
+          await createTaskAlarm(
+            userId,
+            task.id,
+            task.title,
+            alarmDate,
+            tx
+          );
+        }
+      }
+
+      return {
+        taskId: task.id,
+        taskTitle: task.title,
+        memberId: newMember.id,
+      };
+    });
+  }
+
+
 }
 
 export default new TaskService();

@@ -47,7 +47,7 @@ export const createTaskAlarm = async (userId, taskId, taskTitle, alarmDate, tx =
   });
 };
 // 세부과제 알림 생성
-export const createSubTaskAlarm = async (userId, taskId, subTaskId, subTaskTitle, alarmDate) => {
+export const createSubTaskAlarm = async (userId, taskId, subTaskId, subTaskTitle, alarmDate, tx = prisma) => {
   return await tx.userAlarm.create({
     data: {
       userId,
