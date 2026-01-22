@@ -7,7 +7,7 @@ export const createTaskRequestDTO = (data) => {
     status: "PENDING",
     subTasks: (data.subTasks || []).map(st => ({
       title: st.title,
-      endDate: new Date(st.deadline)
+      endDate: st.endDate ? new Date(st.endDate) : new Date()
     })),
     references: data.references || []
   };
@@ -21,7 +21,7 @@ export const updateTaskRequestDTO = (data) => {
     type: data.type === "팀" ? "TEAM" : (data.type === "개인" ? "PERSONAL" : undefined),
     subTasks: (data.subTasks || []).map(st => ({
       title: st.title,
-      endDate: new Date(st.deadline),
+      endDate: st.endDate ? new Date(st.endDate) : new Date(),
       status: st.status || "PENDING"
     })),
     references: data.references || []
@@ -89,7 +89,7 @@ export const taskListResponseDTO = (tasks) => {
       type: task.type === "TEAM" ? "TEAM" : "INDIVIDUAL",
       deadline: task.deadline.toISOString().split('T')[0].replace(/-/g, '.'),
       dDay: dDay,
-      progressRate: task.progressRate // 서비스에서 계산된 값 사용
+      progressRate: task.progress // 서비스에서 계산된 값 사용
     };
   });
 };
