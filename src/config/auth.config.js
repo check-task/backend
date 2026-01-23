@@ -1,8 +1,7 @@
-import dotenv from "dotenv";
 import { Strategy as KakaoStrategy } from "passport-kakao";
-import { handleKakaoLogin } from "../services/kakao_auth.service.js";
+import { KakaoAuthService } from "../services/auth.service.js";
 
-dotenv.config();
+const kakaoAuthService = new KakaoAuthService();
 
 //Kakao Strategy -> passport에 전략 등록함
 export const kakaoStrategy = new KakaoStrategy(
@@ -15,7 +14,7 @@ export const kakaoStrategy = new KakaoStrategy(
   //로그인 성공 후 실행되는 함수
   async (accessToken, refreshToken, profile, done) => {
     try{
-      const result = await handleKakaoLogin(profile);
+      const result = await kakaoAuthService.handleKakaoLogin(profile);
       return done(null, result);
     }catch(err){
       return done(err);

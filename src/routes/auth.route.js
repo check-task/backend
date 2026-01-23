@@ -1,7 +1,10 @@
 import { Router } from "express";
-import {kakaoMiddleware} from "../middlewares/kakao.middleware.js";
+import passport from "passport";
+import { kakaoMiddleware } from "../middlewares/kakao.middleware.js";
+import { AuthController } from "../controllers/auth.controller.js";
 
 const router = Router();
+const authController = new AuthController();
 
 //카카오 로그인 요청
 router.get("/kakao", kakaoMiddleware.start);
