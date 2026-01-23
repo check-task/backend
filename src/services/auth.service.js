@@ -1,7 +1,7 @@
 import { prisma } from "../db.config.js";
 import jwt from "jsonwebtoken";
 import { BadRequestError, InternalServerError } from "../errors/custom.error.js"
-
+import axios from "axios";
 
 export class KakaoAuthService {
   constructor(){
@@ -118,6 +118,26 @@ export class KakaoAuthService {
       });
     }catch (error){
       throw new InternalServerError("USER_WITHDRAW_FAILED","회원 탈퇴 처리 중 오류가 발생했습니다.");
+    }
+  }
+
+  //카카오 로그아웃(아직 미정)
+  async logoutKakaoUser(kakaoAccessToken){
+    if(!kakaoAccessToken){
+      throw new BadRequestError("KAKAO_ACCESS_TOKEN_REQUIRED", "카카오 로그인을 위한 토큰이 필요합니다.");
+    }
+    try{
+      await axios.post(
+        "https://kapi.kakao.com/v1/user/logout",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${kakaoAccessToken}`,
+          }
+        }
+      );
+    }catch (error){
+      throw new InternalServerError("KAKAO_LOGOUT_FAILED","카카오 로그아웃 처리 중 오류가 발생했습니다.");
     }
   }
 }

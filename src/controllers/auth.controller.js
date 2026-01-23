@@ -23,5 +23,23 @@ export class AuthController{
             next(error);
         }
     }
+
+    //카카오 로그아웃
+    async logout(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new UnauthorizedError("UNAUTHORIZED", "인증 정보가 없습니다");
+      }
+
+      return res.status(200).json({
+        resultType: "SUCCESS",
+        message: "카카오 로그아웃이 완료되었습니다."
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
+
+
 

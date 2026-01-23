@@ -40,4 +40,12 @@ router.delete(
   authController.kakaoWithdraw.bind(authController)
 );
 
+//카카오 로그아웃
+router.post(
+  "/logout",
+  passport.authenticate("jwt", { session: false }),
+  authController.logout.bind(authController)
+);
+
+
 export default router;
