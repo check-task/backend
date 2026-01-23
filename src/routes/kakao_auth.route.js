@@ -30,4 +30,19 @@ router.get(
   }
 );
 
+//카카오 회원 탈퇴
+router.delete(
+  "/kakao/unlink",
+  passport.authenticate("jwt", { session: false }),
+  authController.kakaoWithdraw.bind(authController)
+);
+
+//카카오 로그아웃
+router.post(
+  "/logout",
+  passport.authenticate("jwt", { session: false }),
+  authController.logout.bind(authController)
+);
+
+
 export default router;
