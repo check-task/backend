@@ -18,6 +18,8 @@ export const updateProfile = async (userId, data) => {
       phoneNum: data.phoneNum,
       email: data.email,
       profileImage: data.profileImage,
+      deadlineAlarm: data.deadlineAlarm,
+      taskAlarm: data.taskAlarm,
     },
   });
 

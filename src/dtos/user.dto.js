@@ -4,6 +4,8 @@ export const bodyToProfileDto = (body) => {
     phoneNum: body.phoneNum,
     email: body.email,
     profileImage: body.profileImage,
+    deadlineAlarm: body.deadlineAlarm, 
+    taskAlarm: body.taskAlarm,
   };
 };
 

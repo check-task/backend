@@ -2,7 +2,7 @@ import { BadRequestError } from "../errors/custom.error.js";
 
 export const bodyToFolderDto = (body) => {
   if (!body.folderTitle || body.folderTitle.trim() === "") {
-    throw new BadRequestError("INVALID_INPUT_VALUE", "폴더 이름(folderTitle)은 필수입니다.");
+    throw new BadRequestError("INVALID_INPUT_VALUE", "폴더 이름은 필수입니다.");
   }
 
   return {
