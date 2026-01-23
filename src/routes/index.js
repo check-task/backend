@@ -5,7 +5,7 @@ import commentRouter from "./comment.route.js";
 import taskRouter from "./task.route.js";
 import modalRouter from "./modal.route.js";
 import folderRouter from "./folder.route.js";
-import kakaoAuthRouter from "./kakao_auth.route.js"
+import kakaoAuthRouter from "./auth.route.js"
 const router = express.Router();
 
 //kakao
