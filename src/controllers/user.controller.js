@@ -1,4 +1,5 @@
 import userService from "../services/user.service.js";
+import { uploadToS3 } from "../middlewares/upload.middleware.js";
 
 class UserController {
   async getMyInfo(req, res, next) {
@@ -15,9 +16,23 @@ class UserController {
   // 프로필 수정
   async updateProfile(req, res, next) {
     try {
-      const userId = req.user.id; // 토큰에서 내 ID 추출
-      const body = req.body;      // 클라이언트가 보낸 수정할 데이터  
-      const result = await userService.updateProfile(userId, body);
+      const userId = req.user.id; 
+      const body = req.body;      
+
+      let imageUrl = null;
+      
+      if (req.file) {
+        // S3에 업로드하고 URL 받기
+        imageUrl = await uploadToS3(req.file);
+      }
+
+      // 서비스에 전달할 데이터 객체 생성 (이미지가 있으면 덮어씌움)
+      const updateData = {
+        ...body,
+        ...(imageUrl && { profileImage: imageUrl }), // imageUrl이 있을 때만 추가
+      };
+
+      const result = await userService.updateProfile(userId, updateData);
 
       return res.success(result, "프로필 수정 성공");
     } catch (error) {

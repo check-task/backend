@@ -44,6 +44,7 @@
     "joi": "^18.0.2",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.2",
+    "multer-s3": "^3.0.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-kakao": "^1.0.1",
@@ -53,7 +54,7 @@
     "yamljs": "^0.3.0"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "^3.971.0",
+    "@aws-sdk/client-s3": "^3.972.0",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "nodemon": "^3.1.11",

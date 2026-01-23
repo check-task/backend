@@ -1,5 +1,11 @@
 import { prisma } from "../db.config.js";
 
+export const getFolderById = async (folderId) => {
+  return await prisma.folder.findUnique({
+    where: { id: parseInt(folderId) },
+  });
+};
+
 // 1. 폴더 생성
 export const addFolder = async (userId, data) => {
   const newFolder = await prisma.folder.create({
@@ -22,17 +28,16 @@ export const updateFolder = async (userId, folderId, data) => {
   const updatedFolder = await prisma.folder.update({
     where: {
       id: parseInt(folderId),
-      userId: userId, // 내 폴더인지 확인
+      userId: userId,
     },
     data: {
-      folderTitle: data.folderTitle,
-      color: data.color,
+      ...data 
     },
     select: {
-        id: true,
-        folderTitle: true,
-        color: true,
-      }
+      id: true,
+      folderTitle: true,
+      color: true,
+    }
   });
   return updatedFolder;
 };
