@@ -1,6 +1,6 @@
 import { prisma } from '../db.config.js';
 import Joi from 'joi'; //요청 데이터 유효성 검사
-import { NotFoundError, BadRequestError } from '../errors/custom.error.js';
+import { NotFoundError, BadRequestError, ForbiddenError } from '../errors/custom.error.js';
 
 // 댓글 수정 유효성 검사 스키마
 const updateCommentSchema = Joi.object({
@@ -25,9 +25,7 @@ const updateCommentService = async (commentId, userId, content) => {
 
     // 댓글 작성자만 수정 가능
     if (comment.user.id !== userId) {
-      const error = new Error('수정 권한이 없습니다.');
-      error.status = 403;
-      throw error;
+      throw new ForbiddenError('PERMISSION_DENIED', '댓글 수정 권한이 없습니다.');
     }
 
     // 댓글 수정
