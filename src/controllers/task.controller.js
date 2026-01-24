@@ -1,21 +1,17 @@
 import taskService from "../services/task.service.js";
-import { createTaskRequestDTO } from "../dtos/task.dto.js";
-import { updateTaskRequestDTO } from "../dtos/task.dto.js";
-import { taskDetailResponseDTO } from "../dtos/task.dto.js";
-import { taskListResponseDTO } from "../dtos/task.dto.js";
+import { TaskRequestDTO, TaskResponseDTO } from "../dtos/task.dto.js";
 
 class TaskController {
   // 완료된 과제 조회
   async getCompletedTasks(req, res, next) {
     try {
       const userId = req.user.id;
-
       const result = await taskService.getCompletedTasks(userId);
 
       res.status(200).json({
         resultType: "SUCCESS",
         message: "완료된 과제 조회에 성공하였습니다.",
-        data: result
+        data: TaskResponseDTO.fromCompleted(result)
       });
     } catch (error) {
       next(error);
@@ -25,8 +21,8 @@ class TaskController {
   // 과제 생성
   async createTask(req, res, next) {
     try {
-      const userId = req.user.id; // 사용자 ID 가져오기
-      const taskRequest = createTaskRequestDTO(req.body);
+      const userId = req.user.id;
+      const taskRequest = TaskRequestDTO.toCreate(req.body);
 
       const result = await taskService.registerTask(userId, taskRequest);
 
@@ -44,7 +40,7 @@ class TaskController {
   async updateTask(req, res, next) {
     try {
       const { taskId } = req.params;
-      const taskRequest = updateTaskRequestDTO(req.body);
+      const taskRequest = TaskRequestDTO.toUpdate(req.body);
 
       const result = await taskService.modifyTask(parseInt(taskId), taskRequest);
 
@@ -83,18 +79,17 @@ class TaskController {
       res.status(200).json({
         resultType: "SUCCESS",
         message: "서버가 요청을 성공적으로 처리하였습니다.",
-        data: taskDetailResponseDTO(task)
+        // static 메서드 fromDetail 사용
+        data: TaskResponseDTO.fromDetail(task)
       });
     } catch (error) {
       next(error);
     }
   }
 
-  // 과제 목록 조회
+  // [002] 과제 목록 조회
   async getTasks(req, res, next) {
     try {
-      console.log("쿼리 내용:", req.query);
-
       const queryParams = {
         type: req.query.type,
         sort: req.query.sort,
@@ -107,14 +102,14 @@ class TaskController {
       res.status(200).json({
         resultType: "SUCCESS",
         message: "서버가 요청을 성공적으로 처리하였습니다.",
-        data: taskListResponseDTO(tasks)
+        data: TaskResponseDTO.fromList(tasks)
       });
     } catch (error) {
       next(error);
     }
   }
 
-  // 우선 순위 변경
+  // [010] 우선 순위 변경
   async updateTaskPriorities(req, res, next) {
     try {
       const userId = req.user.id;
@@ -132,7 +127,7 @@ class TaskController {
     }
   }
 
-  // 팀원 정보 수정
+  // 팀원 정보 수정 (역할 변경)
   async updateTeamMember(req, res, next) {
     try {
       const { taskId, memberId } = req.params;
@@ -159,108 +154,65 @@ class TaskController {
     }
   }
 
-  // 세부 TASK 완료 처리 API 
+  // 세부 TASK 상태 업데이트
   async updateSubTaskStatus(req, res, next) {
     try {
       const { subTaskId } = req.params;
       const { status } = req.body;
 
-      // 서비스 계층 호출
       const updatedTask = await taskService.updateSubTaskStatus(subTaskId, status);
 
-      // 응답 형식에 맞게 데이터 가공
-      const responseData = {
+      res.status(200).json({
         resultType: 'SUCCESS',
         message: '태스크 상태가 업데이트되었습니다.',
         data: {
           sub_task_id: updatedTask.id,
-          status: status === 'COMPLETE' ? '완료' : '미완료'
+          status: status === 'COMPLETED' ? '완료' : '미완료'
         }
-      };
-
-      return res.status(200).json(responseData);
+      });
     } catch (error) {
       next(error);
     }
   }
 
-  // 세부task 날짜 변경 API
+  // 세부 TASK 날짜 변경
   async updateSubTaskDeadline(req, res, next) {
     try {
       const { subTaskId } = req.params;
       const { endDate } = req.body;
 
-      // 서비스 계층 호출
       const updatedTask = await taskService.updateSubTaskDeadline(subTaskId, endDate);
 
-      // 응답 형식에 맞게 데이터 가공
-      const responseData = {
+      res.status(200).json({
         resultType: 'SUCCESS',
         message: '마감 기한이 변경되었습니다.',
         data: {
           sub_task_id: updatedTask.id,
           end_date: updatedTask.endDate.toISOString().split('T')[0]
         }
-      };
-
-      return res.status(200).json(responseData);
-    } catch (error) {
-      console.error('Error in updateSubTaskDeadline:', {
-        message: error.message,
-        stack: error.stack,
-        status: error.status,
-        errorCode: error.errorCode
       });
-
-      // 에러 객체에 상태 코드가 없으면 500으로 설정
-      if (!error.status) {
-        error.status = 500;
-        error.errorCode = 'INTERNAL_SERVER_ERROR';
-      }
-
+    } catch (error) {
       next(error);
     }
   }
 
-  // 세부 TASK 담당자 설정 API
+  // 세부 TASK 담당자 설정
   async setSubTaskAssignee(req, res, next) {
     try {
       const { subTaskId } = req.params;
       const { assigneeId } = req.body;
 
-      console.log('Request - subTaskId:', subTaskId, 'assigneeId:', assigneeId);
-
       const result = await taskService.setSubTaskAssignee(parseInt(subTaskId), assigneeId);
 
-      console.log('Service result:', result);
-
-      const responseData = {
+      res.status(200).json({
         resultType: 'SUCCESS',
         message: '담당자가 지정되었습니다.',
         data: {
           sub_task_id: result.subTaskId,
           assignee_id: result.assigneeId
         }
-      };
-
-      return res.status(200).json(responseData);
-    } catch (error) {
-      console.error('Error in setSubTaskAssignee:', {
-        message: error.message,
-        stack: error.stack,
-        statusCode: error.statusCode || error.status,
-        errorCode: error.errorCode
       });
-
-      // 에러 객체에 상태 코드가 없으면 500으로 설정
-      if (!error.statusCode && !error.status) {
-        error.statusCode = 500;
-        error.errorCode = 'INTERNAL_SERVER_ERROR';
-      } else if (error.status) {
-        // 이전 버전과의 호환성을 위해 status가 있으면 statusCode로 복사
-        error.statusCode = error.status;
-      }
-
+    } catch (error) {
       next(error);
     }
   }
@@ -269,7 +221,7 @@ class TaskController {
   async generateInviteCode(req, res, next) {
     try {
       const { taskId } = req.params;
-      const userId = req.user.id; // 인증 미들웨어에서 설정된 사용자 ID
+      const userId = req.user.id;
 
       const result = await taskService.generateInviteCode(parseInt(taskId), userId);
 
@@ -292,14 +244,6 @@ class TaskController {
       const userId = req.user.id;
       const { inviteCode } = req.body;
 
-      if (!inviteCode || typeof inviteCode !== 'string') {
-        return res.status(400).json({
-          resultType: "FAIL",
-          message: "초대 코드는 필수입니다.",
-          data: null
-        });
-      }
-
       const result = await taskService.joinTaskByInviteCode(userId, inviteCode);
 
       res.status(200).json({
@@ -316,7 +260,5 @@ class TaskController {
     }
   }
 }
-
-
 
 export default new TaskController();
