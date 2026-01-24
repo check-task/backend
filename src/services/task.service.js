@@ -319,6 +319,27 @@ class TaskService {
         throw error;
       }
 
+      // assigneeId가 있는 경우 사용자 존재 여부 확인
+      if (assigneeId) {
+        const parsedAssigneeId = parseInt(assigneeId);
+        if (isNaN(parsedAssigneeId)) {
+          const error = new Error('유효하지 않은 담당자 ID입니다.');
+          error.statusCode = 400;
+          throw error;
+        }
+
+        const userExists = await prisma.user.findUnique({
+          where: { id: parsedAssigneeId }
+        });
+
+        if (!userExists) {
+          const error = new Error('지정된 사용자를 찾을 수 없습니다.');
+          error.statusCode = 404;
+          error.errorCode = 'USER_NOT_FOUND';
+          throw error;
+        }
+      }
+
       // 서브태스크와 관련된 Task, Member 정보 조회
       const existingTask = await prisma.subTask.findUnique({
         where: { id: parsedSubTaskId },
