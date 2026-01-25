@@ -1,8 +1,9 @@
-import userService from "../services/user.service.js";
+import { userService } from "../services/user.service.js";
 import { uploadToS3 } from "../middlewares/upload.middleware.js";
 
 class UserController {
-  async getMyInfo(req, res, next) {
+  // 1. 내 정보 조회
+  getMyInfo = async (req, res, next) => {
     try {
       console.log("로그인 유저 정보:", req.user);
       const userId = req.user.id;
@@ -12,15 +13,16 @@ class UserController {
     } catch (error) {
       next(error);
     }
-  }
-  // 프로필 수정
-  async updateProfile(req, res, next) {
+  };
+
+  // 2. 프로필 수정
+  updateProfile = async (req, res, next) => {
     try {
-      const userId = req.user.id; 
-      const body = req.body;      
+      const userId = req.user.id;
+      const body = req.body;
 
       let imageUrl = null;
-      
+
       if (req.file) {
         // S3에 업로드하고 URL 받기
         imageUrl = await uploadToS3(req.file);
@@ -38,7 +40,7 @@ class UserController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 }
 
-export default new UserController();
+export const userController = new UserController();

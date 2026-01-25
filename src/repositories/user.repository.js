@@ -1,35 +1,39 @@
 import { prisma } from "../db.config.js";
 
-export const getUserData = async (userId) => {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
+class UserRepository {
+  // 내 정보 조회
+  async getUserData(userId) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { folders: true },
+    });
 
-    include: { folders: true },
-  });
+    return user;
+  }
 
-  return user;
-};
+  // 프로필 수정
+  async updateProfile(userId, data) {
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...data 
+      },
+    });
+    return updatedUser;
+  }
 
-export const updateProfile = async (userId, data) => {
-  const updatedUser = await prisma.user.update({
-    where: { id: userId },
-    data: {
-      nickname: data.nickname,
-      phoneNum: data.phoneNum,
-      email: data.email,
-      profileImage: data.profileImage,
-      deadlineAlarm: data.deadlineAlarm,
-      taskAlarm: data.taskAlarm,
-    },
-  });
-  return updatedUser;
+  // 탈퇴한 회원인지 확인
+  async checkDeletedUser(userId) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, deletedAt: true },
+    });
+    return user;
+  }
 }
 
-//탈퇴한 회원인지 확인
-export const checkDeletedUser = async (userId) => {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, deletedAt: true },
-  });
-  return user;
-}
+export const userRepository = new UserRepository();
+
+export const checkDeletedUser = (userId) => userRepository.checkDeletedUser(userId);
+export const getUserData = (userId) => userRepository.getUserData(userId);
+export const updateProfile = (userId, data) => userRepository.updateProfile(userId, data);
