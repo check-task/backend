@@ -1,7 +1,7 @@
 import taskRepository from "../repositories/task.repository.js";
 import { BadRequestError, NotFoundError, ForbiddenError } from "../errors/custom.error.js";
 import { getUserData } from "../repositories/user.repository.js";
-import { responseFromCompletedTasks } from "../dtos/task.dto.js";
+import { TaskResponseDTO } from "../dtos/task.dto.js";
 import { prisma } from "../db.config.js";
 import { createTaskAlarm, createSubTaskAlarm, deleteSubTaskAlarm } from "../repositories/alarm.repository.js";
 import { calculateAlarmDate } from "../utils/calculateAlarmDate.js";
@@ -15,8 +15,8 @@ class TaskService {
 
     const tasks = await taskRepository.getCompletedTasks(userId);
 
-    return responseFromCompletedTasks(tasks);
-  }
+    return tasks; 
+}
 
   // 과제 등록
   async registerTask(userId, data) {
