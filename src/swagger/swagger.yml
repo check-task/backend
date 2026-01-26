@@ -1154,6 +1154,70 @@ paths:
           description: |
             - INTERNAL_SERVER_ERROR: 서버 오류가 발생했습니다.
 
+  # 초대 코드로 팀 참여
+  /api/v1/task/join:
+    post:
+      tags:
+        - Task
+      summary: 초대 코드로 팀 참여
+      description: 초대 코드를 사용하여 팀 과제에 참여합니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - inviteCode
+              properties:
+                inviteCode:
+                  type: string
+                  description: 팀 과제 초대 코드
+                  example: "ABC12345"
+      responses:
+        '200':
+          description: 팀 참여 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "팀에 성공적으로 참여했습니다."
+                  data:
+                    type: object
+                    properties:
+                      task_id:
+                        type: integer
+                        description: 참여한 과제 ID
+                        example: 1
+                      task_title:
+                        type: string
+                        description: 참여한 과제 제목
+                        example: "팀 프로젝트 개발"
+                      member_id:
+                        type: integer
+                        description: 생성된 멤버 ID
+                        example: 5
+        '400':
+          description: |
+            잘못된 요청
+            - INVALID_INVITE_CODE: 유효하지 않은 초대 코드입니다.
+        '403':
+          description: |
+            권한 없음
+            - EXPIRED_INVITE_CODE: 만료된 초대 코드입니다.
+            - ALREADY_MEMBER: 이미 팀 멤버입니다.
+        '404':
+          description: |
+            - INVALID_INVITE_CODE: 유효하지 않은 초대 코드입니다.
+
   # 댓글 관련 API
   /api/v1/task/subtask/{subTaskId}/comments:
     post:
