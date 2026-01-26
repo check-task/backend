@@ -87,7 +87,7 @@ class TaskController {
     }
   }
 
-  // [002] 과제 목록 조회
+  // 과제 목록 조회
   async getTasks(req, res, next) {
     try {
       const queryParams = {
@@ -109,7 +109,7 @@ class TaskController {
     }
   }
 
-  // [010] 우선 순위 변경
+  // 우선 순위 변경
   async updateTaskPriorities(req, res, next) {
     try {
       const userId = req.user.id;
@@ -143,9 +143,9 @@ class TaskController {
         resultType: "SUCCESS",
         message: "요청이 성공적으로 처리되었습니다.",
         data: {
-          member_id: result.id,
-          user_id: result.userId,
-          task_id: result.taskId,
+          memberId: result.id,
+          userId: result.userId,
+          taskId: result.taskId,
           role: result.role ? 1 : 0,
         }
       });
