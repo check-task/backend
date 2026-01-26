@@ -49,6 +49,9 @@ jobs:
             # 의존성 설치
             npm ci
 
+            #Prisma Client 생성
+            npx prisma generate
+
             #Prisma migrate
             npx prisma migrate deploy
 
