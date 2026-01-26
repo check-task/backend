@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
-  title: UMC 9th
-  description: UMC 9th Node.js 테스트 프로젝트입니다.
+  title: Check-Task
+  description: Check-Task API 문서입니다.
   version: 1.0.0
 
 
