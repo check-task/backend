@@ -1,5 +1,5 @@
 import express from "express";
-import * as folderController from "../controllers/folder.controller.js";
+import { folderController } from "../controllers/folder.controller.js";
 import authenticate from "../middlewares/authenticate.middleware.js";
 
 const router = express.Router();
