@@ -1,21 +1,14 @@
-import passport from "../config/kakao_passport.config.js";
+import passport from "../config/passport.config.js";
 
 export const kakaoMiddleware = {
-  start: passport.authenticate("kakao", { session: false }),
+  // 카카오 로그인 시작
+  start: passport.authenticate("kakao", {
+    session: false,
+  }),
 
-  callback: (req, res, next) => {
-    passport.authenticate("kakao", { session: false }, (err, user) => {
-      if (err) return next(err);
-
-      if (!user) {
-        const error = new Error("카카오 로그인에 실패했습니다");
-        error.statusCode = 401;
-        error.errorCode = "KAKAO_LOGIN_FAILED";
-        return next(error);
-      }
-
-      req.user = user;
-      next();
-    })(req, res, next);
-  },
+  // 카카오 콜백
+  callback: passport.authenticate("kakao", {
+    session: false,
+    failureRedirect: "/login-failed",
+  }),
 };

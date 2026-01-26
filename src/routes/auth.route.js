@@ -1,7 +1,10 @@
 import { Router } from "express";
-import {kakaoMiddleware} from "../middlewares/kakao.middleware.js";
+import passport from "passport";
+import { kakaoMiddleware } from "../middlewares/kakao.middleware.js";
+import { AuthController } from "../controllers/auth.controller.js";
 
 const router = Router();
+const authController = new AuthController();
 
 //카카오 로그인 요청
 router.get("/kakao", kakaoMiddleware.start);
@@ -29,5 +32,20 @@ router.get(
     });
   }
 );
+
+//카카오 회원 탈퇴
+router.delete(
+  "/kakao/unlink",
+  passport.authenticate("jwt", { session: false }),
+  authController.kakaoWithdraw.bind(authController)
+);
+
+//카카오 로그아웃
+router.post(
+  "/logout",
+  passport.authenticate("jwt", { session: false }),
+  authController.logout.bind(authController)
+);
+
 
 export default router;

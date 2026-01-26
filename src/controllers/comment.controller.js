@@ -1,6 +1,6 @@
 import { prisma } from '../db.config.js';
 import Joi from 'joi'; //요청 데이터 유효성 검사
-import { NotFoundError, BadRequestError } from '../errors/custom.error.js';
+import { NotFoundError, BadRequestError, ForbiddenError } from '../errors/custom.error.js';
 
 // 댓글 수정 유효성 검사 스키마
 const updateCommentSchema = Joi.object({
@@ -25,9 +25,7 @@ const updateCommentService = async (commentId, userId, content) => {
 
     // 댓글 작성자만 수정 가능
     if (comment.user.id !== userId) {
-      const error = new Error('수정 권한이 없습니다.');
-      error.status = 403;
-      throw error;
+      throw new ForbiddenError('PERMISSION_DENIED', '댓글 수정 권한이 없습니다.');
     }
 
     // 댓글 수정
@@ -284,25 +282,37 @@ export const deleteCommentController = async (req, res, next) => {
     // 에러 유형에 따라 적절한 상태 코드와 메시지 설정
     if (error.status === 403) {
       return res.status(403).json({
-        resultType: 'ERROR',
-        message: '삭제 권한이 없습니다.'
+        resultType: 'FAIL',
+        code: 403,
+        errorCode: 'FORBIDDEN',
+        reason: '삭제 권한이 없습니다.',
+        data: null
       });
     } else if (error.name === 'NotFoundError') {
       return res.status(404).json({
-        resultType: 'ERROR',
-        message: '댓글을 찾을 수 없습니다.'
+        resultType: 'FAIL',
+        code: 404,
+        errorCode: error.errorCode || 'COMMENT_NOT_FOUND',
+        reason: error.reason || '댓글을 찾을 수 없습니다.',
+        data: null
       });
     } else if (error.name === 'BadRequestError') {
       return res.status(400).json({
-        resultType: 'ERROR',
-        message: error.message || '잘못된 요청입니다.'
+        resultType: 'FAIL',
+        code: 400,
+        errorCode: error.errorCode || 'INVALID_REQUEST',
+        reason: error.message || '잘못된 요청입니다.',
+        data: null
       });
     }
     
     // 기타 서버 에러
     res.status(500).json({
-      resultType: 'ERROR',
-      message: '서버 내부 오류가 발생했습니다.'
+      resultType: 'FAIL',
+      code: 500,
+      errorCode: 'INTERNAL_SERVER_ERROR',
+      reason: '서버 내부 오류가 발생했습니다.',
+      data: null
     });
   }
 };

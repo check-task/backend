@@ -1,8 +1,19 @@
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import s3 from '../config/s3.config.js';
+import multer from "multer";
+import dotenv from 'dotenv';
 
-const uploadToS3 = async (file) => {
-  const key = `reference/${Date.now()}-${file.originalname}`;
+dotenv.config();
+
+const storage = multer.memoryStorage();
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 100 * 1024 * 1024 },
+});
+
+export const uploadToS3 = async (file) => {
+  const key = `profile/${Date.now()}-${file.originalname}`;
 
   const command = new PutObjectCommand({
     Bucket: process.env.S3_BUCKET_NAME,
@@ -16,4 +27,4 @@ const uploadToS3 = async (file) => {
   return `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
 };
 
-export default uploadToS3;
+export default upload;
