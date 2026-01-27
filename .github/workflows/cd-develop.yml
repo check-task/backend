@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch: # 이 한 줄이 수동 실행 버튼을 만들어줍니다.
 
 jobs:
   deploy:
