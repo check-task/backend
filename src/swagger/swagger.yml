@@ -536,4 +536,331 @@ paths:
           description: |
             - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
 
+# 유저 정보 조회 API
+  /api/v1/user/me:
+    get:
+      tags:
+        - User
+      summary: 내 정보 조회
+      description: 로그인한 사용자의 정보를 조회합니다.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "내 정보 조회 성공"
+                  data:
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        example: 1
+                      nickname:
+                        type: string
+                        example: "준우"
+                      phoneNum:
+                        type: string
+                        example: "010-6641-2771"
+                      email:
+                        type: string
+                        example: "checktask@tukorea.ac.kr"
+                      profileImage:
+                        type: string
+                        example: "https://checktask.s3.ap-northeast-2.amazonaws.com/profile/1769334594965-S3TEST.jpg"
+                      deadlineAlarm:
+                        type: integer
+                        example: 24
+                      taskAlarm:
+                        type: integer
+                        example: 24
+                      folders:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            folderId:
+                              type: integer
+                              example: 101
+                            folderTitle:
+                              type: string
+                              example: "프로그래밍"
+                            color:
+                              type: string
+                              example: "#000000"
+        '400':
+          description: |
+            - BAD_REQUEST: 토큰이 형식에 맞지 않습니다.                      
+        '401':
+          description: |
+            - TOKEN_NOT_FOUND: 인증 토큰이 없습니다.
+            - TOKEN_INVALID: 토큰이 유효하지 않습니다.
+            - TOKEN_EXPIRED: 토큰이 만료되었습니다.            
+        '404':
+          description: |
+            - USER_NOT_FOUND: 해당 사용자를 찾을 수 없습니다.
+        '500':
+          description: |
+            - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
 
+# 유저 정보 수정 API
+  /api/v1/user/profile:
+    patch:
+      tags:
+        - User
+      summary: 프로필 수정
+      description: 프로필 이미지, 닉네임, 연락처, 이메일을 수정합니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                nickname:
+                  type: string
+                  example: "페이커"
+                phoneNum:  
+                  type: string
+                  example: "010-1234-5678"
+                email:     
+                  type: string
+                  example: "checktask@ct.kr"
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "프로필 수정 성공"
+                  data:
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        example: 1
+                      nickname:
+                        type: string
+                        example: "페이커"
+                      phoneNum:
+                        type: string
+                        example: "010-1234-5678"
+                      email:
+                        type: string
+                        example: "checktask@ct.kr"
+                      profileImage:
+                        type: string
+                        example: "https://checktask.s3.ap-northeast-2.amazonaws.com/profile/1769334594965-S3TEST.jpg"
+                      updatedAt:
+                        type: string
+                        example: "2026-01-26T23:30:00"
+        '400':
+          description: |
+            - INVALID_NICKNAME: 닉네임은 최대 10자까지만 가능합니다.                      
+        '401':
+          description: |
+            - TOKEN_NOT_FOUND: 인증 토큰이 없습니다.
+        '404':
+          description: |
+            - USER_NOT_FOUND: 해당 사용자를 찾을 수 없습니다.
+        '500':
+          description: |
+            - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
+
+# 폴더 생성 API
+  /api/v1/user/folder:
+    post:
+      tags:
+        - Folder
+      summary: 폴더 생성
+      description: 새로운 폴더를 생성합니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - folderTitle
+              properties:
+                folderTitle:
+                  type: string
+                  example: "프로그래밍"
+                color:
+                  type: string
+                  example: "#FF5733"
+      responses:
+        '200':
+          description: 생성 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "폴더 생성 성공"
+                  data:
+                    type: object
+                    properties:
+                      folderId:
+                        type: integer
+                        example: 10
+                      folderTitle:
+                        type: string
+                        example: "프로그래밍"
+                      color:
+                        type: string
+                        example: "#FF5733"
+        '400':
+          description: |
+            - BAD_REQUEST: 토큰이 형식에 맞지 않습니다.
+            - INVALID_INPUT_VALUE: 폴더 이름은 필수입니다.
+        '401':
+          description: |
+            - TOKEN_NOT_FOUND: 인증 토큰이 없습니다.
+            - TOKEN_INVALID: 토큰이 유효하지 않습니다.
+        '500':
+          description: |
+            - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
+
+# 폴더 수정 API
+  /api/v1/user/folder/{folderId}:
+    patch:
+      tags:
+        - Folder
+      summary: 폴더 수정
+      description: 폴더의 이름이나 색상을 수정합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: folderId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                folderTitle:
+                  type: string
+                  example: "프로그래밍"
+                color:
+                  type: string
+                  example: "#123456"
+      responses:
+        '200':
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "폴더 수정 성공"
+                  data:
+                    type: object
+                    properties:
+                      folderId:
+                        type: integer
+                        example: 10
+                      folderTitle:
+                        type: string
+                        example: "프로그래밍"
+                      color:
+                        type: string
+                        example: "#123456"
+        '400':
+          description: |
+            - BAD_REQUEST: 토큰이 형식에 맞지 않습니다.
+        '401':
+          description: |
+            - TOKEN_NOT_FOUND: 인증 토큰이 없습니다.
+            - TOKEN_INVALID: 토큰이 유효하지 않습니다.
+        '403':
+          description: |
+            - PERMISSION_DENIED: 수정 권한이 없습니다.
+        '404':
+          description: |
+            - FOLDER_NOT_FOUND: 해당 폴더를 찾을 수 없습니다.
+        '500':
+          description: |
+            - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
+
+# 폴더 삭제 API
+    delete:
+      tags:
+        - Folder
+      summary: 폴더 삭제
+      description: 폴더를 삭제합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: folderId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "폴더 삭제 성공"
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+        '401':
+          description: |
+            - TOKEN_NOT_FOUND: 인증 토큰이 없습니다.
+        '403':
+          description: |
+            - FORBIDDEN_ACCESS: 삭제 권한이 없습니다.
+        '404':
+          description: |
+            - FOLDER_NOT_FOUND: 해당 폴더를 찾을 수 없습니다.
+        '500':
+          description: |
+            - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
