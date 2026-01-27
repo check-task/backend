@@ -31,6 +31,8 @@ class UserController {
       // 서비스에 전달할 데이터 객체 생성 (이미지가 있으면 덮어씌움)
       const updateData = {
         ...body,
+        deadlineAlarm: body.deadlineAlarm ? parseInt(body.deadlineAlarm, 10) : undefined,
+        taskAlarm: body.taskAlarm ? parseInt(body.taskAlarm, 10) : undefined,
         ...(imageUrl && { profileImage: imageUrl }), // imageUrl이 있을 때만 추가
       };
 

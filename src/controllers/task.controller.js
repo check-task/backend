@@ -2,22 +2,23 @@ import taskService from "../services/task.service.js";
 import { TaskRequestDTO, TaskResponseDTO } from "../dtos/task.dto.js";
 
 class TaskController {
-  // 완료된 과제 조회
+  // 완료 과제 조회
   async getCompletedTasks(req, res, next) {
     try {
       const userId = req.user.id;
-      const result = await taskService.getCompletedTasks(userId);
+      
+      const tasksRaw = await taskService.getCompletedTasks(userId);
 
       res.status(200).json({
         resultType: "SUCCESS",
         message: "완료된 과제 조회에 성공하였습니다.",
-        data: TaskResponseDTO.fromCompleted(result)
+        data: TaskResponseDTO.fromCompleted(tasksRaw)
       });
     } catch (error) {
       next(error);
     }
   }
-
+  
   // 과제 생성
   async createTask(req, res, next) {
     try {
