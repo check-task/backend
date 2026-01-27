@@ -2,7 +2,7 @@ import taskService from "../services/task.service.js";
 import { TaskRequestDTO, TaskResponseDTO } from "../dtos/task.dto.js";
 
 class TaskController {
-  // 완료된 과제 조회
+  // 완료 과제 조회
   async getCompletedTasks(req, res, next) {
     try {
       const userId = req.user.id;
@@ -17,7 +17,7 @@ class TaskController {
       next(error);
     }
   }
-
+  
   // 과제 생성
   async createTask(req, res, next) {
     try {
