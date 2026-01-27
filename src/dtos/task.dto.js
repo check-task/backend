@@ -66,7 +66,7 @@ export class TaskResponseDTO extends TaskUtils {
     return {
       taskId: task.id,
       title: task.title,
-      type: task.type === "TEAM" ? "TEAM" : "INDIVIDUAL",
+      type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
       deadline: this.formatDate(task.deadline, '-'),
       dDay: this.calculateDDay(task.deadline),
       progressRate: progressRate,
@@ -74,7 +74,7 @@ export class TaskResponseDTO extends TaskUtils {
         subTaskId: st.id,
         title: st.title,
         deadline: this.formatDate(st.endDate, '-'),
-        status: st.status === 'COMPLETED' ? 'COMPLETED' : 'PROGRESS', // PROGRASS 오타 수정
+        status: st.status === 'COMPLETED' ? 'COMPLETED' : 'PROGRESS', 
         isAlarm: st.isAlarm || false,
         commentCount: st._count?.comments || 0,
         assigneeName: st.assigneeName || "PENDING"
@@ -92,25 +92,25 @@ export class TaskResponseDTO extends TaskUtils {
       folderId: task.folderId,
       folderTitle: task.folder?.title || "PENDING",
       title: task.title,
-      type: task.type === "TEAM" ? "TEAM" : "INDIVIDUAL",
+      type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
       deadline: this.formatDate(task.deadline),
       dDay: this.calculateDDay(task.deadline),
       progressRate: task.progress || 0
     }));
   }
 
-  // 완료된 과제 응답
+  // 완료 과제 조회 응답
   static fromCompleted(tasks) {
     return {
       tasks: tasks.map(task => ({
         taskId: task.id,
         title: task.title,
-        deadline: this.formatDate(task.deadline, '-'),
-        type: task.type === "TEAM" ? "팀" : "개인",
-        status: task.status === 'COMPLETED' ? '완료' : task.status,
+        deadline: this.formatDate(task.deadline, '-'), 
+        type: task.type === "PERSONAL" ? "개인" : "팀",
+        status: task.status === 'COMPLETED' ? '완료' : '미완료', 
         folderId: task.folder?.id || null,
-        folderTitle: task.folder?.folderTitle || null,
-        color: task.folder?.color || null,
+        folderTitle: task.folder?.folderTitle || "미지정",
+        color: task.folder?.color || "#000000",
       }))
     };
   }

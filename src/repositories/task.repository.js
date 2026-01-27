@@ -6,20 +6,20 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 class TaskRepository {
+  // 완료 과제 조회
   async getCompletedTasks(userId) {
     return await prisma.task.findMany({
       where: {
-        folder: {
-          userId: userId,
+        members: { some: { userId: userId } },
+        deadline: {
+          lt: new Date(), 
         },
-
-        status: 'COMPLETED',
       },
       include: {
         folder: true,
       },
       orderBy: {
-        deadline: 'asc',
+        deadline: 'desc', 
       },
     });
   }
@@ -157,26 +157,26 @@ class TaskRepository {
     });
   }
 
-  // 대상 멤버 제외 역할 member로 전환
-  async resetOtherMembersRole(taskId, excludeMemberId, tx = prisma) {
-    return await tx.member.updateMany({
-      where: {
-        taskId: taskId,
-        id: { not: excludeMemberId } // 대상 멤버는 제외
-      },
-      data: {
-        role: true
-      }
-    });
-  }
+// 나머지 멤버 역할 리셋
+async resetOtherMembersRole(taskId, memberId, tx) {
+  return await tx.member.updateMany({
+    where: {
+      taskId: taskId,
+      id: { not: memberId }, 
+    },
+    data: {
+      role: false, 
+    },
+  });
+}
 
-  // 멤버 역할 업데이트
-  async updateMemberRole(memberId, isMember) {
-    return await prisma.member.update({
-      where: { id: memberId },
-      data: { role: isMember }
-    });
-  }
+// 대상 멤버 역할 업데이트
+async updateMemberRole(memberId, isAdmin, tx) {
+  return await tx.member.update({
+    where: { id: memberId },
+    data: { role: isAdmin },
+  });
+}
 
   // 세부 과제 일괄 삭제
   async deleteAllSubTasks(taskId, tx) {

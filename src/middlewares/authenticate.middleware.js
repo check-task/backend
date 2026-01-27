@@ -28,11 +28,17 @@ export default function authenticate(req, res, next) {
 
     req.user = { id: userIdInt };
     next();
-  } catch (error) {
+
+    } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      next(new UnauthorizedError("TOKEN_EXPIRED", "토큰이 만료되었습니다."));
+      return;
+    }
+  
     if (error.name === 'JsonWebTokenError') { 
       next(new UnauthorizedError("TOKEN_INVALID", "토큰이 유효하지 않습니다."));
-    } else {
-      next(error);
+      return;
     }
+    next(error);
   }
 }

@@ -4,7 +4,27 @@ import dayjs from "dayjs";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 
+const args = process.argv.slice(2);
+const tokensOnly = args.includes("--tokens-only");
+
 async function main() {
+  if (tokensOnly) {
+    // 토큰만 생성
+    const users = await prisma.user.findMany({
+      where: { deletedAt: null },
+      select: { id: true, nickname: true, email: true },
+      orderBy: { id: "asc" },
+    });
+
+    const jwtSecret = process.env.JWT_SECRET || "dev-secret";
+    console.log("\n🔑 테스트용 JWT 토큰 (Authorization 헤더에 사용):");
+    users.forEach((user, index) => {
+      const token = jwt.sign({ id: user.id }, jwtSecret, { expiresIn: "7d" });
+      console.log(`  ${index + 1}. ${user.nickname} (ID: ${user.id}, Email: ${user.email})`);
+      console.log(`     Authorization: Bearer ${token}\n`);
+    });
+    return;
+  }
   console.log("🌱 시드 데이터 생성 시작...");
 
   // 기존 데이터 삭제 (순서 중요: 외래키 관계 고려)
@@ -421,8 +441,7 @@ async function main() {
   console.log(`  - 유저: ${users.length}명`);
   console.log(`  - 폴더: ${folders.length}개`);
   console.log(
-    `  - 과제: ${personalTasks.length + 1}개 (개인 ${
-      personalTasks.length
+    `  - 과제: ${personalTasks.length + 1}개 (개인 ${personalTasks.length
     }개, 팀 1개)`
   );
   console.log(`  - 세부과제: ${subTasks.length}개`);
