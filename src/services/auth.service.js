@@ -95,8 +95,8 @@ export class KakaoAuthService {
         refreshToken: this.generateRefreshToken(user),
       };
     } catch (error){
-      console.error("카카오 로그인 진짜 에러:", error);
-      throw new InternalServerError("KAKAO_LOGIN_FAILED", "카카오 로그인 처리 중 오류가 발생했습니다.");
+      console.error("ERROR:", error);
+      throw new InternalServerError("INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다.");
     }
   }
 
