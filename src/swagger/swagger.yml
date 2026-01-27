@@ -1730,7 +1730,7 @@ paths:
         - Task
       summary: 완료된 과제 조회
       description: |
-        사용자의 완료된 과제 목록을 조회합니다.
+        마감일이 지난 과제를 조회합니다.
       security:
         - bearerAuth: []
       responses:
@@ -1761,10 +1761,10 @@ paths:
                             title:
                               type: string
                               example: "자료구조 과제"
-                            completedAt:
+                            deadline:
                               type: string
                               example: "2025-11-19"
-                              description: "과제 완료 날짜"
+                              description: "과제 마감일"
                             type:
                               type: string
                               example: "개인"

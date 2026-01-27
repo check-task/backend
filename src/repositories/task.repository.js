@@ -10,17 +10,16 @@ class TaskRepository {
   async getCompletedTasks(userId) {
     return await prisma.task.findMany({
       where: {
-        folder: {
-          userId: userId,
+        members: { some: { userId: userId } },
+        deadline: {
+          lt: new Date(), 
         },
-
-        status: 'COMPLETED',
       },
       include: {
         folder: true,
       },
       orderBy: {
-        updatedAt: 'desc',
+        deadline: 'desc', 
       },
     });
   }

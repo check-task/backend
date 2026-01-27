@@ -105,11 +105,15 @@ export class TaskResponseDTO extends TaskUtils {
       tasks: tasks.map(task => ({
         taskId: task.id,
         title: task.title,
-        completedAt: this.formatDate(task.updatedAt, '-'), 
+        // 마감일 포맷팅 (YYYY-MM-DD)
+        deadline: this.formatDate(task.deadline, '-'), 
+        // 한글 변환
         type: task.type === "PERSONAL" ? "개인" : "팀",
-        status: "완료",
+        // 마감이 지났지만 상태는 '완료'일 수도, '미완료'일 수도 있음
+        status: task.status === 'COMPLETED' ? '완료' : '미완료', 
+        // 폴더 정보 안전 처리
         folderId: task.folder?.id || null,
-        folderTitle: task.folder?.folderTitle || "미지정", 
+        folderTitle: task.folder?.folderTitle || "미지정",
         color: task.folder?.color || "#000000",
       }))
     };

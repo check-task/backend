@@ -13,6 +13,7 @@ class TaskService {
     if (!user) {
       throw new NotFoundError("USER_NOT_FOUND", "해당 사용자를 찾을 수 없습니다.");
     }
+
     return await taskRepository.getCompletedTasks(userId);
   }
 
