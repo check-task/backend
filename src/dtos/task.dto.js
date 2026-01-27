@@ -99,18 +99,18 @@ export class TaskResponseDTO extends TaskUtils {
     }));
   }
 
-  // 완료된 과제 응답
+  // 완료 과제 조회 응답
   static fromCompleted(tasks) {
     return {
       tasks: tasks.map(task => ({
         taskId: task.id,
         title: task.title,
-        deadline: this.formatDate(task.deadline, '-'),
-        type: task.type === "TEAM" ? "팀" : "개인",
-        status: task.status === 'COMPLETED' ? '완료' : task.status,
+        deadline: this.formatDate(task.deadline, '-'), 
+        type: task.type === "PERSONAL" ? "개인" : "팀",
+        status: task.status === 'COMPLETED' ? '완료' : '미완료', 
         folderId: task.folder?.id || null,
-        folderTitle: task.folder?.folderTitle || null,
-        color: task.folder?.color || null,
+        folderTitle: task.folder?.folderTitle || "미지정",
+        color: task.folder?.color || "#000000",
       }))
     };
   }

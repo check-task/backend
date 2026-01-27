@@ -6,20 +6,20 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 class TaskRepository {
+  // 완료 과제 조회
   async getCompletedTasks(userId) {
     return await prisma.task.findMany({
       where: {
-        folder: {
-          userId: userId,
+        members: { some: { userId: userId } },
+        deadline: {
+          lt: new Date(), 
         },
-
-        status: 'COMPLETED',
       },
       include: {
         folder: true,
       },
       orderBy: {
-        deadline: 'asc',
+        deadline: 'desc', 
       },
     });
   }

@@ -7,16 +7,15 @@ import { createTaskAlarm, createSubTaskAlarm, deleteSubTaskAlarm } from "../repo
 import { calculateAlarmDate } from "../utils/calculateAlarmDate.js";
 
 class TaskService {
+  // 완료 과제 조회
   async getCompletedTasks(userId) {
     const user = await getUserData(userId);
     if (!user) {
       throw new NotFoundError("USER_NOT_FOUND", "해당 사용자를 찾을 수 없습니다.");
     }
 
-    const tasks = await taskRepository.getCompletedTasks(userId);
-
-    return tasks; 
-}
+    return await taskRepository.getCompletedTasks(userId);
+  }
 
   // 과제 등록
   async registerTask(userId, data) {
