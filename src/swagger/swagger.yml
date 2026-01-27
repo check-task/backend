@@ -1400,7 +1400,7 @@ paths:
       tags:
         - Kakao Auth
       summary: 카카오 연동하기
-      description: 카카오 로그인/회원가입
+      description: 카카오 OAuth를 통해 로그인/회원가입을 진행합니다.
       requestBody:
         required: true
         content:
@@ -1427,7 +1427,7 @@ paths:
                     example: "SUCCESS"
                   message:
                     type: string
-                    example: "카카오 회원가입 성공"
+                    example: "회원 가입 성공"
                   data:
                     type: object
                     properties:
@@ -1502,7 +1502,7 @@ paths:
       tags:
         - Kakao Auth
       summary: 카카오 로그아웃
-      description: 카카오 OAuth를 통해 로그인한 사용자에 대해서 로그아웃 처리합니다.
+      description: 카카오 OAuth를 통해 로그인한 사용자에 대해서 로그아웃 처리합니다.(현재 JWT 인증 무효화 형식으로 진행)
       security:
         - bearerAuth: []
       requestBody:
@@ -1520,7 +1520,7 @@ paths:
                     example: "SUCCESS"
                   message:
                     type: string
-                    example: "카카오 로그아웃이 완료되었습니다"
+                    example: "카카오 로그아웃이 완료되었습니다."
                   data:
                     type: "null"
                     example: null
@@ -1536,7 +1536,7 @@ paths:
                   resultType: "FAIL"
                   code: 401
                   errorCode: "KAKAO_AUTH_FAILED"
-                  reason: "카카오 인증에 실패하였습니다"
+                  reason: "카카오 인증에 실패하였습니다."
                   data: null
 
         '500':
@@ -1552,6 +1552,7 @@ paths:
                   errorCode: "INTERNAL_SERVER_ERROR"
                   reason: "서버 내부 오류가 발생했습니다"
                   data: null
+  
   #카카오 회원 탈퇴
   /api/v1/auth/kakao/unlink:
     delete:
@@ -1578,7 +1579,7 @@ paths:
                     example: "SUCCESS"
                   message:
                     type: string
-                    example: "회원 탈퇴가 완료되었습니다"
+                    example: "카카오 회원 탈퇴가 완료되었습니다."
                   data:
                     type: "null"
                     example: null
@@ -1625,5 +1626,3 @@ paths:
                   errorCode: "USER_WITHDRAW_FAILED"
                   reason: "회원 탈퇴 처리 중 오류가 발생했습니다"
                   data: null
-
-
