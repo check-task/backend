@@ -66,7 +66,7 @@ export class TaskResponseDTO extends TaskUtils {
     return {
       taskId: task.id,
       title: task.title,
-      type: task.type === "TEAM" ? "TEAM" : "INDIVIDUAL",
+      type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
       deadline: this.formatDate(task.deadline, '-'),
       dDay: this.calculateDDay(task.deadline),
       progressRate: progressRate,
@@ -74,7 +74,7 @@ export class TaskResponseDTO extends TaskUtils {
         subTaskId: st.id,
         title: st.title,
         deadline: this.formatDate(st.endDate, '-'),
-        status: st.status === 'COMPLETED' ? 'COMPLETED' : 'PROGRESS', // PROGRASS 오타 수정
+        status: st.status === 'COMPLETED' ? 'COMPLETED' : 'PROGRESS', 
         isAlarm: st.isAlarm || false,
         commentCount: st._count?.comments || 0,
         assigneeName: st.assigneeName || "PENDING"
@@ -92,7 +92,7 @@ export class TaskResponseDTO extends TaskUtils {
       folderId: task.folderId,
       folderTitle: task.folder?.title || "PENDING",
       title: task.title,
-      type: task.type === "TEAM" ? "TEAM" : "INDIVIDUAL",
+      type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
       deadline: this.formatDate(task.deadline),
       dDay: this.calculateDDay(task.deadline),
       progressRate: task.progress || 0

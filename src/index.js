@@ -34,6 +34,16 @@ app.get("/", (req, res) => {
 const swaggerDocument = YAML.load(
   path.join(process.cwd(), "src/swagger/swagger.yml")
 );
+
+// 서버 URL을 동적으로 설정
+const serverPort = process.env.PORT || 3000;
+swaggerDocument.servers = [
+  {
+    url: `http://localhost:${serverPort}`,
+    description: "Local Development Server",
+  },
+];
+
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.get("/openapi.json", swaggerHandler);

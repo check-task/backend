@@ -1,12 +1,9 @@
 openapi: 3.0.0
 info:
-  title: UMC 9th
-  description: UMC 9th Node.js 테스트 프로젝트입니다.
+  title: Check-Task
+  description: Check-Task API 문서입니다.
   version: 1.0.0
 
-servers:
-  - url: http://localhost:8000
-    description: Local Development Server
 
 components:
   securitySchemes:
@@ -32,7 +29,9 @@ tags:
     description: 카카오 인증 관련 API
 
 paths:
-  api/v1/alarm:
+  # -- 알림 API --
+  # 알림 목록 조회
+  /api/v1/alarm:
     get:
       tags:
         - Alarm
@@ -54,6 +53,19 @@ paths:
           required: false
           description: 조회 개수
           default: 10
+        - in: query
+          name: orderBy
+          schema:
+            type: string
+          required: false
+          description: 정렬 기준
+        - in: query
+          name: order
+          schema:
+            type: string
+            enum: [asc, desc]
+          required: false
+          description: 정렬 순서
       responses:
         '200':
           description: 성공
@@ -65,11 +77,52 @@ paths:
                   resultType:
                     type: string
                     example: SUCCESS
+                  message:
+                    type: string
+                    example: 알림 목록 조회 성공
                   data:
-                    type: array
-                    items:
-                      type: object
-        
+                    type: object
+                    properties:
+                      alarmList:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            alarmId:
+                              type: integer
+                              example: 1
+                            title:
+                              type: string
+                              example: 과제 마감 임박
+                            alarmContent:
+                              type: string
+                              example: 포트폴리오 웹사이트 제작 마감이 3일 남았습니다
+                            isRead:
+                              type: boolean
+                              example: false
+                            alarmDate:
+                              type: string
+                              format: date-time
+                              example: "2026-01-20T10:00:00.000Z"
+                            taskId:
+                              type: integer
+                              nullable: true
+                              example: 1
+                            subTaskId:
+                              type: integer
+                              nullable: true
+                              example: null
+                      meta:
+                        type: object
+                        properties:
+                          hasNextPage:
+                            type: boolean
+                            example: true
+                          cursor:
+                            type: integer
+                            nullable: true
+                            example: 5
+    # 전체 알림 삭제    
     delete:
       tags:
         - Alarm
@@ -80,8 +133,22 @@ paths:
       responses:
         '200':
           description: 성공
-
-  api/v1/alarm/{alarmId}:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                    example: 알림 전체 삭제 성공
+                  data:
+                    type: "null"
+                    example: null
+  # 개별 알림 삭제
+  /api/v1/alarm/{alarmId}:
     delete:
       tags:
         - Alarm
@@ -99,7 +166,21 @@ paths:
       responses:
         '200':
           description: 성공
-
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                    example: 개별 알림 삭제 성공
+                  data:
+                    type: "null"
+                    example: null
+    # 알림 읽음 처리
     patch:
       tags:
         - Alarm
@@ -120,6 +201,8 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - isRead
               properties:
                 isRead:
                   type: boolean
@@ -127,6 +210,717 @@ paths:
       responses:
         '200':
           description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                    example: 알림 읽음 처리 성공
+                  data:
+                    type: object
+                    properties:
+                      alarm:
+                        type: object
+                        properties:
+                          alarmId:
+                            type: integer
+                            example: 1
+                          userId:
+                            type: integer
+                            example: 1
+                          taskId:
+                            type: integer
+                            nullable: true
+                            example: 1
+                          subTaskId:
+                            type: integer
+                            nullable: true
+                            example: null
+                          title:
+                            type: string
+                            example: 과제 마감 임박
+                          alarmContent:
+                            type: string
+                            example: 포트폴리오 웹사이트 제작 마감이 3일 남았습니다
+                          isRead:
+                            type: boolean
+                            example: true
+  # 최종 마감 알림 설정 수정
+  /api/v1/alarm/settings/deadline:
+    patch:
+      tags:
+        - Alarm
+      summary: 최종 마감 알림 설정 수정
+      description: 사용자의 최종 마감 알림 전송 시간을 변경합니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - deadlineAlarm
+              properties:
+                deadlineAlarm:
+                  type: integer
+                  description: 알림 전송 시간 (시간 단위)
+                  example: 24
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                    example: 최종 마감 시간의 알림 전송 시간을 변경했습니다.
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        properties:
+                          userId:
+                            type: integer
+                            example: 1
+                          nickname:
+                            type: string
+                            example: 홍길동
+                          deadlineAlarm:
+                            type: integer
+                            example: 24
+  # 과제 마감 알림 설정 수정
+  /api/v1/alarm/settings/task:
+    patch:
+      tags:
+        - Alarm
+      summary: 과제 마감 알림 설정 수정
+      description: 사용자의 과제 마감 알림 전송 시간을 변경합니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - taskAlarm
+              properties:
+                taskAlarm:
+                  type: integer
+                  description: 알림 전송 시간 (시간 단위)
+                  example: 24
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                    example: 과제 마감 시간의 알림 전송 시간을 변경했습니다.
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        properties:
+                          userId:
+                            type: integer
+                            example: 1
+                          nickname:
+                            type: string
+                            example: 홍길동
+                          taskAlarm:
+                            type: integer
+                            example: 24
+  # 과제 알림 여부 수정
+  /api/v1/alarm/task/{taskId}:
+    patch:
+      tags:
+        - Alarm
+      summary: 과제 알림 여부 수정
+      description: 특정 과제의 알림 여부를 변경합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+          description: 과제 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - isAlarm
+              properties:
+                isAlarm:
+                  type: boolean
+                  description: 알림 여부
+                  example: true
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                    example: 과제에 대한 알림 여부를 변경하였습니다.
+                  data:
+                    type: object
+                    properties:
+                      task:
+                        type: object
+                        properties:
+                          taskId:
+                            type: integer
+                            example: 1
+                          title:
+                            type: string
+                            example: 포트폴리오 웹사이트 제작
+                          deadline:
+                            type: string
+                            format: date
+                            example: "2026-01-27"
+                          isAlarm:
+                            type: boolean
+                            example: true
+                          updatedAt:
+                            type: string
+                            format: date-time
+                            example: "2026-01-20T10:00:00.000Z"
+  # 세부과제 알림 여부 수정
+  /api/v1/alarm/subtask/{subtaskId}:
+    patch:
+      tags:
+        - Alarm
+      summary: 세부과제 알림 여부 수정
+      description: 특정 세부과제의 알림 여부를 변경합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: subtaskId
+          required: true
+          schema:
+            type: integer
+          description: 세부과제 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - isAlarm
+              properties:
+                isAlarm:
+                  type: boolean
+                  description: 알림 여부
+                  example: true
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                    example: 세부과제에 대한 알림 여부를 변경하였습니다.
+                  data:
+                    type: object
+                    properties:
+                      subtask:
+                        type: object
+                        properties:
+                          subTaskId:
+                            type: integer
+                            example: 1
+                          assigneeId:
+                            type: integer
+                            nullable: true
+                            example: 1
+                          taskId:
+                            type: integer
+                            example: 1
+                          title:
+                            type: string
+                            example: 디자인 완료
+                          endDate:
+                            type: string
+                            format: date
+                            example: "2026-01-23"
+                          isAlarm:
+                            type: boolean
+                            example: true
+                          updatedAt:
+                            type: string
+                            format: date-time
+                            example: "2026-01-20T10:00:00.000Z"
+  # -- 과제 API --
+  # 과제 등록
+  /api/v1/task:
+    post:
+      tags:
+        - Task
+      summary: 과제 생성
+      description: 새로운 과제와 세부 태스크들을 생성합니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, deadline, type]
+              properties:
+                title:
+                  type: string
+                  example: "프로젝트1"
+                folderId:
+                  type: integer
+                  example: 1
+                deadline:
+                  type: string
+                  format: date
+                  example: "2026-05-10"
+                type:
+                  type: string
+                  enum: [TEAM, PERSONAL]
+                  example: "PERSONAL"
+                subTasks:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        example: "세부과제1"
+                      endDate:
+                        type: string
+                        format: date
+                        example: "2026-05-05"
+                references:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        example: "참고 문서 1"
+                      url:
+                        type: string
+                        example: "https://example.com"
+      responses:
+        '201':
+          description: 과제 등록 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "요청이 처리되어서 새로운 과제가 생성되었습니다."
+                  data:
+                    type: object
+                    properties:
+                      taskId:
+                        type: integer
+                        example: 13
+
+    # 과제 목록 조회
+    get:
+      tags:
+        - Task
+      summary: 과제 목록 조회
+      description: 필터(유형, 폴더) 및 정렬 조건에 따라 과제 목록을 조회합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [TEAM, PERSONAL]
+          description: 과제 유형 필터
+        - in: query
+          name: folderId
+          schema:
+            type: integer
+          description: 폴더별 필터
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [PROGRESSRATE, DEADLINE, PRIORITY]
+          description: 정렬 기준 (진척도순, 마감임박순, 우선순위순)
+      responses:
+        '200':
+          description: 과제 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message: 
+                    type: string
+                    example: "서버가 요청을 성공적으로 처리하였습니다."
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        taskId:
+                          type: integer
+                          example: 1
+                        folderId:
+                          type: integer
+                          example: 1
+                        folderTitle:
+                          type: string
+                          example: "PENDING"
+                        title:
+                          type: string
+                          example: "프로젝트1"
+                        type:
+                          type: string
+                          example: "TEAM"
+                        deadline:
+                          type: string
+                          example: "2026.06.15"
+                        dDay:
+                          type: string
+                          example: "D-10"
+                        progressRate:
+                          type: integer
+                          example: "50"
+
+  # 과제 상세 조회
+  /api/v1/task/{taskId}:
+    get:
+      tags:
+        - Task
+      summary: 과제 상세 정보 조회
+      description: 특정 과제의 세부 태스크, 진행률, 팀원 정보 등을 조회합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 과제 상세 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "서버가 요청을 성공적으로 처리하였습니다."
+                  data:
+                    type: object
+                    properties:
+                      taskId:
+                        type: integer
+                        example: 1
+                      title:
+                        type: string
+                        example: "프로젝트1"
+                      type:
+                        type: string
+                        example: "TEAM"
+                      deadline:
+                        type: string
+                        format: date
+                        example: "2026-06-15"
+                      dDay:
+                        type: string
+                        example: "D-10"
+                      progressRate:
+                        type: integer
+                        example: 0
+                      subTasks:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            subTaskId:
+                              type: integer
+                              example: 1
+                            title:
+                              type: string
+                              example: "세부과제 1"
+                            deadline:
+                              type: string
+                              format: date
+                              example: "2026-05-10"
+                            status:
+                              type: string
+                              example: "PROGRESS"
+                            isAlarm:
+                              type: boolean
+                              example: true
+                            commentCount:
+                              type: integer
+                              example: 0
+                            assigneeName:
+                              type: string
+                              example: "PENDING"
+                      communications:
+                        type: array
+                        items:
+                          type: object
+                        example: []
+                      meetingLogs:
+                        type: array
+                        items:
+                          type: object
+                        example: []
+                      references:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              example: "레퍼런스1"
+                            url:
+                              type: string
+                              example: "https://www.example.com"
+    
+    # 과제 수정
+    patch:
+      tags:
+        - Task
+      summary: 과제 수정
+      description: 과제의 기본 정보 및 세부 태스크를 수정합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                deadline:
+                  type: string
+                  format: date
+      responses:
+        '200':
+          description: 과제 수정 성공
+          content:
+            application/json:
+              schema:
+              type: object
+              properties:
+                resultType: 
+                  type: string
+                  example: "SUCCESS"
+                message:
+                  type: string
+                  example: "요청이 성공적으로 처리되었습니다."
+                data:
+                  type: object
+                  properties:
+                    taskId: 
+                      type: integer
+                      example: 1
+
+
+    # 과제 삭제
+    delete:
+      tags:
+        - Task
+      summary: 과제 삭제
+      description: 과제를 삭제합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 과제 삭제 성공
+          content:
+            application/json:
+              schema:
+              type: object
+              properties:
+                resultType:
+                  type: string
+                  example: "SUCCESS"
+                message: 
+                  type: string
+                  example: "과제가 성공적으로 삭제되었습니다."
+                data:
+                  type: "null"
+                  example: null
+
+
+  # 우선순위 일괄 수정
+  /api/v1/task/priority:
+    patch:
+      tags:
+        - Task
+      summary: 과제 우선순위 일괄 변경
+      description: 드래그 앤 드롭으로 변경된 과제들의 순서를 일괄 저장합니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                orderedTasks:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      taskId:
+                        type: integer
+                      rank:
+                        type: integer
+      responses:
+        '200':
+          description: 우선순위 변경 성공
+          content:
+           application/json:
+            schema:
+              type: object
+              properties:
+                resultType:
+                  type: string
+                  example: "SUCCESS"
+                message: 
+                  type: string
+                  example: "과제 우선순위가 일괄 변경되었습니다." 
+                data:
+                  type: null
+                  example: null
+
+  # 팀원 정보(역할) 수정
+  /api/v1/task/{taskId}/member/{memberId}:
+    patch:
+      tags:
+        - Task
+      summary: 팀원 역할 수정
+      description: 팀원의 역할(관리자/일반)을 변경합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: memberId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: integer
+                  description: "0: 일반, 1: 관리자"
+                  example: 1
+      responses:
+        '200':
+          description: 역할 수정 성공
+          content:
+            application/json:
+              schema:
+              type: object
+              properties:
+                resultType:
+                  type: string
+                  example: "SUCCESS"
+                message: 
+                  type: string
+                  example: "요청이 성공적으로 처리되었습니다."
+                data:
+                    type: object
+                    properties:
+                      memberId:
+                        type: integer
+                        example: 1
+                      userid:
+                        type: integer
+                        example: 1
+                      taskId:
+                        type: integer
+                        example: 1
+                      role:
+                        type: integer
+                        example: 1
+
 
   # 팀원 초대 링크 생성
   /api/v1/task/{taskId}/invitation:
@@ -359,6 +1153,70 @@ paths:
         '500':
           description: |
             - INTERNAL_SERVER_ERROR: 서버 오류가 발생했습니다.
+
+  # 초대 코드로 팀 참여
+  /api/v1/task/join:
+    post:
+      tags:
+        - Task
+      summary: 초대 코드로 팀 참여
+      description: 초대 코드를 사용하여 팀 과제에 참여합니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - inviteCode
+              properties:
+                inviteCode:
+                  type: string
+                  description: 팀 과제 초대 코드
+                  example: "ABC12345"
+      responses:
+        '200':
+          description: 팀 참여 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "팀에 성공적으로 참여했습니다."
+                  data:
+                    type: object
+                    properties:
+                      task_id:
+                        type: integer
+                        description: 참여한 과제 ID
+                        example: 1
+                      task_title:
+                        type: string
+                        description: 참여한 과제 제목
+                        example: "팀 프로젝트 개발"
+                      member_id:
+                        type: integer
+                        description: 생성된 멤버 ID
+                        example: 5
+        '400':
+          description: |
+            잘못된 요청
+            - INVALID_INVITE_CODE: 유효하지 않은 초대 코드입니다.
+        '403':
+          description: |
+            권한 없음
+            - EXPIRED_INVITE_CODE: 만료된 초대 코드입니다.
+            - ALREADY_MEMBER: 이미 팀 멤버입니다.
+        '404':
+          description: |
+            - INVALID_INVITE_CODE: 유효하지 않은 초대 코드입니다.
 
   # 댓글 관련 API
   /api/v1/task/subtask/{subTaskId}/comments:

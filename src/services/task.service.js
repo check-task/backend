@@ -225,6 +225,46 @@ class TaskService {
     return tasks;
   }
 
+  // 우선순위 변경
+  async updatePriorities(userId, orderedTasks) {
+    // 일괄 변경 트랜잭션 처리 
+    return await prisma.$transaction(async (tx) => {
+      for (const item of orderedTasks) {
+        await taskRepository.upsertTaskPriority(userId, item.taskId, item.rank, tx);
+      }
+    });
+  }
+
+  // 세부 TASK 완료 처리 API 
+  async updateSubTaskStatus(subTaskId, status) {
+    try {
+      // 서브태스크 존재 여부 확인
+      const existingTask = await prisma.SubTask.findUnique({
+        where: { id: parseInt(subTaskId) },
+      });
+
+      if (!existingTask) {
+        const error = new Error('해당하는 세부 태스크를 찾을 수 없습니다.');
+        error.status = 404;
+        throw error;
+      }
+
+      // 상태 업데이트(프리지마 모델명은 대소문자 구분!)
+      const updatedTask = await prisma.SubTask.update({
+        where: { id: parseInt(subTaskId) },
+        data: {
+          status: status === 'COMPLETE' ? 'COMPLETED' : 'PENDING',
+          updatedAt: new Date()
+        },
+      });
+
+      return updatedTask;
+    } catch (error) {
+      console.error('Error updating subtask status:', error);
+      throw error;
+    }
+  }
+
   // 세부 TASK 완료 처리 API 
   async updateSubTaskStatus(subTaskId, status) {
     try {
@@ -582,6 +622,22 @@ class TaskService {
         taskTitle: task.title,
         memberId: newMember.id,
       };
+    });
+  }
+
+  // 팀원 정보 수정
+  async modifyMemberRole(taskId, memberId, role) {
+    const member = await taskRepository.findMemberInTask(taskId, memberId);
+    if (!member) throw new NotFoundError("멤버를 찾을 수 없음");
+
+    const isAdmin = role === 1;
+
+    return await prisma.$transaction(async (tx) => {
+      if (isAdmin) {
+        await taskRepository.resetOtherMembersRole(taskId, memberId, tx);
+      }
+
+      return await taskRepository.updateMemberRole(memberId, isAdmin, tx);
     });
   }
 

@@ -1,17 +1,4 @@
 -- CreateTable
-CREATE TABLE `TaskPriority` (
-    `priority_id` INTEGER NOT NULL AUTO_INCREMENT,
-    `user_id` INTEGER NOT NULL,
-    `task_id` INTEGER NOT NULL,
-    `rank` INTEGER NOT NULL,
-    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` DATETIME NULL,
-
-    UNIQUE INDEX `TaskPriority_user_id_task_id_key`(`user_id`, `task_id`),
-    PRIMARY KEY (`priority_id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
 CREATE TABLE `User` (
     `user_id` INTEGER NOT NULL AUTO_INCREMENT,
     `nickname` VARCHAR(10) NOT NULL,
@@ -152,12 +139,6 @@ CREATE TABLE `Communication` (
 
     PRIMARY KEY (`comu_id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- AddForeignKey
-ALTER TABLE `TaskPriority` ADD CONSTRAINT `TaskPriority_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `User`(`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `TaskPriority` ADD CONSTRAINT `TaskPriority_task_id_fkey` FOREIGN KEY (`task_id`) REFERENCES `Task`(`task_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `UserAlarm` ADD CONSTRAINT `UserAlarm_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `User`(`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
