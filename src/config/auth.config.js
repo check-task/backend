@@ -1,5 +1,7 @@
 import { Strategy as KakaoStrategy } from "passport-kakao";
 import { KakaoAuthService } from "../services/auth.service.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 const kakaoAuthService = new KakaoAuthService();
 
