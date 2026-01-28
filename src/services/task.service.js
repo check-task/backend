@@ -3,8 +3,8 @@ import { BadRequestError, NotFoundError, ForbiddenError } from "../errors/custom
 import { getUserData } from "../repositories/user.repository.js";
 import { TaskResponseDTO } from "../dtos/task.dto.js";
 import { prisma } from "../db.config.js";
-import { createTaskAlarm, createSubTaskAlarm, deleteSubTaskAlarm } from "../repositories/alarm.repository.js";
 import { calculateAlarmDate } from "../utils/calculateAlarmDate.js";
+import alarmRepository from "../repositories/alarm.repository.js";
 
 class TaskService {
   // 완료 과제 조회
@@ -53,7 +53,7 @@ class TaskService {
               const alarmHours = user.taskAlarm || 24;
               const alarmDate = calculateAlarmDate(newTask.deadline, alarmHours);
 
-              return createTaskAlarm(
+              return alarmRepository.createTaskAlarm(
                 member.userId,
                 newTask.id,
                 newTask.title,
@@ -74,7 +74,7 @@ class TaskService {
             const alarmHours = creator.taskAlarm || 24;
             const alarmDate = calculateAlarmDate(newTask.deadline, alarmHours);
 
-            await createTaskAlarm(
+            await alarmRepository.createTaskAlarm(
               userId,
               newTask.id,
               newTask.title,
@@ -104,7 +104,7 @@ class TaskService {
               const alarmDate = new Date(subTask.endDate);
               alarmDate.setHours(alarmDate.getHours() - alarmHours);
 
-              await createSubTaskAlarm(
+              await alarmRepository.createSubTaskAlarm(
                 subTask.assigneeId,
                 subTask.taskId,
                 subTask.id,
@@ -163,7 +163,7 @@ class TaskService {
               const alarmHours = assignee.taskAlarm || 24;
               const alarmDate = calculateAlarmDate(subTask.endDate, alarmHours);
 
-              await createSubTaskAlarm(
+              await alarmRepository.createSubTaskAlarm(
                 subTask.assigneeId,
                 subTask.taskId,
                 subTask.id,
@@ -440,7 +440,7 @@ class TaskService {
       return await prisma.$transaction(async (tx) => {
         // 이전 담당자가 있고, 담당자가 변경되는 경우 이전 담당자의 알림 삭제
         if (previousAssigneeId && previousAssigneeId !== parseInt(assigneeId || 0)) {
-          await deleteSubTaskAlarm(previousAssigneeId, parsedSubTaskId);
+          await alarmRepository.deleteSubTaskAlarm(previousAssigneeId, parsedSubTaskId);
         }
 
         // 담당자 업데이트 (assigneeId가 null이면 담당자 해제)
@@ -457,7 +457,7 @@ class TaskService {
 
         // 담당자가 해제된 경우 (assigneeId가 null) 이전 담당자의 알림 삭제
         if (!assigneeId && previousAssigneeId) {
-          await deleteSubTaskAlarm(previousAssigneeId, parsedSubTaskId, tx);
+          await alarmRepository.deleteSubTaskAlarm(previousAssigneeId, parsedSubTaskId, tx);
         }
 
         // 담당자가 새로 설정되었고, 세부과제 알림이 켜져있으면 알림 생성
@@ -472,7 +472,7 @@ class TaskService {
             const alarmHours = newAssignee.taskAlarm || 24;
             const alarmDate = calculateAlarmDate(updatedTask.endDate, alarmHours);
 
-            await createSubTaskAlarm(
+            await alarmRepository.createSubTaskAlarm(
               parseInt(assigneeId),
               parseInt(updatedTask.taskId),
               parseInt(updatedTask.id),
@@ -606,7 +606,7 @@ class TaskService {
           const alarmHours = user.taskAlarm || 24;
           const alarmDate = calculateAlarmDate(task.deadline, alarmHours);
 
-          await createTaskAlarm(
+          await alarmRepository.createTaskAlarm(
             userId,
             task.id,
             task.title,
