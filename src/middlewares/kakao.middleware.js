@@ -1,4 +1,6 @@
 import passport from "../config/passport.config.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 export const kakaoMiddleware = {
   // 카카오 로그인 시작
