@@ -63,7 +63,7 @@ jobs:
             if pm2 describe backend > /dev/null; then
               pm2 reload backend --update-env
             else
-              pm2 start src/index.js --name backend --update-env
+              pm2 start src/index.js --name backend
             fi
             pm2 status
           EOF
