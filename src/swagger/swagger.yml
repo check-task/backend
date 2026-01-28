@@ -23,8 +23,8 @@ tags:
     description: 폴더 관련 API
   - name: Comment
     description: 댓글 관련 API
-  - name: Modal
-    description: 모달/자료 관련 API
+  - name: Reference
+    description: 자료/커뮤니케이션/회의록 관련 API
   - name: Kakao Auth
     description: 카카오 인증 관련 API
 
@@ -2024,3 +2024,742 @@ paths:
                   errorCode: "USER_WITHDRAW_FAILED"
                   reason: "회원 탈퇴 처리 중 오류가 발생했습니다"
                   data: null
+  # -- 자료 API --
+  # 자료 생성 (파일 업로드)
+  /api/v1/reference/data/{taskId}:
+    post:
+      tags:
+        - Reference
+      summary: 자료 생성
+      description: 과제에 자료를 추가합니다. (파일 업로드 또는 URL 추가)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+          description: 과제 ID
+        - in: query
+          name: type
+          required: true
+          schema:
+            type: string
+            enum: [file, url]
+          description: 자료 타입 (file 또는 url)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 자료 이름 (파일의 경우 선택, URL의 경우 필수)
+                url:
+                  type: string
+                  description: URL (type=url일 때 필수)
+                file_url:
+                  type: string
+                  format: binary
+                  description: 파일 (type=file일 때 필수)
+      responses:
+        '200':
+          description: 자료 생성 성공 (해당 과제의 전체 자료 목록 반환)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  isSuccess:
+                    type: boolean
+                    example: true
+                  code:
+                    type: string
+                    example: "COMMON200"
+                  message:
+                    type: string
+                    example: "자료 생성 성공"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        reference_id:
+                          type: integer
+                          example: 1
+                        name:
+                          type: string
+                          example: "프로젝트 자료"
+                        url:
+                          type: string
+                          nullable: true
+                          example: "https://example.com"
+                        file_url:
+                          type: string
+                          nullable: true
+                          example: "https://s3.amazonaws.com/..."
+                    example:
+                      - reference_id: 1
+                        name: "기존 자료 1"
+                        url: "https://example1.com"
+                        file_url: null                   
+                      - reference_id: 2
+                        name: "새로 추가된 자료"
+                        url: null
+                        file_url: "https://s3.amazonaws.com/..."                     
+        '400':
+          description: 잘못된 요청 (필수 필드 누락, 타입 오류 등)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 400
+                  isSuccess:
+                    type: boolean
+                    example: false
+                  code:
+                    type: string
+                    example: "COMMON400"
+                  message:
+                    type: string
+                    example: "url은 필수입니다."
+        '401':
+          description: 인증 실패
+        '403':
+          description: 권한 없음
+        '404':
+          description: 과제를 찾을 수 없음
+
+  # 자료 수정
+  /api/v1/reference/data/{taskId}/{referenceId}:
+    patch:
+      tags:
+        - Reference
+      summary: 자료 수정
+      description: 과제의 자료를 수정합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+          description: 과제 ID
+        - in: path
+          name: referenceId
+          required: true
+          schema:
+            type: integer
+          description: 자료 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 자료 이름
+                url:
+                  type: string
+                  description: URL
+                file_url:
+                  type: string
+                  description: 파일 URL
+              example:
+                name: "수정된 자료 이름"
+                url: "https://updated-example.com"
+      responses:
+        '200':
+          description: 자료 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  isSuccess:
+                    type: boolean
+                    example: true
+                  code:
+                    type: string
+                    example: "COMMON200"
+                  message:
+                    type: string
+                    example: "자료 수정 성공"
+                  data:
+                    type: object
+                    properties:
+                      reference_id:
+                        type: integer
+                        example: 1
+                      task_id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: "수정된 자료 이름"
+                      url:
+                        type: string
+                        nullable: true
+                        example: "https://updated-example.com"
+                      file_url:
+                        type: string
+                        nullable: true
+                        example: "https://s3.amazonaws.com/..."
+                      updated_at:
+                        type: string
+                        format: date-time
+                        example: "2026-01-28T11:00:00Z"
+        '400':
+          description: 잘못된 요청
+        '401':
+          description: 인증 실패
+        '403':
+          description: 권한 없음
+        '404':
+          description: 자료를 찾을 수 없음
+
+    delete:
+      tags:
+        - Reference
+      summary: 자료 삭제
+      description: 과제의 자료를 삭제합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+          description: 과제 ID
+        - in: path
+          name: referenceId
+          required: true
+          schema:
+            type: integer
+          description: 자료 ID
+      responses:
+        '200':
+          description: 자료 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  isSuccess:
+                    type: boolean
+                    example: true
+                  code:
+                    type: string
+                    example: "COMMON200"
+                  message:
+                    type: string
+                    example: "자료 삭제 성공"
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+        '400':
+          description: 잘못된 요청
+        '401':
+          description: 인증 실패
+        '403':
+          description: 권한 없음
+        '404':
+          description: 자료를 찾을 수 없음
+
+  # -- 커뮤니케이션 API --
+  # 커뮤니케이션 생성
+  /api/v1/reference/communication/{taskId}:
+    post:
+      tags:
+        - Reference
+      summary: 커뮤니케이션 생성
+      description: 과제에 커뮤니케이션 링크를 추가합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+          description: 과제 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - url
+              properties:
+                name:
+                  type: string
+                  description: 커뮤니케이션 이름
+                url:
+                  type: string
+                  description: 커뮤니케이션 URL
+              example:
+                name: "팀 슬랙 채널"
+                url: "https://slack.com/channel/..."
+      responses:
+        '200':
+          description: 커뮤니케이션 생성 성공 (해당 과제의 전체 커뮤니케이션 목록 반환)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  isSuccess:
+                    type: boolean
+                    example: true
+                  code:
+                    type: string
+                    example: "COMMON200"
+                  message:
+                    type: string
+                    example: "커뮤니케이션 생성 성공"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        communication_id:
+                          type: integer
+                          example: 1
+                        name:
+                          type: string
+                          example: "팀 슬랙 채널"
+                        url:
+                          type: string
+                          example: "https://slack.com/channel/..."
+                    example:
+                      - communication_id: 1 
+                        name: "기존 슬랙 채널"
+                        url: "https://slack.com/old-channel"
+                      - communication_id: 2
+                        name: "새로 추가된 디스코드"
+                        url: "https://discord.com/..."
+        '400':
+          description: 잘못된 요청
+        '401':
+          description: 인증 실패
+        '403':
+          description: 권한 없음
+        '404':
+          description: 과제를 찾을 수 없음
+
+  # 커뮤니케이션 수정 및 삭제
+  /api/v1/modal/communication/{taskId}/{communicationId}:
+    patch:
+      tags:
+        - Reference
+      summary: 커뮤니케이션 수정
+      description: 과제의 커뮤니케이션을 수정합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+          description: 과제 ID
+        - in: path
+          name: communicationId
+          required: true
+          schema:
+            type: integer
+          description: 커뮤니케이션 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 커뮤니케이션 이름
+                url:
+                  type: string
+                  description: 커뮤니케이션 URL
+              example:
+                name: "수정된 슬랙 채널"
+                url: "https://slack.com/new-channel/..."
+      responses:
+        '200':
+          description: 커뮤니케이션 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  isSuccess:
+                    type: boolean
+                    example: true
+                  code:
+                    type: string
+                    example: "COMMON200"
+                  message:
+                    type: string
+                    example: "커뮤니케이션 수정 성공"
+                  data:
+                    type: object
+                    properties:
+                      communication_id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: "수정된 슬랙 채널"
+                      url:
+                        type: string
+                        example: "https://slack.com/new-channel/..."
+        '400':
+          description: 잘못된 요청
+        '401':
+          description: 인증 실패
+        '403':
+          description: 권한 없음
+        '404':
+          description: 커뮤니케이션을 찾을 수 없음
+
+    delete:
+      tags:
+        - Reference
+      summary: 커뮤니케이션 삭제
+      description: 과제의 커뮤니케이션을 삭제합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+          description: 과제 ID
+        - in: path
+          name: communicationId
+          required: true
+          schema:
+            type: integer
+          description: 커뮤니케이션 ID
+      responses:
+        '200':
+          description: 커뮤니케이션 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  isSuccess:
+                    type: boolean
+                    example: true
+                  code:
+                    type: string
+                    example: "COMMON200"
+                  message:
+                    type: string
+                    example: "커뮤니케이션 삭제 성공"
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+        '400':
+          description: 잘못된 요청
+        '401':
+          description: 인증 실패
+        '403':
+          description: 권한 없음
+        '404':
+          description: 커뮤니케이션을 찾을 수 없음
+
+  # -- 회의록 API --
+  # 회의록 생성
+  /api/v1/reference/log/{taskId}:
+    post:
+      tags:
+        - Reference
+      summary: 회의록 생성
+      description: 과제에 회의록을 추가합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+          description: 과제 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - date
+              properties:
+                date:
+                  type: string
+                  format: date
+                  description: 회의 일자 (YYYY.MM.DD 또는 ISO 형식)
+                agenda:
+                  type: string
+                  nullable: true
+                  description: 회의 안건
+                conclusion:
+                  type: string
+                  nullable: true
+                  description: 회의 결론
+                discussion:
+                  type: string
+                  nullable: true
+                  description: 회의 논의 내용
+              example:
+                date: "2026.01.28"
+                agenda: "프로젝트 진행 현황 점검"
+                conclusion: "다음 주까지 기능 구현 완료"
+                discussion: "각자 맡은 부분에 대한 진행 상황 공유"
+      responses:
+        '200':
+          description: 회의록 생성 성공 (해당 과제의 전체 회의록 목록 반환)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  isSuccess:
+                    type: boolean
+                    example: true
+                  code:
+                    type: string
+                    example: "COMMON200"
+                  message:
+                    type: string
+                    example: "회의록 생성 성공"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        log_id:
+                          type: integer
+                          example: 1
+                        date:
+                          type: string
+                          format: date-time
+                          example: "2026-01-28T00:00:00Z"
+                        agenda:
+                          type: string
+                          nullable: true
+                          example: "프로젝트 진행 현황 점검"
+                        conclusion:
+                          type: string
+                          nullable: true
+                          example: "다음 주까지 기능 구현 완료"
+                        discussion:
+                          type: string
+                          nullable: true
+                          example: "각자 맡은 부분에 대한 진행 상황 공유"
+              
+                    example:
+                      - log_id: 1
+                        date: "2026-01-27T00:00:00Z"
+                        agenda: "1차 회의"
+                        conclusion: "역할 분담 완료"
+                        discussion: "팀원 소개 및 목표 설정"
+                      - log_id: 2
+                        date: "2026-01-28T00:00:00Z"
+                        agenda: "프로젝트 진행 현황 점검"
+                        conclusion: "다음 주까지 기능 구현 완료"
+                        discussion: "각자 맡은 부분에 대한 진행 상황 공유"
+        '400':
+          description: 잘못된 요청
+        '401':
+          description: 인증 실패
+        '403':
+          description: 권한 없음
+        '404':
+          description: 과제를 찾을 수 없음
+
+  # 회의록 수정 및 삭제
+  /api/v1/reference/log/{taskId}/{logId}:
+    patch:
+      tags:
+        - Reference
+      summary: 회의록 수정
+      description: 과제의 회의록을 수정합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+          description: 과제 ID
+        - in: path
+          name: logId
+          required: true
+          schema:
+            type: integer
+          description: 회의록 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                date:
+                  type: string
+                  format: date
+                  description: 회의 일자 (YYYY.MM.DD)
+                agenda:
+                  type: string
+                  description: 회의 안건
+                conclusion:
+                  type: string
+                  description: 회의 결론
+                discussion:
+                  type: string
+                  description: 회의 논의 내용
+              example:
+                date: "2026.01.29"
+                agenda: "수정된 안건"
+                conclusion: "수정된 결론"
+      responses:
+        '200':
+          description: 회의록 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  isSuccess:
+                    type: boolean
+                    example: true
+                  code:
+                    type: string
+                    example: "COMMON200"
+                  message:
+                    type: string
+                    example: "회의록 수정 성공"
+                  data:
+                    type: object
+                    properties:
+                      log_id:
+                        type: integer
+                        example: 1
+                      date:
+                        type: string
+                        format: date-time
+                        example: "2026-01-29T00:00:00Z"
+                      agenda:
+                        type: string
+                        example: "수정된 안건"
+                      conclusion:
+                        type: string
+                        example: "수정된 결론"
+                      discussion:
+                        type: string
+                        example: "수정된 논의 내용"
+                    
+        '400':
+          description: 잘못된 요청
+        '401':
+          description: 인증 실패
+        '403':
+          description: 권한 없음
+        '404':
+          description: 회의록을 찾을 수 없음
+
+    delete:
+      tags:
+        - Reference
+      summary: 회의록 삭제
+      description: 과제의 회의록을 삭제합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+          description: 과제 ID
+        - in: path
+          name: logId
+          required: true
+          schema:
+            type: integer
+          description: 회의록 ID
+      responses:
+        '200':
+          description: 회의록 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  isSuccess:
+                    type: boolean
+                    example: true
+                  code:
+                    type: string
+                    example: "COMMON200"
+                  message:
+                    type: string
+                    example: "회의록 삭제 성공"
+                  data:
+                    type: object
+                    nullable: true
+                    example: null
+        '400':
+          description: 잘못된 요청
+        '401':
+          description: 인증 실패
+        '403':
+          description: 권한 없음
+        '404':
+          description: 회의록을 찾을 수 없음
