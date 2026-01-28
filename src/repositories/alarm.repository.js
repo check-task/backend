@@ -1,178 +1,163 @@
 import prisma from "../db.config.js";
 import dayjs from "dayjs";
 
+class AlarmRepository {
+  async findAlarmsByUserId(userId, options = {}) {
+    const {
+      cursor = null,
+      limit = 10,
+      orderBy = "alarmDate",
+      order = "desc",
+    } = options;
 
-export const findAlarmsByUserId = async (userId, options = {}) => {
-  // 기본값 적용
-  const {
-    cursor = null,
-    limit = 10,
-    orderBy = "alarmDate",
-    order = "desc",
-  } = options;
+    const kstDate = dayjs().add(9, "hour").toDate();
 
-  const kstDate = dayjs().add(9, "hour").toDate();
-
-  const where = {
-    userId,
-    alarmDate: {
-      lte: kstDate,
-    },
-    ...(cursor && { id: { lt: cursor } }),
-  };
-
-  const alarms = await prisma.userAlarm.findMany({
-    where,
-    orderBy: {
-      [orderBy]: order,
-    },
-    take: limit + 1,
-  });
-
-  return alarms;
-};
-
-// 과제 알림 생성
-export const createTaskAlarm = async (userId, taskId, taskTitle, alarmDate, tx = prisma) => {
-  return await tx.userAlarm.create({
-    data: {
+    const where = {
       userId,
-      taskId,
-      title: "과제 생성 알림",
-      alarmContent: `${taskTitle} 과제가 생성되었습니다`,
-      alarmDate,
-      isRead: false,
-      createdAt: new Date(Date.now() + 9 * 60 * 60 * 1000),
-    },
-  });
-};
-// 세부과제 알림 생성
-export const createSubTaskAlarm = async (userId, taskId, subTaskId, subTaskTitle, alarmDate, tx = prisma) => {
-  return await tx.userAlarm.create({
-    data: {
-      userId,
-      taskId,
-      subTaskId,
-      title: "세부과제 생성 알림",
-      alarmContent: `${subTaskTitle} 세부과제가 생성되었습니다`,
-      alarmDate,
-      isRead: false,
-      createdAt: new Date(Date.now() + 9 * 60 * 60 * 1000),
-    },
-  });
-};
+      alarmDate: {
+        lte: kstDate,
+      },
+      ...(cursor && { id: { lt: cursor } }),
+    };
 
-// 개별 알림 삭제
-export const deleteAlarmById = async (alarmId) => {
-  return await prisma.userAlarm.delete({
-    where: { id: alarmId },
-  });
-};
+    return await prisma.userAlarm.findMany({
+      where,
+      orderBy: {
+        [orderBy]: order,
+      },
+      take: limit + 1,
+    });
+  }
 
-// 알림 존재 여부 및 소유자 확인
-export const findAlarmById = async (alarmId) => {
-  return await prisma.userAlarm.findUnique({
-    where: { id: alarmId },
-    select: {
-      id: true,
-      userId: true,
-    },
-  });
-};
+  async createTaskAlarm(userId, taskId, taskTitle, alarmDate, tx = prisma) {
+    return await tx.userAlarm.create({
+      data: {
+        userId,
+        taskId,
+        title: "과제 생성 알림",
+        alarmContent: `${taskTitle} 과제가 생성되었습니다`,
+        alarmDate,
+        isRead: false,
+        createdAt: new Date(Date.now() + 9 * 60 * 60 * 1000),
+      },
+    });
+  }
 
-// 유저의 모든 알림 삭제
-export const deleteAllAlarmsByUserId = async (userId) => {
-  return await prisma.userAlarm.deleteMany({
-    where: { userId },
-  });
-};
+  async createSubTaskAlarm(userId, taskId, subTaskId, subTaskTitle, alarmDate, tx = prisma) {
+    return await tx.userAlarm.create({
+      data: {
+        userId,
+        taskId,
+        subTaskId,
+        title: "세부과제 생성 알림",
+        alarmContent: `${subTaskTitle} 세부과제가 생성되었습니다`,
+        alarmDate,
+        isRead: false,
+        createdAt: new Date(Date.now() + 9 * 60 * 60 * 1000),
+      },
+    });
+  }
 
-// 최종 마감 알림 수정
-export const updateDeadlineAlarm = async (userId, deadlineAlarm) => {
-  // 업데이트 후 유저 정보 반환
-  return await prisma.user.update({
-    where: { id: userId },
-    data: { deadlineAlarm },
-    select: {
-      id: true,
-      nickname: true,
-      deadlineAlarm: true,
-    },
-  });
-};
+  async deleteAlarmById(alarmId) {
+    return await prisma.userAlarm.delete({
+      where: { id: alarmId },
+    });
+  }
 
-// 최종 과제 알림 수정
-export const updateTaskAlarm = async (userId, taskAlarm) => {
-  // 업데이트 후 유저 정보 반환
-  return await prisma.user.update({
-    where: { id: userId },
-    data: { taskAlarm },
-    select: {
-      id: true,
-      nickname: true,
-      taskAlarm: true,
-    },
-  });
-};
+  async findAlarmById(alarmId) {
+    return await prisma.userAlarm.findUnique({
+      where: { id: alarmId },
+      select: {
+        id: true,
+        userId: true,
+      },
+    });
+  }
 
-// 과제 알림 여부 설정
-export const updateTaskAlarmStatusRepository = async (taskId, isAlarm) => {
-  return await prisma.task.update({
-    where: { id: taskId },
-    data: { isAlarm },
-    select: {
-      id: true,
-      title: true,
-      deadline: true,
-      isAlarm: true,
-      updatedAt: true,
-    },
-  });
-};
+  async deleteAllAlarmsByUserId(userId) {
+    return await prisma.userAlarm.deleteMany({
+      where: { userId },
+    });
+  }
 
-// 세부과제 알림 여부 설정
-export const updateSubtaskAlarmStatusRepository = async (
-  subTaskId,
-  isAlarm
-) => {
-  return await prisma.subTask.update({
-    where: { id: subTaskId },
-    data: { isAlarm },
-    select: {
-      id: true,
-      assigneeId: true,
-      taskId: true,
-      title: true,
-      endDate: true,
-      isAlarm: true,
-      updatedAt: true,
-    },
-  });
-};
+  async updateDeadlineAlarm(userId, deadlineAlarm) {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: { deadlineAlarm },
+      select: {
+        id: true,
+        nickname: true,
+        deadlineAlarm: true,
+      },
+    });
+  }
 
-//  알림 읽음 처리
-export const updateAlarmReadStatusRepository = async (alarmId, isRead) => {
-  return await prisma.userAlarm.update({
-    where: { id: alarmId },
-    data: { isRead },
-    select: {
-      id: true,
-      userId: true,
-      taskId: true,
-      subTaskId: true,
-      title: true,
-      alarmContent: true,
-      isRead: true,
-    },
-  });
-};
+  async updateTaskAlarm(userId, taskAlarm) {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: { taskAlarm },
+      select: {
+        id: true,
+        nickname: true,
+        taskAlarm: true,
+      },
+    });
+  }
 
-// 세부과제 알림 삭제 (특정 세부과제의 특정 사용자 알림 삭제)
-export const deleteSubTaskAlarm = async (userId, subTaskId) => {
-  return await prisma.userAlarm.deleteMany({
-    where: {
-      userId,
-      subTaskId,
-    },
-  });
-};
+  async updateTaskAlarmStatus(taskId, isAlarm) {
+    return await prisma.task.update({
+      where: { id: taskId },
+      data: { isAlarm },
+      select: {
+        id: true,
+        title: true,
+        deadline: true,
+        isAlarm: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async updateSubtaskAlarmStatus(subTaskId, isAlarm) {
+    return await prisma.subTask.update({
+      where: { id: subTaskId },
+      data: { isAlarm },
+      select: {
+        id: true,
+        assigneeId: true,
+        taskId: true,
+        title: true,
+        endDate: true,
+        isAlarm: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async updateAlarmReadStatus(alarmId, isRead) {
+    return await prisma.userAlarm.update({
+      where: { id: alarmId },
+      data: { isRead },
+      select: {
+        id: true,
+        userId: true,
+        taskId: true,
+        subTaskId: true,
+        title: true,
+        alarmContent: true,
+        isRead: true,
+      },
+    });
+  }
+
+  async deleteSubTaskAlarm(userId, subTaskId) {
+    return await prisma.userAlarm.deleteMany({
+      where: {
+        userId,
+        subTaskId,
+      },
+    });
+  }
+}
+
+export default new AlarmRepository();
