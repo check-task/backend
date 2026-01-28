@@ -42,6 +42,11 @@ swaggerDocument.servers = [
     url: `http://localhost:${serverPort}`,
     description: "Local Development Server",
   },
+  {
+    url: `https://checktask.p-e.kr`,
+    description: "Production Server",
+  },
+
 ];
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
