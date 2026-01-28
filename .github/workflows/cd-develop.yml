@@ -59,11 +59,11 @@ jobs:
             #Prisma migrate -> EC2 서버내에서 수동으로 실행하기 떄문에 일단 제외
             #npx prisma migrate deploy
 
-            # 앱 재시작
+            # 앱 재시작 관련
             if pm2 describe backend > /dev/null; then
               pm2 reload backend --update-env
             else
-              pm2 start src/index.js --name backend --update-env
+              pm2 start src/index.js --name backend 
             fi
             pm2 status
           EOF
