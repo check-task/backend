@@ -36,7 +36,7 @@ const swaggerDocument = YAML.load(
 );
 
 // 서버 URL을 동적으로 설정
-const serverPort = process.env.PORT || 3000;
+const serverPort = process.env.PORT;
 swaggerDocument.servers = [
   {
     url: `http://localhost:${serverPort}`,

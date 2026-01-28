@@ -8,10 +8,8 @@ import folderRouter from "./folder.route.js";
 import kakaoAuthRouter from "./auth.route.js"
 const router = express.Router();
 
-//kakao
-router.use("/auth",kakaoAuthRouter)
-
 // 각 도메인별 라우터 등록
+router.use("/auth",kakaoAuthRouter)
 router.use("/user/folder", folderRouter);
 router.use("/user", userRouter);
 router.use("/alarm", alarmRouter);
