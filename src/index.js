@@ -10,6 +10,7 @@ import { swaggerHandler } from "./middlewares/swagger.middleware.js";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 import path from "path";
+import passport from "passport";
 
 dotenv.config();
 
@@ -23,6 +24,8 @@ app.use(express.static("public"));
 app.use(express.json());
 //단순 객체 문자열 형태로 본문 데이터 해석 (form-data 형태의 요청 body를 파싱하기 위함)
 app.use(express.urlencoded({ extended: false }));
+
+app.use(passport.initialize());
 
 app.use(stateHandler);
 
