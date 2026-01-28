@@ -56,8 +56,8 @@ jobs:
             #Prisma Client 생성
             npx prisma generate
 
-            #Prisma migrate
-            npx prisma migrate deploy
+            #Prisma migrate -> EC2 서버내에서 수동으로 실행하기 떄문에 일단 제외
+            #npx prisma migrate deploy
 
             # 앱 재시작
             pm2 describe backend > /dev/null \
