@@ -1,4 +1,6 @@
 import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
 import { errorHandler } from "./middlewares/error.middleware.js";
@@ -10,8 +12,6 @@ import { swaggerHandler } from "./middlewares/swagger.middleware.js";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 import path from "path";
-
-dotenv.config();
 
 const app = express();
 const port = process.env.PORT;
