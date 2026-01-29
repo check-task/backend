@@ -1440,7 +1440,7 @@ paths:
           description: |
             - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
 
-# 유저 정보 조회 API
+  # 유저 정보 조회 API
   /api/v1/user/me:
     get:
       tags:
@@ -1516,7 +1516,7 @@ paths:
           description: |
             - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
 
-# 유저 정보 수정 API
+  # 유저 정보 수정 API
   /api/v1/user/profile:
     patch:
       tags:
@@ -1591,7 +1591,7 @@ paths:
           description: |
             - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
 
-# 폴더 생성 API
+  # 폴더 생성 API
   /api/v1/user/folder:
     post:
       tags:
@@ -1653,7 +1653,7 @@ paths:
           description: |
             - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
 
-# 폴더 수정 API
+  # 폴더 수정 API
   /api/v1/user/folder/{folderId}:
     patch:
       tags:
@@ -1724,7 +1724,7 @@ paths:
           description: |
             - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
 
-# 폴더 삭제 API
+  # 폴더 삭제 API
     delete:
       tags:
         - Folder
@@ -1769,7 +1769,7 @@ paths:
           description: |
             - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
 
-#완료 과제 조회 API  
+  #완료 과제 조회 API  
   /api/v1/task/completed:
     get:
       tags:
@@ -1838,7 +1838,7 @@ paths:
         '500':
           description: |
             - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.                      
-# 카카오 연동하기
+  # 카카오 연동하기
   /api/v1/auth/kakao:
     get:
       tags:
