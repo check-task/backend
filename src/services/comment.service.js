@@ -1,63 +1,82 @@
 import { CommentRepository } from '../repositories/comment.repository.js';
-import { CreateCommentDto, CommentResponseDto } from '../dtos/comment.dto.js';
-import { NotFoundError } from '../errors/custom.error.js';
+import { CommentResponseDto } from '../dtos/comment.dto.js';
+import { NotFoundError, ForbiddenError } from '../errors/custom.error.js';
 
 export class CommentService {
+  // 댓글 생성
   static async createComment(subTaskId, createCommentDto) {
-    // 하위 업무 존재 여부 확인
-    const subTask = await CommentRepository.findSubTaskById(subTaskId);
-    if (!subTask) {
-      throw new NotFoundError('SubTask not found');
-    }
+    try {
+      // 하위 업무 존재 여부 확인
+      const subTask = await CommentRepository.findSubTaskById(subTaskId);
+      if (!subTask) {
+        throw new NotFoundError('SUBTASK_NOT_FOUND', '하위 업무를 찾을 수 없습니다.');
+      }
 
-    // 사용자 존재 여부 확인
-    const user = await CommentRepository.findUserById(createCommentDto.userId);
-    if (!user) {
-      throw new NotFoundError('User not found');
-    }
+      // 사용자 존재 여부 확인
+      const user = await CommentRepository.findUserById(createCommentDto.userId);
+      if (!user) {
+        throw new NotFoundError('USER_NOT_FOUND', '사용자를 찾을 수 없습니다.');
+      }
 
-    // 댓글 생성
-    const comment = await CommentRepository.createComment(createCommentDto, subTaskId);
-    return CommentResponseDto.from(comment);
+      // 댓글 생성
+      const comment = await CommentRepository.createComment(createCommentDto, subTaskId);
+      
+      // 응답 DTO 형태로 변환
+      return CommentResponseDto.from(comment);
+    } catch (error) {
+      console.error('Create Comment Service Error:', error);
+      throw error;
+    }
   }
 
   // 댓글 수정
   static async updateComment(commentId, userId, content) {
-    // 댓글 존재 여부 및 소유자 확인
-    const comment = await CommentRepository.findCommentById(commentId);
-    if (!comment) {
-      throw new NotFoundError('COMMENT_NOT_FOUND', '댓글을 찾을 수 없습니다.');
-    }
+    try {
+      // 댓글 존재 여부 및 소유자 확인
+      const comment = await CommentRepository.findCommentById(commentId);
+      
+      if (!comment) {
+        throw new NotFoundError('COMMENT_NOT_FOUND', '댓글을 찾을 수 없습니다.');
+      }
 
-    // 댓글 작성자만 수정 가능
-    if (comment.userId !== userId) {
-      const error = new Error('수정 권한이 없습니다.');
-      error.status = 403;
+      // 댓글 작성자만 수정 가능
+      if (comment.user.id !== userId) {
+        throw new ForbiddenError('PERMISSION_DENIED', '댓글 수정 권한이 없습니다.');
+      }
+
+      // 댓글 수정
+      const updatedComment = await CommentRepository.updateComment(commentId, content);
+      
+      // 응답 DTO 형태로 변환
+      return CommentResponseDto.from(updatedComment);
+    } catch (error) {
+      console.error('Update Comment Service Error:', error);
       throw error;
     }
-
-    // 댓글 수정
-    const updatedComment = await CommentRepository.updateComment(commentId, content);
-    return CommentResponseDto.from(updatedComment);
   }
 
   // 댓글 삭제
   static async deleteComment(commentId, userId) {
-    // 댓글 존재 여부 확인
-    const comment = await CommentRepository.findCommentById(commentId);
-    if (!comment) {
-      throw new NotFoundError('COMMENT_NOT_FOUND', '댓글을 찾을 수 없습니다.');
-    }
+    try {
+      // 댓글 존재 여부 확인
+      const comment = await CommentRepository.findCommentById(commentId);
+      
+      if (!comment) {
+        throw new NotFoundError('COMMENT_NOT_FOUND', '댓글을 찾을 수 없습니다.');
+      }
 
-    // 댓글 작성자만 삭제 가능
-    if (comment.user.id !== userId) {
-      const error = new Error('삭제 권한이 없습니다.');
-      error.status = 403;
+      // 댓글 작성자만 삭제 가능
+      if (comment.user.id !== userId) {
+        const error = new Error('삭제 권한이 없습니다.');
+        error.status = 403;
+        throw error;
+      }
+
+      // 댓글 삭제
+      await CommentRepository.deleteComment(commentId);
+    } catch (error) {
+      console.error('Delete Comment Service Error:', error);
       throw error;
     }
-
-    // 댓글 삭제 (hard delete)
-    await CommentRepository.deleteComment(commentId);
-    return { message: '댓글이 삭제되었습니다.' };
   }
 }
