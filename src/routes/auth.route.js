@@ -15,7 +15,7 @@ router.get("/kakao",
 
     if (!ALLOWED_STATES.includes(state)) { throw BadRequestError("잘못된 state값을 입력했습니다.") }
 
-    req.session.oauthState = state;
+    req.oauthState = state;
     next();
   }, kakaoMiddleware.start
 );
@@ -25,8 +25,7 @@ router.get(
   kakaoMiddleware.callback,
   (req, res) => {
     const ALLOWED_STATES = ["local", "prod"];
-    const state = req.session.oauthState || "prod";
-
+    const state = req.query.state ?? "prod";
     
     if (!ALLOWED_STATES.includes(state)) { throw BadRequestError("잘못된 state값을 입력했습니다.") }
 
