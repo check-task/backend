@@ -40,7 +40,7 @@ router.get(
       return res.status(500).send("REDIRECT URL NOT CONFIGURED");
     }
 
-    return res.redirect(`${redirectBaseUrl}/auth/kakao/callback`);
+    return res.redirect(`${redirectBaseUrl}`);
 
     //리다이렉트 되기 때문에 필요없지만 추후 테스트를 위해 남겨둠
     //const { user, accessToken, refreshToken, isNewUser } = req.user;
