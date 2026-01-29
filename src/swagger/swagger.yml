@@ -752,6 +752,7 @@ paths:
           schema:
             type: integer
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -759,29 +760,74 @@ paths:
               properties:
                 title:
                   type: string
+                  example: "수정된 프로젝트 이름"
                 deadline:
                   type: string
                   format: date
+                  example: "2026-06-30"
+                type:
+                  type: string
+                  enum: [TEAM, PERSONAL]
+                  example: "TEAM"
+                status:
+                  type: string
+                  enum: [PENDING, PROGRESS, COMPLETED]
+                  example: "PROGRESS"
+                folderId:
+                  type: integer
+                  example: 2
+                subTasks:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        example: "세부과제 1"
+                      endDate:
+                        type: string
+                        format: date
+                        example: "2026-05-10"
+                      status:
+                        type: string
+                        example: "COMPLETED"
+                      isAlarm:
+                        type: boolean
+                        example: true
+                      assigneeId:
+                        type: integer
+                        example: 5
+                references:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        example: "자료1"
+                      url:
+                        type: string
+                        example: "https://mariadb.org/documentation/"
       responses:
         '200':
           description: 과제 수정 성공
           content:
             application/json:
               schema:
-              type: object
-              properties:
-                resultType: 
-                  type: string
-                  example: "SUCCESS"
-                message:
-                  type: string
-                  example: "요청이 성공적으로 처리되었습니다."
-                data:
-                  type: object
-                  properties:
-                    taskId: 
-                      type: integer
-                      example: 1
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "요청이 처리되어서 새로운 과제가 생성되었습니다."
+                  data:
+                    type: object
+                    properties:
+                      taskId:
+                        type: integer
+                        example: 1
 
 
     # 과제 삭제
@@ -802,8 +848,8 @@ paths:
         '200':
           description: 과제 삭제 성공
           content:
-            application/json:
-              schema:
+           application/json:
+            schema:
               type: object
               properties:
                 resultType:
@@ -811,9 +857,9 @@ paths:
                   example: "SUCCESS"
                 message: 
                   type: string
-                  example: "과제가 성공적으로 삭제되었습니다."
+                  example: "과제가 성공적으로 삭제되었습니다." 
                 data:
-                  type: "null"
+                  type: null
                   example: null
 
 
