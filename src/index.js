@@ -42,14 +42,13 @@ const swaggerDocument = YAML.load(
 const serverPort = process.env.PORT;
 swaggerDocument.servers = [
   {
-    url: `http://localhost:${serverPort}`,
-    description: "Local Development Server",
-  },
-  {
     url: `https://checktask.p-e.kr`,
     description: "Production Server",
   },
-
+  {
+    url: `http://localhost:${serverPort}`,
+    description: "Local Development Server",
+  },
 ];
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));

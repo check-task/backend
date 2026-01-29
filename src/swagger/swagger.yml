@@ -752,6 +752,7 @@ paths:
           schema:
             type: integer
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -759,29 +760,74 @@ paths:
               properties:
                 title:
                   type: string
+                  example: "수정된 프로젝트 이름"
                 deadline:
                   type: string
                   format: date
+                  example: "2026-06-30"
+                type:
+                  type: string
+                  enum: [TEAM, PERSONAL]
+                  example: "TEAM"
+                status:
+                  type: string
+                  enum: [PENDING, PROGRESS, COMPLETED]
+                  example: "PROGRESS"
+                folderId:
+                  type: integer
+                  example: 2
+                subTasks:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                        example: "세부과제 1"
+                      endDate:
+                        type: string
+                        format: date
+                        example: "2026-05-10"
+                      status:
+                        type: string
+                        example: "COMPLETED"
+                      isAlarm:
+                        type: boolean
+                        example: true
+                      assigneeId:
+                        type: integer
+                        example: 5
+                references:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        example: "자료1"
+                      url:
+                        type: string
+                        example: "https://mariadb.org/documentation/"
       responses:
         '200':
           description: 과제 수정 성공
           content:
             application/json:
               schema:
-              type: object
-              properties:
-                resultType: 
-                  type: string
-                  example: "SUCCESS"
-                message:
-                  type: string
-                  example: "요청이 성공적으로 처리되었습니다."
-                data:
-                  type: object
-                  properties:
-                    taskId: 
-                      type: integer
-                      example: 1
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "요청이 처리되어서 새로운 과제가 생성되었습니다."
+                  data:
+                    type: object
+                    properties:
+                      taskId:
+                        type: integer
+                        example: 1
 
 
     # 과제 삭제
@@ -802,8 +848,8 @@ paths:
         '200':
           description: 과제 삭제 성공
           content:
-            application/json:
-              schema:
+           application/json:
+            schema:
               type: object
               properties:
                 resultType:
@@ -811,9 +857,9 @@ paths:
                   example: "SUCCESS"
                 message: 
                   type: string
-                  example: "과제가 성공적으로 삭제되었습니다."
+                  example: "과제가 성공적으로 삭제되었습니다." 
                 data:
-                  type: "null"
+                  type: null
                   example: null
 
 
@@ -1394,7 +1440,7 @@ paths:
           description: |
             - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
 
-# 유저 정보 조회 API
+  # 유저 정보 조회 API
   /api/v1/user/me:
     get:
       tags:
@@ -1470,7 +1516,7 @@ paths:
           description: |
             - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
 
-# 유저 정보 수정 API
+  # 유저 정보 수정 API
   /api/v1/user/profile:
     patch:
       tags:
@@ -1545,7 +1591,7 @@ paths:
           description: |
             - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
 
-# 폴더 생성 API
+  # 폴더 생성 API
   /api/v1/user/folder:
     post:
       tags:
@@ -1607,7 +1653,7 @@ paths:
           description: |
             - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
 
-# 폴더 수정 API
+  # 폴더 수정 API
   /api/v1/user/folder/{folderId}:
     patch:
       tags:
@@ -1678,7 +1724,7 @@ paths:
           description: |
             - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
 
-# 폴더 삭제 API
+  # 폴더 삭제 API
     delete:
       tags:
         - Folder
@@ -1723,7 +1769,7 @@ paths:
           description: |
             - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
 
-#완료 과제 조회 API  
+  #완료 과제 조회 API  
   /api/v1/task/completed:
     get:
       tags:
@@ -1792,108 +1838,45 @@ paths:
         '500':
           description: |
             - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.                      
-# 카카오 연동하기
+  # 카카오 로그인
   /api/v1/auth/kakao:
     get:
       tags:
         - Kakao Auth
       summary: 카카오 연동하기
-      description: 카카오 OAuth를 통해 로그인/회원가입을 진행합니다.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - code
-              properties:
-                code:
-                  type: string
-                  description: 카카오 로그인 완료 후 Redirect URI로 전달받은 인가 코드
-                  example: "xxxxxxxxxxxxxxxx"
+      description: 카카오 OAuth를 통해 로그인/회원가입을 진행합니다. 브라우저가 카카오 로그인 페이지로 리다이렉트됩니다.
+      parameters:
+      - in: query
+        name: state
+        required: false
+        schema:
+          type: string
+          enum: [local, prod]
+        description: |
+          프론트 환경 구분값
+          - local: 로컬 프론트
+          - prod: 배포 프론트
       responses:
-        '200':
-          description: 카카오 로그인 / 회원가입 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  message:
-                    type: string
-                    example: "회원 가입 성공"
-                  data:
-                    type: object
-                    properties:
-                      isNewUser:
-                        type: boolean
-                        description: 신규 회원 여부
-                        example: true
-                      provider:
-                        type: string
-                        example: "KAKAO"
-                      token:
-                        type: object
-                        properties:
-                          accessToken:
-                            type: string
-                            description: Access Token
-                            example: "jwt_access_token"
-                          refreshToken:
-                            type: string
-                            description: Refresh Token
-                            example: "jwt_refresh_token"
-                          accessTokenExpiresIn:
-                            type: integer
-                            description: Access Token 만료 시간(초)
-                            example: 3600
-
-        '400':
-          description: |
-            - INVALID_REQUEST: 인가 코드 누락 또는 형식 오류
-          content:
-            application/json:
-              schema:
-                type: object
-                example:
-                  resultType: "FAIL"
-                  code: 400
-                  errorCode: "INVALID_REQUEST"
-                  reason: "잘못된 요청입니다"
-                  data: null
-
-        '401':
-          description: |
-            - KAKAO_AUTH_FAILED: 카카오 인증 실패
-          content:
-            application/json:
-              schema:
-                type: object
-                example:
-                  resultType: "FAIL"
-                  code: 401
-                  errorCode: "KAKAO_AUTH_FAILED"
-                  reason: "카카오 인증에 실패하였습니다"
-                  data: null
-
-        '500':
-          description: |
-            - INTERNAL_SERVER_ERROR: 서버 내부 오류
-          content:
-            application/json:
-              schema:
-                type: object
-                example:
-                  resultType: "FAIL"
-                  code: 500
-                  errorCode: "INTERNAL_SERVER_ERROR"
-                  reason: "서버 내부 오류가 발생했습니다"
-                  data: null
-
+        '302':
+          description: 카카오 로그인 페이지로 리다이렉트
+  /api/v1/auth/kakao/callback:
+    get:
+      tags:
+        - Kakao Auth
+      summary: 카카오 로그인 콜백
+      description: |
+        카카오 로그인 완료 후 호출되는 콜백 API입니다.
+        로그인 처리 후 프론트엔드로 리다이렉트됩니다.
+      parameters:
+        - in: query
+          name: code
+          required: true
+          schema:
+            type: string
+          description: 카카오 인가 코드
+      responses:
+        '302':
+          description: 로그인 처리 후 프론트엔드로 리다이렉트
   #카카오 로그아웃
   /api/v1/auth/logout:
     post:
