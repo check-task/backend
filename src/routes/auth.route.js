@@ -4,6 +4,8 @@ import { kakaoMiddleware } from "../middlewares/kakao.middleware.js";
 import { AuthController } from "../controllers/auth.controller.js";
 import { BadRequestError } from "../errors/custom.error.js";
 import session from "express-session";
+import crypto from "crypto";
+import { generateAccessToken, generateRefreshToken } from "../config/jwt.config.js";
 
 const router = Router();
 const authController = new AuthController();
@@ -22,7 +24,6 @@ router.get("/kakao",
   (req, res, next) => {
     const ALLOWED_STATES = ["local", "prod"];
     const state = req.query.state || "prod";
-
     if (!ALLOWED_STATES.includes(state)) { throw BadRequestError("잘못된 state값을 입력했습니다.") }
 
     req.oauthState = state;
@@ -36,7 +37,6 @@ router.get(
   (req, res) => {
     const ALLOWED_STATES = ["local", "prod"];
     const state = req.query.state ?? "prod";
-    
     if (!ALLOWED_STATES.includes(state)) { throw BadRequestError("잘못된 state값을 입력했습니다.") }
 
     const REDIRECT_URL_MAP = {
@@ -45,12 +45,8 @@ router.get(
     };
 
     const redirectBaseUrl = REDIRECT_URL_MAP[state] || REDIRECT_URL_MAP.prod;
+    if (!redirectBaseUrl) { return res.status(500).send("리다이렉트 URL이 설정되지 않았습니다."); }
 
-    if (!redirectBaseUrl) {
-      return res.status(500).send("REDIRECT URL NOT CONFIGURED");
-    }
-
-    const crypto = require("crypto");
     const tempCode = crypto.randomBytes(32).toString("hex");
 
     // 세션에 토큰 저장 (5분)
@@ -82,12 +78,14 @@ router.get(
 // 토큰 교환
 router.get("/auth/token", (req, res) => {
   const code = req.query.code;
-  if (!code || !req.session.codes || !req.session.codes[code])
-    return res.status(400).json({ message: "Invalid or expired code" });
+  if (!code || !req.session.codes || !req.session.codes[code]) { return res.status(400).json({ message: "일회용 코드를 필수로 입력해주세요." }); }
 
   const tokenData = req.session.codes[code];
-  delete req.session.codes[code]; // 1회용 코드
-  res.json({ resultType: "SUCCESS", data: tokenData });
+  delete req.session.codes[code]; // 1회용 코드 삭제
+
+  const { accessToken, refreshToken, isNewUser, userId } = tokenData;
+
+  return res.success( { userId, isNewUser, provider: "KAKAO", token: { accessToken, refreshToken, accessTokenExpireIn:3600} }, '자료 생성 성공')
 });
 
 //카카오 회원 탈퇴
