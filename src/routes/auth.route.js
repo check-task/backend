@@ -3,9 +3,19 @@ import passport from "passport";
 import { kakaoMiddleware } from "../middlewares/kakao.middleware.js";
 import { AuthController } from "../controllers/auth.controller.js";
 import { BadRequestError } from "../errors/custom.error.js";
+import session from "express-session";
 
 const router = Router();
 const authController = new AuthController();
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { maxAge: 5 * 60 * 1000 }, // 5분
+  })
+);
 
 //카카오 로그인 요청
 router.get("/kakao",
@@ -40,7 +50,15 @@ router.get(
       return res.status(500).send("REDIRECT URL NOT CONFIGURED");
     }
 
-    return res.redirect(`${redirectBaseUrl}`);
+    const crypto = require("crypto");
+    const tempCode = crypto.randomBytes(32).toString("hex");
+
+    // 세션에 토큰 저장 (5분)
+    if (!req.session.codes) req.session.codes = {};
+    const { user, accessToken, refreshToken, isNewUser } = req.user;
+    req.session.codes[tempCode] = { userId: user.id, accessToken, refreshToken, isNewUser };
+
+    return res.redirect(`${redirectBaseUrl}?code=${tempCode}`);
 
     //리다이렉트 되기 때문에 필요없지만 추후 테스트를 위해 남겨둠
     //const { user, accessToken, refreshToken, isNewUser } = req.user;
@@ -60,6 +78,17 @@ router.get(
     // });
   }
 );
+
+// 토큰 교환
+router.get("/auth/token", (req, res) => {
+  const code = req.query.code;
+  if (!code || !req.session.codes || !req.session.codes[code])
+    return res.status(400).json({ message: "Invalid or expired code" });
+
+  const tokenData = req.session.codes[code];
+  delete req.session.codes[code]; // 1회용 코드
+  res.json({ resultType: "SUCCESS", data: tokenData });
+});
 
 //카카오 회원 탈퇴
 router.delete(
