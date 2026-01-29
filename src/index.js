@@ -1,4 +1,6 @@
 import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
 import { errorHandler } from "./middlewares/error.middleware.js";
@@ -11,8 +13,6 @@ import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 import path from "path";
 import passport from "passport";
-
-dotenv.config();
 
 const app = express();
 const port = process.env.PORT;
@@ -42,14 +42,13 @@ const swaggerDocument = YAML.load(
 const serverPort = process.env.PORT || 3000;
 swaggerDocument.servers = [
   {
-    url: `http://localhost:${serverPort}`,
-    description: "Local Development Server",
-  },
-  {
     url: `https://checktask.p-e.kr`,
     description: "Production Server",
   },
-
+  {
+    url: `http://localhost:${serverPort}`,
+    description: "Local Development Server",
+  },
 ];
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
