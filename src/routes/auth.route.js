@@ -5,7 +5,6 @@ import { AuthController } from "../controllers/auth.controller.js";
 import { BadRequestError } from "../errors/custom.error.js";
 import session from "express-session";
 import crypto from "crypto";
-import { generateAccessToken, generateRefreshToken } from "../config/jwt.config.js";
 
 const router = Router();
 const authController = new AuthController();
