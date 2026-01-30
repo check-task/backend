@@ -9,15 +9,6 @@ import crypto from "crypto";
 const router = Router();
 const authController = new AuthController();
 
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-    cookie: { maxAge: 5 * 60 * 1000 }, // 5분
-  })
-);
-
 //카카오 로그인 요청
 router.get("/kakao",
   (req, res, next) => {

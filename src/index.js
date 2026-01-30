@@ -13,6 +13,7 @@ import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 import path from "path";
 import passport from "passport";
+import session from "express-session";
 
 const app = express();
 const port = process.env.PORT;
@@ -26,8 +27,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use(passport.initialize());
+app.use(passport.session());
 
 app.use(stateHandler);
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { maxAge: 5 * 60 * 1000 }, // 5분
+  })
+);
 
 app.get("/", (req, res) => {
   return res.success("아싸 나이스 성공~");
