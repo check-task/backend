@@ -12,6 +12,8 @@ export const kakaoMiddleware = {
 
   // 카카오 콜백
   callback: passport.authenticate("kakao", {
+    //Passport 세션 사용 x
+    session: false,
     failureRedirect: "/login-failed",
   }),
 };
