@@ -2,6 +2,7 @@ import prisma from "../db.config.js";
 import dayjs from "dayjs";
 
 class AlarmRepository {
+  //유저의 알림 조회
   async findAlarmsByUserId(userId, options = {}) {
     const {
       cursor = null,
@@ -29,6 +30,7 @@ class AlarmRepository {
     });
   }
 
+  //과제 알림 생성
   async createTaskAlarm(userId, taskId, taskTitle, alarmDate, tx = prisma) {
     return await tx.userAlarm.create({
       data: {
@@ -43,6 +45,7 @@ class AlarmRepository {
     });
   }
 
+  //세부과제 알림 생성
   async createSubTaskAlarm(userId, taskId, subTaskId, subTaskTitle, alarmDate, tx = prisma) {
     return await tx.userAlarm.create({
       data: {
@@ -58,12 +61,14 @@ class AlarmRepository {
     });
   }
 
+  //유저의 개별 알림 삭제
   async deleteAlarmById(alarmId) {
     return await prisma.userAlarm.delete({
       where: { id: alarmId },
     });
   }
 
+  //알림 조회
   async findAlarmById(alarmId) {
     return await prisma.userAlarm.findUnique({
       where: { id: alarmId },
@@ -74,12 +79,15 @@ class AlarmRepository {
     });
   }
 
+
+  //유저의 모든 알림 삭제
   async deleteAllAlarmsByUserId(userId) {
     return await prisma.userAlarm.deleteMany({
       where: { userId },
     });
   }
 
+  //최종 마감 알림 시간 수정
   async updateDeadlineAlarm(userId, deadlineAlarm) {
     return await prisma.user.update({
       where: { id: userId },
@@ -92,6 +100,7 @@ class AlarmRepository {
     });
   }
 
+  //과제 알림 시간 수정
   async updateTaskAlarm(userId, taskAlarm) {
     return await prisma.user.update({
       where: { id: userId },
@@ -104,6 +113,7 @@ class AlarmRepository {
     });
   }
 
+  //과제 알림 상태 변경
   async updateTaskAlarmStatus(taskId, isAlarm) {
     return await prisma.task.update({
       where: { id: taskId },
@@ -118,6 +128,7 @@ class AlarmRepository {
     });
   }
 
+  //세부과제 알림 상태 변경
   async updateSubtaskAlarmStatus(subTaskId, isAlarm) {
     return await prisma.subTask.update({
       where: { id: subTaskId },
@@ -134,6 +145,7 @@ class AlarmRepository {
     });
   }
 
+  //알림 읽음 처리
   async updateAlarmReadStatus(alarmId, isRead) {
     return await prisma.userAlarm.update({
       where: { id: alarmId },
@@ -150,6 +162,18 @@ class AlarmRepository {
     });
   }
 
+  // 알림 읽음 처리 -> 모든 알림 읽음 처리
+  async updateAllAlarmReadStatus(userId) {
+    return await prisma.userAlarm.updateMany({
+      where: {
+        userId,
+        isRead: false,
+      },
+      data: { isRead: true },
+    });
+  }
+
+  //세부과제 알림 삭제
   async deleteSubTaskAlarm(userId, subTaskId) {
     return await prisma.userAlarm.deleteMany({
       where: {

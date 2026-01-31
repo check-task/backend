@@ -13,6 +13,16 @@ export const alarmListResponseDto = (alarms, hasNextPage = false) => {
   };
 };
 
+// 모든 알림 읽음 처리 DTO
+export const updateAllAlarmReadResponseDto = (data) => {
+  return {
+    alarms: data.map((alarm) => ({
+      alarmId: alarm.id,
+      isRead: alarm.isRead,
+    })),
+  };
+};
+
 // 최종 마감 알림 수정 DTO
 export const updateDeadlineAlarmDto = (data) => {
   return {
