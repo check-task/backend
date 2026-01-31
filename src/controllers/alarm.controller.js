@@ -192,6 +192,17 @@ class AlarmController {
     // 성공 응답 (이미지 명세에 맞게)
     return res.success(result, "알림 읽음 처리 성공");
   };
+
+
+  // 모든 알림 읽음 처리
+  handleAlarmUpdateAllAlarmReadStatus = async (req, res) => {
+    const userId = req.user.id;
+
+    // Service 호출
+    const result = await this.alarmService.updateAllAlarmReadStatus(userId);
+
+    return res.success(result, "모든 알림 읽음 처리 성공");
+  };
 }
 
 export default new AlarmController();

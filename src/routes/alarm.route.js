@@ -32,4 +32,6 @@ router.patch("/task/:taskId", authenticate, alarmController.handleAlarmUpdateTas
 // PATCH /v1/api/alarm/:alarmId - 알림 읽음 처리
 router.patch("/:alarmId", authenticate, alarmController.handleAlarmUpdateAlarmReadStatus);
 
+// PATCH /v1/api/alarm - 모든 알림 읽음 처리
+router.patch("/", authenticate, alarmController.handleAlarmUpdateAllAlarmReadStatus);
 export default router;
