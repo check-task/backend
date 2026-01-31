@@ -289,13 +289,18 @@ class AlarmService {
   // 모든 알림 읽음 처리
   async updateAllAlarmReadStatus(userId) {
     // 모든 알림 읽음 처리 (Repository 호출)
+    const user = await checkDeletedUser(userId);
     // const updatedAlarms = await this.alarmRepository.updateAllAlarmReadStatus(userId);
     await this.alarmRepository.updateAllAlarmReadStatus(userId);
     if (!userId) {
       throw new NotFoundError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
     }
-
-
+    if (user.deletedAt) {
+      throw new ForbiddenError(
+        "USER_DELETED",
+        "탈퇴한 유저는 알림을 읽을 수 없습니다."
+      );
+    }
 
     // return updateAllAlarmReadResponseDto(updatedAlarms);
     return null;
