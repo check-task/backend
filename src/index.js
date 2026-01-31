@@ -12,6 +12,7 @@ import { swaggerHandler } from "./middlewares/swagger.middleware.js";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 import path from "path";
+import session from "express-session";
 import passport from "passport";
 
 const app = express();
@@ -25,7 +26,17 @@ app.use(express.json());
 //단순 객체 문자열 형태로 본문 데이터 해석 (form-data 형태의 요청 body를 파싱하기 위함)
 app.use(express.urlencoded({ extended: false }));
 
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { maxAge: 5 * 60 * 1000 }, // 5분
+  })
+);
+
 app.use(passport.initialize());
+app.use(passport.session());
 
 app.use(stateHandler);
 
@@ -39,7 +50,7 @@ const swaggerDocument = YAML.load(
 );
 
 // 서버 URL을 동적으로 설정
-const serverPort = process.env.PORT || 3000;
+const serverPort = process.env.PORT;
 swaggerDocument.servers = [
   {
     url: `https://checktask.p-e.kr`,

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch: # 이 한 줄이 수동 실행 버튼을 만들어줍니다.
 
 jobs:
   deploy:
@@ -36,7 +37,7 @@ jobs:
           
           ssh -i ~/.ssh/id_rsa \
             -o StrictHostKeyChecking=no \
-            $EC2_USER@$EC2_HOST << EOF
+            $EC2_USER@$EC2_HOST << 'EOF'
             # 에러 발생시 즉시 중단
             set -e
 
@@ -45,10 +46,6 @@ jobs:
 
             # 최신 코드로 PULL 받기
             git pull origin main
-
-            # .env 생성
-            # export BACKEND_ENV="${{ secrets.BACKEND_ENV }}"
-            echo "$BACKEND_ENV" > .env
 
             # 의존성 설치
             npm ci
