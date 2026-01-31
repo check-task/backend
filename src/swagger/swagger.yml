@@ -147,6 +147,45 @@ paths:
                   data:
                     type: "null"
                     example: null
+    # 모든 알림 읽음 처리
+    patch:
+      tags:
+        - Alarm
+      summary: 모든 알림 읽음 처리
+      description: 모든 알림을 읽음으로 표시합니다.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                    example: 모든 알림 읽음 처리 성공
+                  data:
+                    type: "null"
+                    example: null
+        '401': 
+          description: |
+            - TOKEN_NOT_FOUND: 인증 토큰이 없습니다.
+            - TOKEN_INVALID: 토큰이 유효하지 않습니다.
+            - TOKEN_EXPIRED: 토큰이 만료되었습니다.
+        '403':
+          description: |
+            - USER_DELETED: 탈퇴한 유저는 알림을 읽을 수 없습니다.
+        '404':
+          description: |
+            - USER_NOT_FOUND: 사용자를 찾을 수 없습니다.
+        '500':
+          description: |
+            - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
   # 개별 알림 삭제
   /api/v1/alarm/{alarmId}:
     delete:
@@ -184,8 +223,8 @@ paths:
     patch:
       tags:
         - Alarm
-      summary: 알림 읽음 처리
-      description: 알림을 읽음으로 표시합니다.
+      summary: 개별 알림 읽음 처리
+      description: 특정 알림을 읽음으로 표시합니다. -> 일단 전체 알림 읽기 처리로 대체해서 다른 API 사용하시면 됩니다.
       security:
         - bearerAuth: []
       parameters:
