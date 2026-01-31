@@ -16,9 +16,10 @@ router.get("/kakao",
     const state = req.query.state || "prod";
     if (!ALLOWED_STATES.includes(state)) { throw BadRequestError("잘못된 state값을 입력했습니다.") }
 
-    req.oauthState = state;
-    next();
-  }, kakaoMiddleware.start
+    passport.authenticate("kakao", {
+      state,
+    })(req, res, next);
+  }
 );
 
 router.get(
@@ -26,7 +27,9 @@ router.get(
   kakaoMiddleware.callback,
   (req, res) => {
     const ALLOWED_STATES = ["local", "prod"];
-    const state = req.query.state ?? "prod";
+    const state = req.query.state || "prod";
+
+    
     if (!ALLOWED_STATES.includes(state)) { throw BadRequestError("잘못된 state값을 입력했습니다.") }
 
     const REDIRECT_URL_MAP = {
