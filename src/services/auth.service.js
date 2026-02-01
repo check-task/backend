@@ -88,18 +88,6 @@ export class KakaoAuthService {
         });
       }
 
-      // 추후 삭제
-      const accessToken = this.generateAccessToken(user);
-      const refreshToken = this.generateRefreshToken(user);
-
-      console.log("==========================================");
-      console.log("✅ 로그인 성공! 발급된 토큰 정보:");
-      console.log("👉 Access Token:", accessToken);
-      console.log("👉 Refresh Token:", refreshToken);
-      console.log("👤 로그인 유저 ID:", user.id);
-      console.log("==========================================");
-      //
-
       return{
         user,
         isNewUser,
