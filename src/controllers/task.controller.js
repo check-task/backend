@@ -260,6 +260,30 @@ class TaskController {
       next(error);
     }
   }
+
+  // 세부 과제 추가
+  async addSubTask(req, res, next) {
+    try {
+      const {taskId} = req.params;
+      const userId = req.user.id;
+
+      const result = await taskService.createSingleSubTask(userId, parseInt(taskId), req.body);
+
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "세부 Task가 성공적으로 추가되었습니다.",
+        data: {
+          subTaskId: result.id,
+          title: result.title,
+          deadline: result.endDate,
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
+
+
 
 export default new TaskController();

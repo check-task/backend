@@ -944,6 +944,75 @@ paths:
                 data:
                   type: null
                   example: null
+  
+  # 세부 과제 생성
+  /api/v1/task/{taskId}/subTask:
+    post:
+      tags:
+        - Task
+      summary: 세부 과제 단일 추가
+      description: |
+        특정 과제 내에 세부 과제를 하나 추가합니다.
+        - 상태(status): PENDING 자동 지정
+        - 담당자(assigneeId): 팀 과제는 NULL, 개인 과제는 본인 자동 지정
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, deadline]
+              properties:
+                title:
+                  type: string
+                  example: "세부과제1"
+                deadline:
+                  type: string
+                  format: date
+                  example: "2026-05-30"
+                isAlarm:
+                  type: boolean
+                  example: true
+      responses:
+        '201':
+          description: 생성 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "세부 과제가 성공적으로 추가되었습니다."
+                  data:
+                    type: object
+                    properties:
+                      subTaskId:
+                        type: integer
+                        example: 105
+                      title:
+                        type: string
+                        example: "세부과제1"
+                      deadline:
+                        type: string
+                        example: "2026-05-30"
+                      status:
+                        type: string
+                        example: "PENDING"
+                      assigneeName:
+                        type: string
+                        example: "유저"
 
   # 팀원 정보(역할) 수정
   /api/v1/task/{taskId}/member/{memberId}:
