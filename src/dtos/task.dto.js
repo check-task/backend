@@ -28,7 +28,7 @@ export class TaskRequestDTO {
       title: data.title,
       folderId: data.folderId,
       deadline: data.deadline ? new Date(data.deadline) : new Date(),
-      type: data.type === "팀" ? "TEAM" : "PERSONAL",
+      type: data.type === "TEAM" ? "TEAM" : "PERSONAL",
       status: "PENDING",
       subTasks: (data.subTasks || []).map(st => ({
         title: st.title,
