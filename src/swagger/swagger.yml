@@ -1611,18 +1611,58 @@ paths:
                               example: "#000000"
         '400':
           description: |
-            - BAD_REQUEST: 토큰이 형식에 맞지 않습니다.                      
+            - BAD_REQUEST: 토큰이 형식에 맞지 않음.      
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "BAD_REQUEST"
+                  reason: "토큰이 형식에 맞지 않습니다."
+                  data: null
         '401':
           description: |
-            - TOKEN_NOT_FOUND: 인증 토큰이 없습니다.
-            - TOKEN_INVALID: 토큰이 유효하지 않습니다.
-            - TOKEN_EXPIRED: 토큰이 만료되었습니다.            
+            - TOKEN_NOT_FOUND: 인증 토큰이 없음.
+            - TOKEN_INVALID: 토큰이 유효하지 않음.
+            - TOKEN_EXPIRED: 토큰이 만료됨.            
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 401
+                  errorCode: "TOKEN_NOT_FOUND | TOKEN_INVALID | TOKEN_EXPIRED"
+                  reason: "인증 토큰이 없습니다. | 토큰이 유효하지 않습니다. | 토큰이 만료되었습니다."
+                  data: null   
         '404':
           description: |
-            - USER_NOT_FOUND: 해당 사용자를 찾을 수 없습니다.
+            - USER_NOT_FOUND: 해당 사용자를 찾을 수 없음.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 404
+                  errorCode: "USER_NOT_FOUND"
+                  reason: "해당 사용자를 찾을 수 없습니다."
+                  data: null
         '500':
           description: |
-            - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
+            - INTERNAL_SERVER_ERROR: 서버 내부 오류 발생.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "INTERNAL_SERVER_ERROR"
+                  reason: "서버 내부 오류가 발생했습니다."
+                  data: null
 
   # 유저 정보 수정 API
   /api/v1/user/profile:
@@ -1688,16 +1728,56 @@ paths:
                         example: "2026-01-26T23:30:00"
         '400':
           description: |
-            - INVALID_NICKNAME: 닉네임은 최대 10자까지만 가능합니다.                      
+            - INVALID_NICKNAME: 닉네임 수정 에러.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "INVALID_NICKNAME"
+                  reason: "닉네임은 최대 10자까지만 가능합니다."
+                  data: null                      
         '401':
           description: |
-            - TOKEN_NOT_FOUND: 인증 토큰이 없습니다.
+            - TOKEN_NOT_FOUND: 인증 토큰이 없음.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 401
+                  errorCode: "TOKEN_NOT_FOUND"
+                  reason: "인증 토큰이 없습니다."
+                  data: null
         '404':
           description: |
-            - USER_NOT_FOUND: 해당 사용자를 찾을 수 없습니다.
+            - USER_NOT_FOUND: 해당 사용자를 찾을 수 없음.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 404
+                  errorCode: "USER_NOT_FOUND"
+                  reason: "해당 사용자를 찾을 수 없습니다."
+                  data: null
         '500':
           description: |
-            - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
+            - INTERNAL_SERVER_ERROR: 서버 내부 오류 발생.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "INTERNAL_SERVER_ERROR"
+                  reason: "서버 내부 오류가 발생했습니다."
+                  data: null
 
   # 폴더 생성 API
   /api/v1/user/folder:
@@ -1751,15 +1831,45 @@ paths:
                         example: "#FF5733"
         '400':
           description: |
-            - BAD_REQUEST: 토큰이 형식에 맞지 않습니다.
-            - INVALID_INPUT_VALUE: 폴더 이름은 필수입니다.
+            - BAD_REQUEST: 토큰이 형식에 맞지 않음.
+            - INVALID_INPUT_VALUE: 폴더명이 비어있을 때.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "BAD_REQUEST | INVALID_INPUT_VALUE"
+                  reason: "토큰이 형식에 맞지 않습니다. | 폴더 이름은 필수입니다."
+                  data: null
         '401':
           description: |
-            - TOKEN_NOT_FOUND: 인증 토큰이 없습니다.
-            - TOKEN_INVALID: 토큰이 유효하지 않습니다.
+            - TOKEN_NOT_FOUND: 인증 토큰이 없음.
+            - TOKEN_INVALID: 토큰이 유효하지 않음.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 401
+                  errorCode: "TOKEN_NOT_FOUND | TOKEN_INVALID"
+                  reason: "인증 토큰이 없습니다. | 토큰이 유효하지 않습니다."
+                  data: null
         '500':
           description: |
-            - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
+            - INTERNAL_SERVER_ERROR: 서버 내부 오류 발생.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "INTERNAL_SERVER_ERROR"
+                  reason: "서버 내부 오류가 발생했습니다."
+                  data: null                                                          
 
   # 폴더 수정 API
   /api/v1/user/folder/{folderId}:
@@ -1817,21 +1927,71 @@ paths:
                         example: "#123456"
         '400':
           description: |
-            - BAD_REQUEST: 토큰이 형식에 맞지 않습니다.
+            - BAD_REQUEST: 토큰이 형식에 맞지 않음.      
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "BAD_REQUEST"
+                  reason: "토큰이 형식에 맞지 않습니다."
+                  data: null     
         '401':
           description: |
-            - TOKEN_NOT_FOUND: 인증 토큰이 없습니다.
-            - TOKEN_INVALID: 토큰이 유효하지 않습니다.
+            - TOKEN_NOT_FOUND: 인증 토큰이 없음.
+            - TOKEN_INVALID: 토큰이 유효하지 않음.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 401
+                  errorCode: "TOKEN_NOT_FOUND | TOKEN_INVALID"
+                  reason: "인증 토큰이 없습니다. | 토큰이 유효하지 않습니다."
+                  data: null   
         '403':
           description: |
-            - PERMISSION_DENIED: 수정 권한이 없습니다.
+            - FORBIDDEN: 수정 권한이 없음.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 403
+                  errorCode: "FORBIDDEN"
+                  reason: "수정 권한이 없습니다."
+                  data: null 
         '404':
           description: |
-            - FOLDER_NOT_FOUND: 해당 폴더를 찾을 수 없습니다.
+            - FOLDER_NOT_FOUND: 해당 폴더를 찾을 수 없을 때.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 404
+                  errorCode: "FOLDER_NOT_FOUND"
+                  reason: "해당 폴더를 찾을 수 없습니다."
+                  data: null      
         '500':
           description: |
-            - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
-
+            - INTERNAL_SERVER_ERROR: 서버 내부 오류 발생.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "INTERNAL_SERVER_ERROR"
+                  reason: "서버 내부 오류가 발생했습니다."
+                  data: null                                                                             
+        
   # 폴더 삭제 API
     delete:
       tags:
@@ -1866,16 +2026,57 @@ paths:
                     example: null
         '401':
           description: |
-            - TOKEN_NOT_FOUND: 인증 토큰이 없습니다.
+            - TOKEN_NOT_FOUND: 인증 토큰이 없음.      
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 401
+                  errorCode: "TOKEN_NOT_FOUND"
+                  reason: "인증 토큰이 없습니다."
+                  data: null                 
+        
         '403':
           description: |
-            - FORBIDDEN_ACCESS: 삭제 권한이 없습니다.
+            - FORBIDDEN: 삭제 권한이 없음.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 403
+                  errorCode: "FORBIDDEN"
+                  reason: "삭제 권한이 없습니다."
+                  data: null
         '404':
           description: |
-            - FOLDER_NOT_FOUND: 해당 폴더를 찾을 수 없습니다.
+            - FOLDER_NOT_FOUND: 해당 폴더를 찾을 수 없을 때.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 404
+                  errorCode: "FOLDER_NOT_FOUND"
+                  reason: "해당 폴더를 찾을 수 없습니다."
+                  data: null      
         '500':
           description: |
-            - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
+            - INTERNAL_SERVER_ERROR: 서버 내부 오류 발생.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "INTERNAL_SERVER_ERROR"
+                  reason: "서버 내부 오류가 발생했습니다."
+                  data: null
 
   #완료 과제 조회 API  
   /api/v1/task/completed:
@@ -1939,13 +2140,44 @@ paths:
                               example: "#FF5733"
         '401':
           description: |
-            - TOKEN_NOT_FOUND: 인증 토큰이 없습니다.
+            - TOKEN_NOT_FOUND: 인증 토큰이 없음.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 401
+                  errorCode: "TOKEN_NOT_FOUND"
+                  reason: "인증 토큰이 없습니다."
+                  data: null
         '404':
           description: |
-            - USER_NOT_FOUND: 해당 사용자를 찾을 수 없습니다.
+            - USER_NOT_FOUND: 해당 사용자를 찾을 수 없을 때.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 404
+                  errorCode: "USER_NOT_FOUND"
+                  reason: "해당 사용자를 찾을 수 없습니다."
+                  data: null
         '500':
           description: |
-            - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.                      
+            - INTERNAL_SERVER_ERROR: 서버 내부 오류 발생.       
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "INTERNAL_SERVER_ERROR"
+                  reason: "서버 내부 오류가 발생했습니다."
+                  data: null
+                                 
   # 카카오 로그인
   /api/v1/auth/kakao:
     get:
