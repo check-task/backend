@@ -28,6 +28,9 @@ router.get("/", authenticate, taskController.getTasks);
 // PATCH /api/v1/task/:taskId/member/:memberId -- 팀원 정보 수정
 router.patch("/:taskId/member/:memberId", authenticate, taskController.updateTeamMember);
 
+// POST /api/v1/task/:taskId/subTask -- 단일 세부 과제 추가
+router.post("/:taskId/subTask", authenticate, taskController.addSubTask)
+
 // 세부 TASK 완료 처리 API 
 // 세부 TASK 상태 업데이트
 router.patch(

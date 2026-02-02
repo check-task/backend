@@ -22,7 +22,7 @@ class FolderService {
       }
 
       if (folder.userId !== userId) {
-        throw new ForbiddenError("PERMISSION_DENIED", "수정 권한이 없습니다.");
+        throw new ForbiddenError("FORBIDDEN", "수정 권한이 없습니다.");
       }
 
       const updateData = {};
@@ -59,7 +59,7 @@ class FolderService {
     }
 
     if (folder.userId !== userId) {
-      throw new ForbiddenError("PERMISSION_DENIED", "삭제 권한이 없습니다.");
+      throw new ForbiddenError("FORBIDDEN", "삭제 권한이 없습니다.");
     }
 
     await folderRepository.removeFolder(userId, folderId);

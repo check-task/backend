@@ -229,6 +229,19 @@ async updateMemberRole(memberId, isAdmin, tx) {
       }
     });
   }
+
+  async findMaxRank(userId, tx= prisma) {
+    const result = await tx.taskPriority.aggregate({
+      _max: {
+        rank: true
+      },
+      where: {
+        userId: userId
+      }
+    });
+
+    return result._max.rank || 0;
+  }
 }
 
 export default new TaskRepository();

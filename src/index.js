@@ -12,11 +12,32 @@ import { swaggerHandler } from "./middlewares/swagger.middleware.js";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 import path from "path";
-import session from "express-session";
 import passport from "passport";
+import { createServer } from "http";
+import setupSocket from "./socket/socket.js";
+import cookieParser from "cookie-parser";
 
+console.log(" INDEX.JS LOADED");
 const app = express();
 const port = process.env.PORT;
+
+// 3. HTTP 서버 및 소켓 서버 생성
+const httpServer = createServer(app);
+
+// Socket.IO 서버 초기화
+const io = setupSocket(httpServer);
+app.set('io', io);  // Make io accessible in routes
+
+// HTTP 서버 이벤트 리스너 추가
+httpServer.on('error', (error) => {
+  console.error('❌ HTTP 서버 오류:', error);
+});
+
+httpServer.on('listening', () => {
+  const addr = httpServer.address();
+  const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
+  console.log(`🌐 HTTP 서버가 ${bind}에서 실행 중입니다.`);
+});
 
 //cors 방식 허용
 app.use(cors(corsOptions));
@@ -26,17 +47,9 @@ app.use(express.json());
 //단순 객체 문자열 형태로 본문 데이터 해석 (form-data 형태의 요청 body를 파싱하기 위함)
 app.use(express.urlencoded({ extended: false }));
 
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-    cookie: { maxAge: 5 * 60 * 1000 }, // 5분
-  })
-);
+app.use(cookieParser());
 
 app.use(passport.initialize());
-app.use(passport.session());
 
 app.use(stateHandler);
 
@@ -75,12 +88,28 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     // DB 연결 테스트 & 커넥션 풀 초기화
+    console.log('🔌 데이터베이스에 연결 중...');
     await prisma.$connect();
     console.log("✅ Database connected successfully");
 
+    // 서버 시작
+    const PORT = process.env.PORT || 8000;
+    const HOST = '0.0.0.0';
+    
+    httpServer.listen(PORT, HOST, () => {
+      const serverUrl = `http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`;
+      console.log('\n🚀 ===== 서버 시작 =====');
+      console.log(`   - 서버 주소: ${serverUrl}`);
+      console.log(`   - 서버 시간: ${new Date().toISOString()}`);
+      console.log(`   - Node.js 버전: ${process.version}`);
+      console.log(`   - 플랫폼: ${process.platform} ${process.arch}`);
+      console.log(`   - 메모리 사용량: ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`);
+      console.log('==========================\n');
+
+      /*
     // 서버 리스닝
     app.listen(port, () => {
-      console.log(`Example app listening on port ${port}`);
+      console.log(`Example app listening on port ${port}`);*/
     });
   } catch (err) {
     console.error("❌ Failed to connect to the database:", err);
