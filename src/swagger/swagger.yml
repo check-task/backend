@@ -530,6 +530,143 @@ paths:
                             type: string
                             format: date-time
                             example: "2026-01-20T10:00:00.000Z"
+  # 안읽은 알림 여부 반환
+  /api/v1/alarm/unread-count:
+    get:
+      tags:
+        - Alarm
+      summary: 안읽은 알림 여부 반환
+      description: 안읽은 알림 여부를 반환합니다.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 안읽은 알림 여부 반환 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                    example: 안읽은 알림 여부 반환 성공
+                  data:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        description: 안읽은 알림 개수
+                      hasUnread:
+                        type: boolean
+                        description: 안읽은 알림 존재 여부
+              examples:
+                안읽은_알림_있음:
+                  summary: 안읽은 알림이 있는 경우
+                  value:
+                    resultType: SUCCESS
+                    message: 안읽은 알림 여부 반환 성공
+                    data:
+                      count: 3
+                      hasUnread: true
+                안읽은_알림_없음:
+                  summary: 안읽은 알림이 없는 경우
+                  value:
+                    resultType: SUCCESS
+                    message: 안읽은 알림 여부 반환 성공
+                    data:
+                      count: 0
+                      hasUnread: false
+        '401':
+          description: 토큰 관련 에러
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: FAIL
+                  code:
+                    type: integer
+                    example: 401
+                  errorCode:
+                    type: string
+                    example: TOKEN_NOT_FOUND | TOKEN_INVALID | TOKEN_EXPIRED 
+                  reason:
+                    type: string
+                    example: 토큰이 누락되었습니다. | 토큰이 유효하지 않습니다. | 토큰이 만료되었습니다.
+                  data:
+                    type: "null"
+                    example: null
+        '403':
+          description: 권한 없음 (탈퇴한 유저)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: FAIL
+                  code:
+                    type: integer
+                    example: 403
+                  errorCode:
+                    type: string
+                    example: USER_DELETED
+                  reason:
+                    type: string
+                    example: 탈퇴한 유저는 알림을 조회할 수 없습니다.
+                  data:
+                    type: "null"
+                    example: null
+        '404':
+          description: 사용자를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: FAIL
+                  code:
+                    type: integer
+                    example: 404
+                  errorCode:
+                    type: string
+                    example: USER_NOT_FOUND
+                  reason:
+                    type: string
+                    example: 사용자를 찾을 수 없습니다.
+                  data:
+                    type: "null"
+                    example: null
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: FAIL
+                  code:
+                    type: integer
+                    example: 500
+                  errorCode:
+                    type: string
+                    example: INTERNAL_SERVER_ERROR
+                  reason:
+                    type: string
+                    example: 서버 내부 오류가 발생했습니다.
+                  data:
+                    type: "null"
+                    example: null
   # -- 과제 API --
   # 과제 등록
   /api/v1/task:

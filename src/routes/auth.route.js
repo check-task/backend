@@ -12,7 +12,7 @@ router.get("/kakao",
   (req, res, next) => {
     const ALLOWED_STATES = ["local", "prod"];
     const state = req.query.state || "prod";
-    if (!ALLOWED_STATES.includes(state)) { throw BadRequestError("잘못된 state값을 입력했습니다.") }
+    if (!ALLOWED_STATES.includes(state)) { throw new BadRequestError("INVALID_STATE", "잘못된 state값을 입력했습니다.") }
 
     passport.authenticate("kakao", {
       state,
@@ -24,10 +24,12 @@ router.get(
   "/kakao/callback",
   kakaoMiddleware.callback,
   (req, res) => {
+    console.log("✅ KAKAO CALLBACK HIT");
+    console.log("REQ.USER:", req.user);
     const ALLOWED_STATES = ["local", "prod"];
     const state = req.query.state || "prod";
   
-    if (!ALLOWED_STATES.includes(state)) { throw BadRequestError("잘못된 state값을 입력했습니다.") }
+    if (!ALLOWED_STATES.includes(state)) { throw new BadRequestError("INVALID_STATE", "잘못된 state값을 입력했습니다.") }
 
     const REDIRECT_URL_MAP = {
       local: process.env.FRONTEND_LOCAL,
