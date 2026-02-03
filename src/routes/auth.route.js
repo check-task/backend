@@ -24,8 +24,6 @@ router.get(
   "/kakao/callback",
   kakaoMiddleware.callback,
   (req, res) => {
-    console.log("✅ KAKAO CALLBACK HIT");
-    console.log("REQ.USER:", req.user);
     const ALLOWED_STATES = ["local", "prod"];
     const state = req.query.state || "prod";
   

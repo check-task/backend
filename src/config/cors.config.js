@@ -5,7 +5,7 @@ export const corsOptions = {
     "https://frontend-one-chi-11.vercel.app",
   ],
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  credential: true,
+  credentials: true,
   preflightContinue: false,
   optionsSuccessStatus: 204,
 };
