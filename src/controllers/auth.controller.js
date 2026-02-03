@@ -55,8 +55,6 @@ export class AuthController{
 
   async refresh(req, res, next){
     try{
-      
-      console.log("cookies:", req.cookies);
       const refreshToken =
         req.cookies?.refreshToken ||
         req.headers.authorization?.replace("Bearer ", "");
