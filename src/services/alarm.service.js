@@ -305,6 +305,26 @@ class AlarmService {
     // return updateAllAlarmReadResponseDto(updatedAlarms);
     return null;
   }
+
+  // 안읽은 알림 개수 확인
+  async getUnreadAlarmCount(userId) {
+    const user = await checkDeletedUser(userId);
+
+    if (user.deletedAt) {
+      throw new ForbiddenError("USER_DELETED", "탈퇴한 유저는 알림을 조회할 수 없습니다.");
+    }
+
+    if (!user) {
+      throw new NotFoundError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
+    }
+
+    const count = await this.alarmRepository.countUnreadAlarms(userId);
+
+    return {
+      count,
+      hasUnread: count > 0,
+    };
+  }
 }
 
 export default new AlarmService();

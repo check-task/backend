@@ -182,6 +182,21 @@ class AlarmRepository {
       },
     });
   }
+
+  //안읽음 알림 여부 
+  async countUnreadAlarms(userId) {
+    const kstDate = dayjs().add(9, "hour").toDate();
+
+    return await prisma.userAlarm.count({
+      where: {
+        userId,
+        isRead: false,
+        alarmDate: {
+          lte: kstDate,
+        },
+      },
+    });
+  }
 }
 
 export default new AlarmRepository();
