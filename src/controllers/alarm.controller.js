@@ -203,6 +203,15 @@ class AlarmController {
 
     return res.success(result, "모든 알림 읽음 처리 성공");
   };
+
+  // 안읽은 알림 개수 확인
+  handleUnreadAlarmCount = async (req, res) => {
+    const userId = req.user.id;
+
+    const result = await this.alarmService.getUnreadAlarmCount(userId);
+
+    return res.success(result, "안읽은 알림 개수 조회 성공");
+  };
 }
 
 export default new AlarmController();

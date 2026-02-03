@@ -95,7 +95,7 @@ const startServer = async () => {
     // 서버 시작
     const PORT = process.env.PORT || 8000;
     const HOST = '0.0.0.0';
-    
+
     httpServer.listen(PORT, HOST, () => {
       const serverUrl = `http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`;
       console.log('\n🚀 ===== 서버 시작 =====');
