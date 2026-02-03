@@ -16,7 +16,10 @@ export const kakaoStrategy = new KakaoStrategy(
   //로그인 성공 후 실행되는 함수
   async (accessToken, refreshToken, profile, done) => {
     try{
-      const result = await kakaoAuthService.handleKakaoLogin(profile);
+      const result = await kakaoAuthService.handleKakaoLogin(
+        profile,
+        accessToken
+      );
       return done(null, result);
     }catch(err){
       return done(err);
