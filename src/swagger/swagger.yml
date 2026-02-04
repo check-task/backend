@@ -45,7 +45,7 @@ paths:
           schema:
             type: integer
           required: false
-          description: 페이징 커서
+          description: 페이징 커서 (마지막 알림 ID)
         - in: query
           name: limit
           schema:
@@ -117,11 +117,60 @@ paths:
                         properties:
                           hasNextPage:
                             type: boolean
-                            example: true
+                            example: false
                           cursor:
                             type: integer
                             nullable: true
-                            example: 5
+                            example: null
+        '401': 
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 401
+                  errorCode: TOKEN_NOT_FOUND
+                  reason: 토큰이 누락되었습니다.
+                  data: null
+        '403':
+          description: 탈퇴한 유저
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 403
+                  errorCode: USER_DELETED
+                  reason: 탈퇴한 유저는 알림을 조회할 수 없습니다.
+                  data: null
+        '404':
+          description: 사용자 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 404
+                  errorCode: USER_NOT_FOUND
+                  reason: 사용자를 찾을 수 없습니다.
+                  data: null
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 500
+                  errorCode: INTERNAL_SERVER_ERROR
+                  reason: 서버 내부 오류가 발생했습니다.
+                  data: null
+
     # 전체 알림 삭제    
     delete:
       tags:
@@ -147,6 +196,43 @@ paths:
                   data:
                     type: "null"
                     example: null
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 401
+                  errorCode: TOKEN_NOT_FOUND
+                  reason: 토큰이 누락되었습니다.
+                  data: null
+        '404':
+          description: 사용자 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 404
+                  errorCode: USER_NOT_FOUND
+                  reason: 사용자를 찾을 수 없습니다.
+                  data: null
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 500
+                  errorCode: INTERNAL_SERVER_ERROR
+                  reason: 서버 내부 오류가 발생했습니다.
+                  data: null
+
     # 모든 알림 읽음 처리
     patch:
       tags:
@@ -173,20 +259,55 @@ paths:
                     type: "null"
                     example: null
         '401': 
-          description: |
-            - TOKEN_NOT_FOUND: 인증 토큰이 없습니다.
-            - TOKEN_INVALID: 토큰이 유효하지 않습니다.
-            - TOKEN_EXPIRED: 토큰이 만료되었습니다.
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 401
+                  errorCode: TOKEN_NOT_FOUND | TOKEN_INVALID | TOKEN_EXPIRED
+                  reason: 토큰이 누락되었습니다. | 토큰이 유효하지 않습니다. | 토큰이 만료되었습니다.
+                  data: null
         '403':
-          description: |
-            - USER_DELETED: 탈퇴한 유저는 알림을 읽을 수 없습니다.
+          description: 권한 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 403
+                  errorCode: USER_DELETED
+                  reason: 탈퇴한 유저는 알림을 읽을 수 없습니다.
+                  data: null
         '404':
-          description: |
-            - USER_NOT_FOUND: 사용자를 찾을 수 없습니다.
+          description: 사용자 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 404
+                  errorCode: USER_NOT_FOUND
+                  reason: 사용자를 찾을 수 없습니다.
+                  data: null
         '500':
-          description: |
-            - INTERNAL_SERVER_ERROR: 서버 내부 오류가 발생했습니다.
-  # 개별 알림 삭제
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 500
+                  errorCode: INTERNAL_SERVER_ERROR
+                  reason: 서버 내부 오류가 발생했습니다.
+                  data: null
+
+  # 개별 알림 삭제 및 읽음 처리
   /api/v1/alarm/{alarmId}:
     delete:
       tags:
@@ -219,12 +340,85 @@ paths:
                   data:
                     type: "null"
                     example: null
-    # 알림 읽음 처리
+        '400':
+          description: 잘못된 요청 (파라미터 타입 오류 등)
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 400
+                  errorCode: INVALID_PARAMETER
+                  reason: params는 숫자로 보내야합니다.
+                  data: null
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 401
+                  errorCode: TOKEN_NOT_FOUND
+                  reason: 토큰이 누락되었습니다..
+                  data: null
+        '403':
+          description: 탈퇴한 유저
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 403
+                  errorCode: USER_DELETED
+                  reason: 탈퇴한 유저는 알림을 삭제할 수 없습니다.
+                  data: null
+        '403': 
+          description: 해당 알림에 접근 권한이 없습니다.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 403
+                  errorCode: ALARM_ACCESS_DENIED
+                  reason: 해당 알림에 접근할 권한이 없습니다.
+                  data: null
+        '404':
+          description: 알림 또는 사용자 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 404
+                  errorCode: ALARM_NOT_FOUND | USER_NOT_FOUND
+                  reason: 해당 알림을 찾을 수 없습니다. | 사용자를 찾을 수 없습니다.
+                  data: null
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 500
+                  errorCode: INTERNAL_SERVER_ERROR
+                  reason: 서버 내부 오류가 발생했습니다.
+                  data: null
+
+    # 개별 알림 읽음 처리
     patch:
       tags:
         - Alarm
       summary: 개별 알림 읽음 처리
-      description: 특정 알림을 읽음으로 표시합니다. -> 일단 전체 알림 읽기 처리로 대체해서 다른 API 사용하시면 됩니다.
+      description: 특정 알림을 읽음으로 표시합니다.
       security:
         - bearerAuth: []
       parameters:
@@ -269,26 +463,58 @@ paths:
                           alarmId:
                             type: integer
                             example: 1
-                          userId:
-                            type: integer
-                            example: 1
-                          taskId:
-                            type: integer
-                            nullable: true
-                            example: 1
-                          subTaskId:
-                            type: integer
-                            nullable: true
-                            example: null
-                          title:
-                            type: string
-                            example: 과제 마감 임박
-                          alarmContent:
-                            type: string
-                            example: 포트폴리오 웹사이트 제작 마감이 3일 남았습니다
                           isRead:
                             type: boolean
                             example: true
+        '400':
+          description: 잘못된 요청 (파라미터 타입 오류 등)
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 400
+                  errorCode: INVALID_PARAMETER | INVALID_BODY
+                  reason: params는 숫자로 보내야합니다. | Body는 Boolean값으로 보내야합니다.
+                  data: null
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 401
+                  errorCode: TOKEN_NOT_FOUND
+                  reason: 토큰이 누락되었습니다.
+                  data: null
+        '404':
+          description: 알림 또는 사용자 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 404
+                  errorCode: ALARM_NOT_FOUND | USER_NOT_FOUND
+                  reason: 해당 알림을 찾을 수 없습니다. | 사용자를 찾을 수 없습니다.
+                  data: null
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 500
+                  errorCode: INTERNAL_SERVER_ERROR
+                  reason: 서버 내부 오류가 발생했습니다.
+                  data: null
+
   # 최종 마감 알림 설정 수정
   /api/v1/alarm/settings/deadline:
     patch:
@@ -334,12 +560,58 @@ paths:
                           userId:
                             type: integer
                             example: 1
-                          nickname:
-                            type: string
-                            example: 홍길동
                           deadlineAlarm:
                             type: integer
                             example: 24
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 400
+                  errorCode: INVALID_BODY
+                  reason: DeadlineAlarm의 타입은 number 입니다.
+                  data: null
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 401
+                  errorCode: TOKEN_NOT_FOUND
+                  reason: 토큰이 누락되었습니다.
+                  data: null
+        '404':
+          description: 사용자 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 404
+                  errorCode: USER_NOT_FOUND
+                  reason: 사용자를 찾을 수 없습니다.
+                  data: null
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 500
+                  errorCode: INTERNAL_SERVER_ERROR
+                  reason: 서버 내부 오류가 발생했습니다.
+                  data: null
+
   # 과제 마감 알림 설정 수정
   /api/v1/alarm/settings/task:
     patch:
@@ -385,12 +657,58 @@ paths:
                           userId:
                             type: integer
                             example: 1
-                          nickname:
-                            type: string
-                            example: 홍길동
                           taskAlarm:
                             type: integer
                             example: 24
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 400
+                  errorCode: INVALID_BODY
+                  reason: TaskAlarm의 타입은 number 입니다.
+                  data: null
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 401
+                  errorCode: TOKEN_NOT_FOUND
+                  reason: 토큰이 누락되었습니다.
+                  data: null
+        '404':
+          description: 사용자 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 404
+                  errorCode: USER_NOT_FOUND
+                  reason: 사용자를 찾을 수 없습니다.
+                  data: null
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 500
+                  errorCode: INTERNAL_SERVER_ERROR
+                  reason: 서버 내부 오류가 발생했습니다.
+                  data: null
+
   # 과제 알림 여부 수정
   /api/v1/alarm/task/{taskId}:
     patch:
@@ -443,20 +761,58 @@ paths:
                           taskId:
                             type: integer
                             example: 1
-                          title:
-                            type: string
-                            example: 포트폴리오 웹사이트 제작
-                          deadline:
-                            type: string
-                            format: date
-                            example: "2026-01-27"
                           isAlarm:
                             type: boolean
                             example: true
-                          updatedAt:
-                            type: string
-                            format: date-time
-                            example: "2026-01-20T10:00:00.000Z"
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 400
+                  errorCode: INVALID_PARAMETER | INVALID_BODY
+                  reason: params의 taskId는 숫자로 보내야합니다. | Body의 isAlarm 데이터는 Boolean 형식으로 보내야합니다.
+                  data: null
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 401
+                  errorCode: TOKEN_NOT_FOUND
+                  reason: 토큰이 누락되었습니다.
+                  data: null
+        '404':
+          description: 사용자 또는 과제 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 404
+                  errorCode: USER_NOT_FOUND | TASK_NOT_FOUND
+                  reason: 사용자를 찾을 수 없습니다. | 요청하신 taskID가 DB에 존재하지 않습니다.
+                  data: null
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 500
+                  errorCode: INTERNAL_SERVER_ERROR
+                  reason: 서버 내부 오류가 발생했습니다.
+                  data: null
+
   # 세부과제 알림 여부 수정
   /api/v1/alarm/subtask/{subtaskId}:
     patch:
@@ -509,27 +865,70 @@ paths:
                           subTaskId:
                             type: integer
                             example: 1
-                          assigneeId:
-                            type: integer
-                            nullable: true
-                            example: 1
-                          taskId:
-                            type: integer
-                            example: 1
-                          title:
-                            type: string
-                            example: 디자인 완료
-                          endDate:
-                            type: string
-                            format: date
-                            example: "2026-01-23"
                           isAlarm:
                             type: boolean
                             example: true
-                          updatedAt:
-                            type: string
-                            format: date-time
-                            example: "2026-01-20T10:00:00.000Z"
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 400
+                  errorCode: INVALID_PARAMETER | INVALID_BODY
+                  reason: params의 subTaskId는 숫자로 보내야합니다. | Body의 isAlarm 데이터는 Boolean 형식으로 보내야합니다.
+                  data: null
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 401
+                  errorCode: TOKEN_NOT_FOUND
+                  reason: 토큰이 누락되었습니다.
+                  data: null
+        '403':
+          description: 해당 세부과제에 접근 권한이 없습니다.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 403
+                  errorCode: SUBTASK_ACCESS_DENIED
+                  reason: 해당 세부과제에 접근할 권한이 없습니다.
+                  data: null
+        '404':
+          description: 사용자 또는 세부과제 없음 또는 세부과제 업데이트에 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 404
+                  errorCode: USER_NOT_FOUND | SUBTASK_NOT_FOUND | SUBTASK_UPDATE_FAILED
+                  reason: 사용자를 찾을 수 없습니다. | 세부과제를 찾을 수 없습니다. | 세부과제 업데이트에 실패했습니다.
+                  data: null
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 500
+                  errorCode: INTERNAL_SERVER_ERROR
+                  reason: 서버 내부 오류가 발생했습니다.
+                  data: null
+
   # 안읽은 알림 여부 반환
   /api/v1/alarm/unread-count:
     get:
@@ -541,7 +940,7 @@ paths:
         - bearerAuth: []
       responses:
         '200':
-          description: 안읽은 알림 여부 반환 성공
+          description: 성공
           content:
             application/json:
               schema:
@@ -552,121 +951,66 @@ paths:
                     example: SUCCESS
                   message:
                     type: string
-                    example: 안읽은 알림 여부 반환 성공
+                    example: 안읽은 알림 개수 조회 성공
                   data:
                     type: object
                     properties:
                       count:
                         type: integer
                         description: 안읽은 알림 개수
+                        example: 3
                       hasUnread:
                         type: boolean
                         description: 안읽은 알림 존재 여부
-              examples:
-                안읽은_알림_있음:
-                  summary: 안읽은 알림이 있는 경우
-                  value:
-                    resultType: SUCCESS
-                    message: 안읽은 알림 여부 반환 성공
-                    data:
-                      count: 3
-                      hasUnread: true
-                안읽은_알림_없음:
-                  summary: 안읽은 알림이 없는 경우
-                  value:
-                    resultType: SUCCESS
-                    message: 안읽은 알림 여부 반환 성공
-                    data:
-                      count: 0
-                      hasUnread: false
+                        example: true
         '401':
-          description: 토큰 관련 에러
+          description: 인증 실패
           content:
             application/json:
               schema:
                 type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: FAIL
-                  code:
-                    type: integer
-                    example: 401
-                  errorCode:
-                    type: string
-                    example: TOKEN_NOT_FOUND | TOKEN_INVALID | TOKEN_EXPIRED 
-                  reason:
-                    type: string
-                    example: 토큰이 누락되었습니다. | 토큰이 유효하지 않습니다. | 토큰이 만료되었습니다.
-                  data:
-                    type: "null"
-                    example: null
+                example:
+                  resultType: FAIL
+                  code: 401
+                  errorCode: TOKEN_NOT_FOUND
+                  reason: 인증 토큰이 없습니다.
+                  data: null
         '403':
           description: 권한 없음 (탈퇴한 유저)
           content:
             application/json:
               schema:
                 type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: FAIL
-                  code:
-                    type: integer
-                    example: 403
-                  errorCode:
-                    type: string
-                    example: USER_DELETED
-                  reason:
-                    type: string
-                    example: 탈퇴한 유저는 알림을 조회할 수 없습니다.
-                  data:
-                    type: "null"
-                    example: null
+                example:
+                  resultType: FAIL
+                  code: 403
+                  errorCode: USER_DELETED
+                  reason: 탈퇴한 유저는 알림을 조회할 수 없습니다.
+                  data: null
         '404':
-          description: 사용자를 찾을 수 없음
+          description: 사용자 없음
           content:
             application/json:
               schema:
                 type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: FAIL
-                  code:
-                    type: integer
-                    example: 404
-                  errorCode:
-                    type: string
-                    example: USER_NOT_FOUND
-                  reason:
-                    type: string
-                    example: 사용자를 찾을 수 없습니다.
-                  data:
-                    type: "null"
-                    example: null
+                example:
+                  resultType: FAIL
+                  code: 404
+                  errorCode: USER_NOT_FOUND
+                  reason: 사용자를 찾을 수 없습니다.
+                  data: null
         '500':
           description: 서버 내부 오류
           content:
             application/json:
               schema:
                 type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: FAIL
-                  code:
-                    type: integer
-                    example: 500
-                  errorCode:
-                    type: string
-                    example: INTERNAL_SERVER_ERROR
-                  reason:
-                    type: string
-                    example: 서버 내부 오류가 발생했습니다.
-                  data:
-                    type: "null"
-                    example: null
+                example:
+                  resultType: FAIL
+                  code: 500
+                  errorCode: INTERNAL_SERVER_ERROR
+                  reason: 서버 내부 오류가 발생했습니다.
+                  data: null
   # -- 과제 API --
   # 과제 등록
   /api/v1/task:
