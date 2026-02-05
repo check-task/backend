@@ -49,7 +49,7 @@ model TaskPriority {
 // 사용자 (User)
 model User {
   id           Int     @id @default(autoincrement()) @map("user_id")
-  nickname     String  @db.VarChar(10)
+  nickname     String  @db.VarChar(100)
   phoneNum     String  @map("phone_num") @db.VarChar(15)
   email        String  @unique @db.VarChar(50)
   profileImage String? @map("profile_image") @db.VarChar(200)
