@@ -6,7 +6,7 @@ class TaskController {
   async getCompletedTasks(req, res, next) {
     try {
       const userId = req.user.id;
-      
+
       const tasksRaw = await taskService.getCompletedTasks(userId);
 
       res.status(200).json({
@@ -18,7 +18,7 @@ class TaskController {
       next(error);
     }
   }
-  
+
   // 과제 생성
   async createTask(req, res, next) {
     try {
@@ -177,24 +177,24 @@ class TaskController {
   }
 
   // 세부 TASK 날짜 변경
-  async updateSubTaskDeadline(req, res, next) {
-    try {
-      const { subTaskId } = req.params;
-      const { endDate } = req.body;
+  async updateSubTaskDeadline(req, res) {
+    // try {
+    const { subTaskId } = req.params;
+    const { endDate } = req.body;
 
-      const updatedTask = await taskService.updateSubTaskDeadline(subTaskId, endDate);
+    const updatedTask = await taskService.updateSubTaskDeadline(subTaskId, endDate);
 
-      res.status(200).json({
-        resultType: 'SUCCESS',
-        message: '마감 기한이 변경되었습니다.',
-        data: {
-          sub_task_id: updatedTask.id,
-          end_date: updatedTask.endDate.toISOString().split('T')[0]
-        }
-      });
-    } catch (error) {
-      next(error);
-    }
+    res.status(200).json({
+      resultType: 'SUCCESS',
+      message: '마감 기한이 변경되었습니다.',
+      data: {
+        sub_task_id: updatedTask.id,
+        end_date: updatedTask.endDate.toISOString().split('T')[0]
+      }
+    });
+    // } catch (error) {
+    //   next(error);
+    // }
   }
 
   // 세부 TASK 담당자 설정
@@ -264,7 +264,7 @@ class TaskController {
   // 세부 과제 추가
   async addSubTask(req, res, next) {
     try {
-      const {taskId} = req.params;
+      const { taskId } = req.params;
       const userId = req.user.id;
 
       const result = await taskService.createSingleSubTask(userId, parseInt(taskId), req.body);
