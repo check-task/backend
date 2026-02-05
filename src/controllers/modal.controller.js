@@ -1,7 +1,6 @@
 import { CreateReferenceDto, UpdateReferenceDto, CreateCommunicationDto, UpdateCommunicationDto, CreateLogDto, UpdateLogDto } from '../dtos/modal.dto.js';
 import { NotFoundError, BadRequestError } from '../errors/custom.error.js';
 import uploadToS3 from '../middlewares/upload.middleware.js';
-
 import modalService from '../services/modal.service.js';
 
 
