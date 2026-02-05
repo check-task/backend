@@ -23,7 +23,7 @@ export const setupCommentHandlers = (io, socket) => {
           //     updatedAt: now
           //   }
           // });
-          result = await CommentRepository.createComment(data, subTaskId);
+          result = await CommentRepository.createComment(data, data.subTaskId);
           break;
 
         case 'update':
