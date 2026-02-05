@@ -2946,7 +2946,7 @@ paths:
               properties:
                 name:
                   type: string
-                  description: 자료 이름 (파일의 경우 선택, URL의 경우 필수)
+                  description: 자료 이름 (파일인 경우 선택, URL인 경우 필수)
                 url:
                   type: string
                   description: URL (type=url일 때 필수)
@@ -3053,7 +3053,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               properties:
@@ -3065,10 +3065,8 @@ paths:
                   description: URL
                 file_url:
                   type: string
-                  description: 파일 URL
-              example:
-                name: "수정된 자료 이름"
-                url: "https://updated-example.com"
+                  format: binary
+                  description: 파일 (선택)
       responses:
         '200':
           description: 자료 수정 성공

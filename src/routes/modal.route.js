@@ -12,6 +12,8 @@ router.post('/data/:taskId', authenticate, upload.single("file_url"), modalContr
 router.post('/data/:taskId', authenticate, modalController.createReferences);
 
 router.patch('/data/:taskId/:referenceId', upload.single("file_url"), authenticate, modalController.updateReference);
+router.patch('/data/:taskId/:referenceId', authenticate, modalController.updateReference);
+
 router.delete('/data/:taskId/:referenceId', authenticate, modalController.deleteReference);
 
 //커뮤니케이션
