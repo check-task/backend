@@ -131,16 +131,6 @@ export class KakaoAuthService {
       //Refresh Token Redis에 저장
       await this.saveRefreshToken(tokenId, user.id);
 
-      // 추후 삭제
-
-      console.log("==========================================");
-      console.log("✅ 로그인 성공! 발급된 토큰 정보:");
-      console.log("👉 Access Token:", accessToken);
-      console.log("👉 Refresh Token:", refreshToken);
-      console.log("👤 로그인 유저 ID:", user.id);
-      console.log("==========================================");
-      //
-
       return{
         user,
         isNewUser,
