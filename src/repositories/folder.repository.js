@@ -8,6 +8,14 @@ class FolderRepository {
     });
   }
 
+  //폴더 목록 조회 (전체)
+  async findAllFolder(userId) {
+    return await prisma.folder.findMany({
+      where: { userId: userId },
+      orderBy: { createdAt: 'asc' }
+    });
+  }
+
   // 1. 폴더 생성
   async addFolder(userId, data) {
     const newFolder = await prisma.folder.create({
@@ -18,6 +26,7 @@ class FolderRepository {
       },
       select: {
         id: true,
+        userId: true,
         folderTitle: true,
         color: true,
       }
@@ -37,6 +46,7 @@ class FolderRepository {
       },
       select: {
         id: true,
+        userId: true,
         folderTitle: true,
         color: true,
       }

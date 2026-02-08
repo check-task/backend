@@ -1,8 +1,14 @@
 import { folderRepository } from "../repositories/folder.repository.js";
 import { FolderDto } from "../dtos/folder.dto.js";
-import { NotFoundError, ForbiddenError, InternalServerError } from "../errors/custom.error.js";
+import { NotFoundError, ForbiddenError, InternalServerError, BadRequestError } from "../errors/custom.error.js";
 
 class FolderService {
+  // 0. 폴더 목록 조회
+  async getFolder(userId) {
+    const folder = await folderRepository.findAllFolder(userId);
+    return FolderDto.responseFromFolderList(folder);
+  }
+
   // 1. 폴더 생성
   async createFolder(userId, body) {
     const folderData = FolderDto.bodyToFolderDto(body);
@@ -27,18 +33,30 @@ class FolderService {
 
       const updateData = {};
       
-      if (body.folderTitle) {
-        updateData.folderTitle = body.folderTitle;
+      if (body.folderTitle && body.folderTitle.trim() !== "") {
+        const trimmedTitle = body.folderTitle.trim();
+        
+        if (trimmedTitle.length > 11) {
+          throw new BadRequestError("INVALID_LENGTH", "폴더 이름은 공백 포함 11자 이내여야 합니다.");
+        }
+        updateData.folderTitle = trimmedTitle;
       }
       
-      if (body.color) {
-        updateData.color = body.color;
+      if (body.color && body.color.trim() !== "") {
+        const trimmedColor = body.color.trim();
+        const colorRegex = /^#[0-9A-Fa-f]{6}$/;
+
+        if (!colorRegex.test(trimmedColor)) {
+          throw new BadRequestError("INVALID_COLOR", "색상은 #을 포함한 7자리 Hex 코드여야 합니다.");
+        }
+        updateData.color = trimmedColor;
       }
 
       if (Object.keys(updateData).length === 0) {
         return FolderDto.responseFromFolder(folder);
       }
 
+      // 3. DB 업데이트
       const updatedFolder = await folderRepository.updateFolder(userId, folderId, updateData);
       
       return FolderDto.responseFromFolder(updatedFolder);

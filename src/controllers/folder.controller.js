@@ -1,6 +1,22 @@
 import { folderService } from "../services/folder.service.js";
 
 class FolderController {
+
+  getFolder = async (req, res, next) => {
+    try {
+      const userId = req.user.id;
+      const result = await folderService.getFolder(userId);
+
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "폴더 목록 조회 성공",
+        data: result
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
   // 1. 폴더 생성
   createFolder = async (req, res, next) => {
     try {

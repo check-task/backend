@@ -7,8 +7,12 @@ export class FolderDto {
       throw new BadRequestError("INVALID_INPUT_VALUE", "폴더 이름은 필수입니다.");
     }
 
+    if (body.folderTitle.length > 11) {
+      throw new BadRequestError("INVALID_FOLDER_TITLE", "폴더 이름은 최대 11자까지만 가능합니다.");
+    }
+
     return {
-      folderTitle: body.folderTitle,
+      folderTitle: body.folderTitle.trim(), 
       color: body.color || "#000000", // 색상 없으면 기본 검정
     };
   }
@@ -17,8 +21,20 @@ export class FolderDto {
   static responseFromFolder(folder) {
     return {
       folderId: folder.id,
+      userId: folder.userId,
       folderTitle: folder.folderTitle,
       color: folder.color      
+    };
+  }
+
+  static responseFromFolderList(folder) {
+    return {
+      folders: folder.map(folder => ({
+        folderId: folder.id,
+        userId: folder.userId,
+        folderTitle: folder.folderTitle,
+        color: folder.color
+      }))
     };
   }
 }
