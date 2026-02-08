@@ -21,6 +21,15 @@ class TaskService {
   async registerTask(userId, data) {
     const { subTasks, references, folderId, ...taskData } = data;
 
+    console.log("생성 시도 유저 ID:", userId)
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      throw new NotFoundError("USER_NOT_FOUND", "존재하지 않는 사용자입니다. 다시 로그인해 주세요.");
+    }
+
     if (!taskData.title) throw new BadRequestError("과제명은 필수입니다.");
 
     // folderId가 있을 때만 폴더 존재 여부 확인
