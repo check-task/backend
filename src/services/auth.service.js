@@ -127,7 +127,7 @@ export class KakaoAuthService {
       //토근 생성
       const accessToken = this.generateAccessToken(user);
       const { refreshToken, tokenId } = this.generateRefreshToken(user);
-      
+
       //Refresh Token Redis에 저장
       await this.saveRefreshToken(tokenId, user.id);
 

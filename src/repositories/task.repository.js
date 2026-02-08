@@ -65,14 +65,18 @@ class TaskRepository {
 
   // 과제 목록 조회
   async findAllTasks({ userId, type, folderId, sort }) {
-    console.log("userid:", userId);
+    const now = new Date();
+
     const query = {
       where: {
         members: {
           some: {
             userId: userId
           }
-        }
+        },
+        deadline: {
+            gte: now
+          }
       },
       include: {
         folder: true,

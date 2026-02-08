@@ -90,7 +90,8 @@ export class TaskResponseDTO extends TaskUtils {
     return (Array.isArray(tasks) ? tasks : []).map(task => ({
       taskId: task.id,
       folderId: task.folderId,
-      folderTitle: task.folder?.title || "PENDING",
+      foldercolor: task.folder?.color || "값 없음",
+      status: task.status || "PENDING",
       title: task.title,
       type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
       deadline: this.formatDate(task.deadline),
