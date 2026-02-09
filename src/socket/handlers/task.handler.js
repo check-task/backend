@@ -47,19 +47,28 @@ export const commentEvents = {
   DELETED_COMMENT: 'comment:deleted',
 };
 
-
 //커뮤니케이션 API 관련 SOCKET 이벤트 정의
 export const communicationEvents = {
   // 클라이언트 -> 서버
   CREATE_COMMUNICATION: "communication:create",
   UPDATE_COMMUNICATION: "communication:update",
   DELETE_COMMUNICATION: "communication:delete",
-
   // 서버 -> 클라이언트
   CREATED_COMMUNICATION: "communication:created",
   UPDATED_COMMUNICATION: "communication:updated",
   DELETED_COMMUNICATION: "communication:deleted",
 };
+
+export const logEvents = {
+  //클라이언트 -> 서버로 명령
+  CREATE_LOG: "log:create",
+  UPDATE_LOG: "log:update",
+  DELETE_LOG: "log:delete",
+  //서버 -> 클라이언트
+  CREATED_LOG: "log:created",
+  UPDATED_LOG: "log:updated",
+  DELETED_LOG: "log:deleted",
+}
 
 /**
  * 태스크 관련 소켓 이벤트 핸들러
