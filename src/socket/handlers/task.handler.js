@@ -52,6 +52,27 @@ export const setupTaskHandlers = (io, socket) => {
     console.log(`📌 [${socket.user.id}] 사용자가 태스크 방에 입장했습니다. (Task ID: ${taskId})`);
   });
 
+  socket.on('debug:checkRoom', (taskId) => {
+    const roomName = `task:${taskId}`;
+    const clients = io.sockets.adapter.rooms.get(roomName);
+
+    console.log(`=== 🏠 방 [${roomName}] 참여자 목록 ===`);
+    if (clients) {
+      console.log(`총 ${clients.size}명 참여 중`);
+      for (const clientId of clients) {
+        // 소켓 객체 찾기
+        const clientSocket = io.sockets.sockets.get(clientId);
+        const user = clientSocket?.user; // 우리가 저장해둔 사용자 정보
+
+        console.log(`- Socket ID: ${clientId}`);
+        console.log(`  User: ${user ? `ID: ${user.id}` : '비회원/정보없음'}`);
+      }
+    } else {
+      console.log('방이 존재하지 않거나 비어있습니다.');
+    }
+    console.log('====================================');
+  });
+
   // 서브과제 상태 업데이트
   socket.on(taskEvents.UPDATE_SUBTASK, async ({ taskId, subTaskId, status }, callback) => {
     try {
@@ -328,7 +349,7 @@ export const setupTaskHandlers = (io, socket) => {
       });
 
       // 같은 Task 방에 있는 사람들에게 알림
-      io.to(`task:${taskId}`).emit(commentEvents.CREATED_COMMENT, {
+      socket.to(`task:${taskId}`).emit(commentEvents.CREATED_COMMENT, {
         taskId: Number(taskId),
         subTaskId: Number(subTaskId),
         comment: newComment
@@ -356,12 +377,13 @@ export const setupTaskHandlers = (io, socket) => {
 
       const updatedComment = await CommentService.updateComment(Number(commentId), userId, content);
 
-      io.to(`task:${taskId}`).emit(commentEvents.UPDATED_COMMENT, {
+      //나 제외하고 모두에게 보냄.
+      socket.to(`task:${taskId}`).emit(commentEvents.UPDATED_COMMENT, {
         taskId: Number(taskId),
         subTaskId: Number(subTaskId),
         comment: updatedComment
       });
-
+      console.log(`[SOCKET][comment:updated] 브로드캐스트 완료`);
       callback?.({ success: true, data: updatedComment });
 
     } catch (err) {
