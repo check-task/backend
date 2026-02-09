@@ -1,10 +1,7 @@
 import prisma from "../../db.config.js";
 import modalService from '../../services/modal.service.js';
 import { CreateReferenceDto, UpdateReferenceDto, } from '../../dtos/modal.dto.js';
-import { UnauthorizedError } from '../../errors/custom.error.js';
-import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
-dotenv.config();
+import { CommentService } from '../../services/comment.service.js';
 
 //과제 API 관련 SOCKET
 export const taskEvents = {
@@ -30,6 +27,19 @@ export const referenceEvents = {
   UPDATED_REFERENCE: 'reference:updated',
   DELETED_REFERENCE: 'reference:deleted',
 };
+
+//댓글 API 관련 SOCKET
+export const commentEvents = {
+  //클라이언트 -> 서버로 명령
+  CREATE_COMMENT: 'comment:create',
+  UPDATE_COMMENT: 'comment:update',
+  DELETE_COMMENT: 'comment:delete',
+  //서버 -> 클라이언트로 결과
+  CREATED_COMMENT: 'comment:created',
+  UPDATED_COMMENT: 'comment:updated',
+  DELETED_COMMENT: 'comment:deleted',
+};
+
 /**
  * 태스크 관련 소켓 이벤트 핸들러
  * @param {Server} io - Socket.IO 서버 인스턴스
@@ -39,7 +49,7 @@ export const setupTaskHandlers = (io, socket) => {
   // 태스크 방 입장
   socket.on(taskEvents.JOIN_TASK, (taskId) => {
     socket.join(`task:${taskId}`);
-    console.log(`📌 [${socket.id}] 사용자가 태스크 방에 입장했습니다. (Task ID: ${taskId})`);
+    console.log(`📌 [${socket.user.id}] 사용자가 태스크 방에 입장했습니다. (Task ID: ${taskId})`);
   });
 
   // 서브과제 상태 업데이트
@@ -48,7 +58,7 @@ export const setupTaskHandlers = (io, socket) => {
       const numericSubTaskId = Number(subTaskId);
       const normalizedStatus = status.toUpperCase();
 
-      console.log(`🔄 [${socket.id}] 서브태스크 상태 업데이트 시도:`, {
+      console.log(`🔄 [${socket.user.id}] 서브태스크 상태 업데이트 시도:`, {
         taskId,
         subTaskId: numericSubTaskId,
         status: normalizedStatus
@@ -87,7 +97,7 @@ export const setupTaskHandlers = (io, socket) => {
         data: updatedSubTask
       });
     } catch (error) {
-      console.error(`❌ [${socket.id}] 서브태스크 상태 업데이트 실패:`, error);
+      console.error(`❌ [${socket.user.id}] 서브태스크 상태 업데이트 실패:`, error);
       if (typeof callback === 'function') {
         callback({
           success: false,
@@ -200,25 +210,14 @@ export const setupTaskHandlers = (io, socket) => {
   //자료 생성 Socket
   socket.on(referenceEvents.CREATE_REFERENCE, async (payload, callback) => {
     try {
-      const { taskId, type, item, token } = payload;
-      console.log(`[SOCKET][reference:create] 요청 수신`, { socketId: socket.id, taskId, type, });
-      if (!token) { throw new UnauthorizedError("UNAUTHORIZED_SOCKET", "인증 토큰이 없습니다."); }
-
-      let decoded;
-      try {
-        decoded = jwt.verify(token, process.env.JWT_SECRET);
-      } catch (err) {
-        throw new UnauthorizedError('INVALID_TOKEN', '유효하지 않은 토큰입니다');
-      }
-
-      const userId = decoded.id;
-      console.log(`[SOCKET][reference:create] 인증 성공`, { userId, taskId, });
+      const { taskId, type, item } = payload;
+      console.log(`[SOCKET][reference:create] 요청 수신`, { userId: socket.user.id, taskId, type, });
 
       //service에서 호출 -> DB 생성
       const data = await modalService.createReferences(
         new CreateReferenceDto({
           taskId: Number(taskId),
-          userId,
+          userId: socket.user.id,
           type,
           items: [item],
         })
@@ -246,26 +245,15 @@ export const setupTaskHandlers = (io, socket) => {
   //자료 수정 Socket
   socket.on(referenceEvents.UPDATE_REFERENCE, async (payload, callback) => {
     try {
-      const { taskId, referenceId, name, url, file_url, token } = payload;
+      const { taskId, referenceId, name, url, file_url } = payload;
       console.log(`[SOCKET][reference:update] 요청 수신`, { socketId: socket.id, taskId, referenceId });
-      if (!token) { throw new UnauthorizedError("UNAUTHORIZED_SOCKET", "인증 토큰이 없습니다."); }
-
-      let decoded;
-      try {
-        decoded = jwt.verify(token, process.env.JWT_SECRET);
-      } catch (err) {
-        throw new UnauthorizedError('INVALID_TOKEN', '유효하지 않은 토큰입니다');
-      }
-
-      const userId = decoded.id;
-      console.log(`[SOCKET][reference:update] 인증 성공`, { userId, taskId, });
 
       //service에서 호출 -> DB 수정
       const data = await modalService.updateReference(
         new UpdateReferenceDto({
           taskId: Number(taskId),
           referenceId: Number(referenceId),
-          userId,
+          userId: socket.user.id,
           name,
           url,
           file_url,
@@ -295,24 +283,14 @@ export const setupTaskHandlers = (io, socket) => {
   // 자료 삭제 Socket
   socket.on(referenceEvents.DELETE_REFERENCE, async (payload, callback) => {
     try {
-      const { taskId, referenceId, token } = payload;
+      const { taskId, referenceId } = payload;
       console.log(`[SOCKET][reference:delete] 요청 수신`, { socketId: socket.id, taskId, referenceId, });
-      if (!token) { throw new UnauthorizedError("UNAUTHORIZED_SOCKET", "인증 토큰이 없습니다."); }
 
-      let decoded;
-      try {
-        decoded = jwt.verify(token, process.env.JWT_SECRET);
-      } catch (err) {
-        throw new UnauthorizedError('INVALID_TOKEN', '유효하지 않은 토큰입니다');
-      }
-
-      const userId = decoded.id;
-      console.log(`[SOCKET][reference:delete] 인증 성공`, { userId, taskId, });
       // service에서 호출 -> DB 삭제
       await modalService.deleteReference({
         taskId: Number(taskId),
         referenceId: Number(referenceId),
-        userId,
+        userId: socket.user.id,
       });
 
       // 같은 task 방에 broadcast
@@ -334,7 +312,90 @@ export const setupTaskHandlers = (io, socket) => {
       });
     }
   });
+
+  // 댓글 생성
+  socket.on(commentEvents.CREATE_COMMENT, async (payload, callback) => {
+    try {
+      const { taskId, subTaskId, content } = payload;
+      const userId = socket.user.id;
+
+      console.log(`[SOCKET][comment:create] 요청 수신`, { userId, taskId, subTaskId, content });
+
+      // Service 호출
+      const newComment = await CommentService.createComment(Number(subTaskId), {
+        userId: userId,
+        content: content,
+      });
+
+      // 같은 Task 방에 있는 사람들에게 알림
+      io.to(`task:${taskId}`).emit(commentEvents.CREATED_COMMENT, {
+        taskId: Number(taskId),
+        subTaskId: Number(subTaskId),
+        comment: newComment
+      });
+
+      console.log(`[SOCKET][${EVENTS.CREATED}] 브로드캐스트 완료`);
+      callback?.({ success: true, data: newComment });
+
+    } catch (err) {
+      console.error(`[SOCKET][comment:create] 실패`, err);
+      callback?.({
+        success: false,
+        message: err.message || '댓글 생성 실패'
+      });
+    }
+  });
+
+  // 댓글 수정
+  socket.on(commentEvents.UPDATE_COMMENT, async (payload, callback) => {
+    try {
+      const { taskId, subTaskId, commentId, content } = payload;
+      const userId = socket.user.id;
+
+      console.log(`[SOCKET][comment:update] 요청 수신`, { userId, commentId });
+
+      const updatedComment = await CommentService.updateComment(Number(commentId), userId, content);
+
+      io.to(`task:${taskId}`).emit(commentEvents.UPDATED_COMMENT, {
+        taskId: Number(taskId),
+        subTaskId: Number(subTaskId),
+        comment: updatedComment
+      });
+
+      callback?.({ success: true, data: updatedComment });
+
+    } catch (err) {
+      console.error(`[SOCKET][comment:update] 실패`, err);
+      callback?.({ success: false, message: err.message });
+    }
+  });
+
+  // 댓글 삭제
+  socket.on(commentEvents.DELETE_COMMENT, async (payload, callback) => {
+    try {
+      const { taskId, subTaskId, commentId } = payload;
+      const userId = socket.user.id;
+
+      console.log(`[SOCKET][comment:delete] 요청 수신`, { userId, commentId });
+
+      await CommentService.deleteComment(Number(commentId), userId);
+
+      io.to(`task:${taskId}`).emit(commentEvents.DELETED_COMMENT, {
+        taskId: Number(taskId),
+        subTaskId: Number(subTaskId),
+        commentId: Number(commentId)
+      });
+
+      callback?.({ success: true });
+
+    } catch (err) {
+      console.error(`[SOCKET][comment:delete] 실패`, err);
+      callback?.({ success: false, message: err.message });
+    }
+  });
 };
+
+
 
 /**
  * 소켓 응답 헬퍼 함수
