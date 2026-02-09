@@ -14,13 +14,13 @@ export const taskEvents = {
   UPDATE_SUBTASK: 'updateSubtaskStatus', //세부과제 상태 업데이트
   UPDATE_DEADLINE: 'updateDeadline', //세부과제 마감일 업데이트
   SET_ASSIGNEE: 'setSubTaskAssignee', //세부과제 담당자 설정
-  UPDATE_TASK: 'task:update', .// 과제 수정
+  UPDATE_TASK: 'task:update', // 과제 수정
   UPDATE_MEMBER: 'member:update', // 멤버 역할 변경
   CREATE_SUBTASK: 'subtask:create', // 단일 세부 과제 생성
   //서버 -> 클라이언트로 결과
   SUBTASK_UPDATED: 'subtaskStatusUpdated', //세부과제 상태 업데이트 완료
   DEADLINE_UPDATED: 'deadlineUpdated', //세부과제 마감일 업데이트 완료
-  ASSIGNEE_UPDATED: 'subtaskAssigneeUpdated' //세부과제 담당자 업데이트
+  ASSIGNEE_UPDATED: 'subtaskAssigneeUpdated', //세부과제 담당자 업데이트
   TASK_UPDATED: 'task:updated', // 과제 수정 완료
   MEMBER_UPDATED: 'member:updated', // 멤버 역할 변경
   SUBTASK_CREATED: 'subtask:created' // 단일 세부 과제 생성
@@ -350,10 +350,10 @@ export const setupTaskHandlers = (io, socket) => {
 
       if (!token) throw new UnauthorizedError("UNAUTHORIZED_SOCKET", "인증 토큰이 없습니다.");
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
+
       // DB 수정 처리
       const result = await taskService.modifyTask(Number(taskId), data);
-      
+
       // 최신 상세 정보 조회 후 브로드캐스트
       const updatedTask = await taskService.getTaskDetail(Number(taskId));
       io.to(`task:${taskId}`).emit(taskEvents.TASK_UPDATED, updatedTask);
