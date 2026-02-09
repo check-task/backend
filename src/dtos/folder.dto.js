@@ -26,15 +26,4 @@ export class FolderDto {
       color: folder.color      
     };
   }
-
-  static responseFromFolderList(folder) {
-    return {
-      folders: folder.map(folder => ({
-        folderId: folder.id,
-        userId: folder.userId,
-        folderTitle: folder.folderTitle,
-        color: folder.color
-      }))
-    };
-  }
 }

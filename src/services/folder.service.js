@@ -3,12 +3,7 @@ import { FolderDto } from "../dtos/folder.dto.js";
 import { NotFoundError, ForbiddenError, InternalServerError, BadRequestError } from "../errors/custom.error.js";
 
 class FolderService {
-  // 0. 폴더 목록 조회
-  async getFolder(userId) {
-    const folder = await folderRepository.findAllFolder(userId);
-    return FolderDto.responseFromFolderList(folder);
-  }
-
+  
   // 1. 폴더 생성
   async createFolder(userId, body) {
     const folderData = FolderDto.bodyToFolderDto(body);
@@ -21,6 +16,7 @@ class FolderService {
   // 2. 폴더 수정
   async updateFolder(userId, folderId, body) {
     try {
+      // 검증을 위해 getFolderById 사용 (Repository에 남아있어야 함)
       const folder = await folderRepository.getFolderById(folderId);
 
       if (!folder) {
