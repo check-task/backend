@@ -444,7 +444,7 @@ class TaskService {
       return await prisma.$transaction(async (tx) => {
         // 이전 담당자가 있고, 담당자가 변경되는 경우 이전 담당자의 알림 삭제
         if (previousAssigneeId && previousAssigneeId !== parseInt(assigneeId || 0)) {
-          await alarmRepository.deleteSubTaskAlarm(previousAssigneeId, parsedSubTaskId);
+          await alarmRepository.deleteSubTaskAlarm(previousAssigneeId, parsedSubTaskId, tx); // 👈 tx 추가
         }
 
         // 담당자 업데이트 (assigneeId가 null이면 담당자 해제)

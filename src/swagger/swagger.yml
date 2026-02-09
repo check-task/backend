@@ -1086,6 +1086,30 @@ paths:
                       taskId:
                         type: integer
                         example: 13
+        '400':
+          description: 잘못된 요청 (필수 값 누락 또는 형식 오류)
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 400
+                errorCode: "BAD_REQUEST"
+                reason: "과제명은 필수입니다."
+                data: null
+        '401':
+          description: 인증 실패 (토큰 만료 또는 누락)
+        '404':
+          description: 존재하지 않는 폴더
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 404
+                errorCode: "FOLDER_NOT_FOUND"
+                reason: "존재하지 않는 폴더입니다."
+                data: null
+        '500':
+          description: 서버 내부 오류
 
     # 과제 목록 조회
     get:
@@ -1156,6 +1180,10 @@ paths:
                         progressRate:
                           type: integer
                           example: "50"
+        '401':
+          description: 인증 실패 (로그인 필요)
+        '500':
+          description: 서버 내부 오류
 
   # 과제 상세 조회
   /api/v1/task/{taskId}:
@@ -1256,6 +1284,20 @@ paths:
                             url:
                               type: string
                               example: "https://www.example.com"
+        '401':
+          description: 인증 실패
+        '404':
+          description: 과제를 찾을 수 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 404
+                errorCode: "과제를 찾을 수 없음"
+                reason: "리소스를 찾을 수 없습니다."
+                data: null
+        '500':
+          description: 서버 내부 오류
     
     # 과제 수정
     patch:
@@ -1348,6 +1390,29 @@ paths:
                       taskId:
                         type: integer
                         example: 1
+        '401':
+          description: 인증 실패 (토큰 만료 또는 누락)
+        '404':
+          description: 존재하지 않는 폴더
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 404
+                errorCode: "변경하려는 폴더가 존재하지 않습니다."
+                reason: "리소스를 찾을 수 없습니다"
+                data: null
+          description: 존재하지 않는 과제
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 404
+                errorCode: "수정하려는 과제가 존재하지 않습니다."
+                reason: "리소스를 찾을 수 없습니다."
+                data: null
+        '500':
+          description: 서버 내부 오류
 
 
     # 과제 삭제
@@ -1381,6 +1446,20 @@ paths:
                 data:
                   type: null
                   example: null
+        '401':
+          description: 인증 실패
+        '404':
+          description: 과제를 찾을 수 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 404
+                errorCode: "삭제하려는 과제가 존재하지 않습니다."
+                reason: "리소스를 찾을 수 없습니다"
+                data: null
+        '500':
+          description: 서버 내부 오류
 
 
   # 우선순위 일괄 수정
@@ -1425,13 +1504,45 @@ paths:
                 data:
                   type: null
                   example: null
+        '400':
+          description: 잘못된 요청 데이터
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 400
+                errorCode: "BAD_REQUEST"
+                reason: "orderedTasks 배열은 비어있을 수 없으며, taskId와 rank가 포함되어야 합니다."
+        '401':
+          description: 인증 실패
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN"
+                reason: "본인의 과제가 아닌 항목의 우선순위는 변경할 수 없습니다."
+        '404':
+          description: 과제를 찾을 수 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 404
+                errorCode: "과제가 존재하지 않습니다."
+                reason: "리소스를 찾을 수 없습니다."
+                data: null
+        '500':
+          description: 서버 내부 오류 (트랜잭션 실패 등)
   
   # 세부 과제 생성
   /api/v1/task/{taskId}/subTask:
     post:
       tags:
         - Task
-      summary: 세부 과제 단일 추가
+      summary: 단일 세부 과제 추가
       description: |
         특정 과제 내에 세부 과제를 하나 추가합니다.
         - 상태(status): PENDING 자동 지정
@@ -1494,6 +1605,27 @@ paths:
                       assigneeName:
                         type: string
                         example: "유저"
+        '400':
+          description: 마감일 설정 오류
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 400
+                errorCode: "INVALID_DEADLINE"
+                reason: "세부 과제의 마감일은 부모 과제의 마감일보다 늦을 수 없습니다."
+        '404':
+          description: 부모 과제를 찾을 수 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 404
+                errorCode: "존재하지 않는 과제입니다."
+                reason: "리소스를 찾을 수 없습니다."
+                data: null
+        '500':
+          description: 서버 내부 오류
 
   # 팀원 정보(역할) 수정
   /api/v1/task/{taskId}/member/{memberId}:
@@ -1555,6 +1687,25 @@ paths:
                       role:
                         type: integer
                         example: 1
+        '403':
+          description: 권한 없음 (Owner만 수정 가능)
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN"
+                reason: "해당 과제의 관리자만 팀원 역할을 수정할 수 있습니다."
+        '404':
+          description: 멤버를 찾을 수 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 404
+                errorCode: "멤버를 찾을 수 없음"
+                reason: "리소스를 찾을 수 없습니다."
+                data: null
 
 
   # 팀원 초대 링크 생성
@@ -1840,18 +1991,33 @@ paths:
                         type: integer
                         description: 생성된 멤버 ID
                         example: 5
-        '400':
-          description: |
-            잘못된 요청
-            - INVALID_INVITE_CODE: 유효하지 않은 초대 코드입니다.
         '403':
           description: |
-            권한 없음
             - EXPIRED_INVITE_CODE: 만료된 초대 코드입니다.
             - ALREADY_MEMBER: 이미 팀 멤버입니다.
+          content:
+              application/json:
+                schema:
+                  type: object
+                  example:
+                    resultType: "FAIL"
+                    code: 403
+                    errorCode: "EXPIRED_INVITE_CODE | ALREADY_MEMBER"
+                    reason: "만료된 초대 코드입니다. | 이미 팀 멤버입니다."
+                    data: null
         '404':
           description: |
             - INVALID_INVITE_CODE: 유효하지 않은 초대 코드입니다.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 404
+                  errorCode: "INVALID_INVITE_CODE"
+                  reason: "유효하지 않은 초대 코드입니다."
+                  data: null
 
   # 댓글 관련 API
   /api/v1/task/subtask/{subTaskId}/comments:
@@ -2101,7 +2267,7 @@ paths:
                   resultType: "FAIL"
                   code: 400
                   errorCode: "BAD_REQUEST"
-                  reason: "토큰이 형식에 맞지 않습니다."
+                  reason: "인증 토큰이 형식에 맞지 않습니다."
                   data: null
         '401':
           description: |
@@ -2304,6 +2470,9 @@ paths:
                       folderId:
                         type: integer
                         example: 10
+                      userId:
+                        type: integer
+                        example: 15
                       folderTitle:
                         type: string
                         example: "프로그래밍"
@@ -2314,6 +2483,7 @@ paths:
           description: |
             - BAD_REQUEST: 토큰이 형식에 맞지 않음.
             - INVALID_INPUT_VALUE: 폴더명이 비어있을 때.
+            - IINVALID_FOLDER_TITLE: 폴더 이름이 길 때.
           content:
             application/json:
               schema:
@@ -2321,8 +2491,8 @@ paths:
                 example:
                   resultType: "FAIL"
                   code: 400
-                  errorCode: "BAD_REQUEST | INVALID_INPUT_VALUE"
-                  reason: "토큰이 형식에 맞지 않습니다. | 폴더 이름은 필수입니다."
+                  errorCode: "BAD_REQUEST | INVALID_INPUT_VALUE | IINVALID_FOLDER_TITLE"
+                  reason: "인증 토큰이 형식에 맞지 않습니다. | 폴더 이름은 필수입니다. | 폴더 이름은 최대 11자까지만 가능합니다."
                   data: null
         '401':
           description: |
@@ -2350,7 +2520,7 @@ paths:
                   code: 500
                   errorCode: "INTERNAL_SERVER_ERROR"
                   reason: "서버 내부 오류가 발생했습니다."
-                  data: null                                                          
+                  data: null                                                                         
 
   # 폴더 수정 API
   /api/v1/user/folder/{folderId}:
@@ -2400,6 +2570,9 @@ paths:
                       folderId:
                         type: integer
                         example: 10
+                      userId:
+                        type: integer
+                        example: 15
                       folderTitle:
                         type: string
                         example: "프로그래밍"
@@ -2408,7 +2581,8 @@ paths:
                         example: "#123456"
         '400':
           description: |
-            - BAD_REQUEST: 토큰이 형식에 맞지 않음.      
+            - BAD_REQUEST: 토큰이 형식에 맞지 않음. 
+            - IINVALID_FOLDER_TITLE: 폴더 이름이 길 때.     
           content:
             application/json:
               schema:
@@ -2416,8 +2590,8 @@ paths:
                 example:
                   resultType: "FAIL"
                   code: 400
-                  errorCode: "BAD_REQUEST"
-                  reason: "토큰이 형식에 맞지 않습니다."
+                  errorCode: "BAD_REQUEST | IINVALID_FOLDER_TITLE"
+                  reason: "인증 토큰이 형식에 맞지 않습니다. | 폴더 이름은 최대 11자까지만 가능합니다."
                   data: null     
         '401':
           description: |
@@ -2557,7 +2731,7 @@ paths:
                   code: 500
                   errorCode: "INTERNAL_SERVER_ERROR"
                   reason: "서버 내부 오류가 발생했습니다."
-                  data: null
+                  data: null                
 
   #완료 과제 조회 API  
   /api/v1/task/completed:
