@@ -75,8 +75,8 @@ class TaskRepository {
           }
         },
         deadline: {
-          gte: now
-        }
+            gte: now
+          }
       },
       include: {
         folder: true,
