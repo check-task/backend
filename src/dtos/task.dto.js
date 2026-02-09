@@ -109,7 +109,7 @@ export class TaskResponseDTO extends TaskUtils {
         type: task.type === "PERSONAL" ? "개인" : "팀",
         status: task.status === 'COMPLETED' ? '완료' : '미완료', 
         folderId: task.folder?.id || null,
-        folderTitle: task.folder?.folderTitle || "미지정",
+        folderTitle: task.folder?.folderTitle || null,
         color: task.folder?.color || "#000000",
       }))
     };

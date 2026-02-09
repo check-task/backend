@@ -2267,7 +2267,7 @@ paths:
                   resultType: "FAIL"
                   code: 400
                   errorCode: "BAD_REQUEST"
-                  reason: "토큰이 형식에 맞지 않습니다."
+                  reason: "인증 토큰이 형식에 맞지 않습니다."
                   data: null
         '401':
           description: |
@@ -2470,6 +2470,9 @@ paths:
                       folderId:
                         type: integer
                         example: 10
+                      userId:
+                        type: integer
+                        example: 15
                       folderTitle:
                         type: string
                         example: "프로그래밍"
@@ -2480,6 +2483,7 @@ paths:
           description: |
             - BAD_REQUEST: 토큰이 형식에 맞지 않음.
             - INVALID_INPUT_VALUE: 폴더명이 비어있을 때.
+            - IINVALID_FOLDER_TITLE: 폴더 이름이 길 때.
           content:
             application/json:
               schema:
@@ -2487,8 +2491,8 @@ paths:
                 example:
                   resultType: "FAIL"
                   code: 400
-                  errorCode: "BAD_REQUEST | INVALID_INPUT_VALUE"
-                  reason: "토큰이 형식에 맞지 않습니다. | 폴더 이름은 필수입니다."
+                  errorCode: "BAD_REQUEST | INVALID_INPUT_VALUE | IINVALID_FOLDER_TITLE"
+                  reason: "인증 토큰이 형식에 맞지 않습니다. | 폴더 이름은 필수입니다. | 폴더 이름은 최대 11자까지만 가능합니다."
                   data: null
         '401':
           description: |
@@ -2516,7 +2520,7 @@ paths:
                   code: 500
                   errorCode: "INTERNAL_SERVER_ERROR"
                   reason: "서버 내부 오류가 발생했습니다."
-                  data: null                                                          
+                  data: null                                                                         
 
   # 폴더 수정 API
   /api/v1/user/folder/{folderId}:
@@ -2566,6 +2570,9 @@ paths:
                       folderId:
                         type: integer
                         example: 10
+                      userId:
+                        type: integer
+                        example: 15
                       folderTitle:
                         type: string
                         example: "프로그래밍"
@@ -2574,7 +2581,8 @@ paths:
                         example: "#123456"
         '400':
           description: |
-            - BAD_REQUEST: 토큰이 형식에 맞지 않음.      
+            - BAD_REQUEST: 토큰이 형식에 맞지 않음. 
+            - IINVALID_FOLDER_TITLE: 폴더 이름이 길 때.     
           content:
             application/json:
               schema:
@@ -2582,8 +2590,8 @@ paths:
                 example:
                   resultType: "FAIL"
                   code: 400
-                  errorCode: "BAD_REQUEST"
-                  reason: "토큰이 형식에 맞지 않습니다."
+                  errorCode: "BAD_REQUEST | IINVALID_FOLDER_TITLE"
+                  reason: "인증 토큰이 형식에 맞지 않습니다. | 폴더 이름은 최대 11자까지만 가능합니다."
                   data: null     
         '401':
           description: |
@@ -2723,7 +2731,7 @@ paths:
                   code: 500
                   errorCode: "INTERNAL_SERVER_ERROR"
                   reason: "서버 내부 오류가 발생했습니다."
-                  data: null
+                  data: null                
 
   #완료 과제 조회 API  
   /api/v1/task/completed:
