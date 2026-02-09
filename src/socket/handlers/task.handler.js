@@ -1,6 +1,6 @@
 import prisma from "../../db.config.js";
 import modalService from '../../services/modal.service.js';
-import { CreateReferenceDto, UpdateReferenceDto, } from '../../dtos/modal.dto.js';
+import { CreateReferenceDto, UpdateReferenceDto, CreateCommunicationDto, UpdateCommunicationDto} from '../../dtos/modal.dto.js';
 import { UnauthorizedError } from '../../errors/custom.error.js';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
@@ -23,6 +23,20 @@ export const referenceEvents = {
   UPDATED_REFERENCE: 'reference:updated',
   DELETED_REFERENCE: 'reference:deleted',
 };
+
+//커뮤니케이션 API 관련 SOCKET 이벤트 정의
+export const communicationEvents = {
+  // 클라이언트 -> 서버
+  CREATE_COMMUNICATION: 'communication:create',
+  UPDATE_COMMUNICATION: 'communication:update',
+  DELETE_COMMUNICATION: 'communication:delete',
+  
+  // 서버 -> 클라이언트
+  CREATED_COMMUNICATION: 'communication:created',
+  UPDATED_COMMUNICATION: 'communication:updated',
+  DELETED_COMMUNICATION: 'communication:deleted',
+};
+
 /**
  * 태스크 관련 소켓 이벤트 핸들러
  * @param {Server} io - Socket.IO 서버 인스턴스
@@ -221,6 +235,148 @@ export const setupTaskHandlers = (io, socket) => {
       callback?.({ success: true });
     } catch (err) {
       console.error('reference:delete 실패', err);
+      callback?.({
+        success: false,
+        errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
+        reason: err.reason ?? err.message,
+      });
+    }
+  });
+
+  // 커뮤니케이션
+
+  // 커뮤니케이션 생성 Socket
+  socket.on(communicationEvents.CREATE_COMMUNICATION, async (payload, callback) => {
+    try {
+      const { taskId, name, url, token } = payload;
+      console.log(`[SOCKET][communication:create] 요청 수신`, { socketId: socket.id, taskId, name });
+      
+      if (!token) { throw new UnauthorizedError("UNAUTHORIZED_SOCKET", "인증 토큰이 없습니다."); }
+
+      let decoded;
+      try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+      } catch (err) {
+        throw new UnauthorizedError('INVALID_TOKEN', '유효하지 않은 토큰입니다');
+      }
+
+      const userId = decoded.id;
+      console.log(`[SOCKET][communication:create] 인증 성공`, { userId, taskId });
+
+      const data = await modalService.createCommunication(
+        new CreateCommunicationDto({
+          taskId: Number(taskId),
+          userId,
+          name,
+          url
+        })
+      );
+
+      // 같은 task 방에 broadcast (전체 리스트 전송)
+      io.to(`task:${taskId}`).emit(
+        communicationEvents.CREATED_COMMUNICATION,
+        {
+          taskId: Number(taskId),
+          communications: data,
+        }
+      );
+      console.log(`[SOCKET][communication:created] 브로드캐스트 완료`);
+      callback?.({ success: true });
+    } catch (err) {
+      console.error('communication:create 실패', err);
+      callback?.({
+        success: false,
+        errorCode: err.errorCode ?? 'INTERNAL_SERVER_ERROR',
+        reason: err.reason ?? err.message,
+      });
+    }
+  });
+
+  // 커뮤니케이션 수정 Socket
+  socket.on(communicationEvents.UPDATE_COMMUNICATION, async (payload, callback) => {
+    try {
+      const { taskId, communicationId, name, url, token } = payload;
+      console.log(`[SOCKET][communication:update] 요청 수신`, { socketId: socket.id, taskId, communicationId });
+      
+      if (!token) { throw new UnauthorizedError("UNAUTHORIZED_SOCKET", "인증 토큰이 없습니다."); }
+
+      let decoded;
+      try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+      } catch (err) {
+        throw new UnauthorizedError('INVALID_TOKEN', '유효하지 않은 토큰입니다');
+      }
+
+      const userId = decoded.id;
+      console.log(`[SOCKET][communication:update] 인증 성공`, { userId, taskId });
+
+      const data = await modalService.updateCommunication(
+        new UpdateCommunicationDto({
+          taskId: Number(taskId),
+          communicationId: Number(communicationId),
+          userId,
+          name,
+          url
+        })
+      );
+
+      // 같은 task 방에 broadcast (수정된 단일 객체 전송)
+      io.to(`task:${taskId}`).emit(
+        communicationEvents.UPDATED_COMMUNICATION,
+        {
+          taskId: Number(taskId),
+          communication: data, 
+        }
+      );
+      console.log(`[SOCKET][communication:updated] 브로드캐스트 완료`);
+      callback?.({ success: true });
+
+    } catch (err) {
+      console.error('communication:update 실패', err);
+      callback?.({
+        success: false,
+        errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
+        reason: err.reason ?? err.message,
+      });
+    }
+  });
+
+  // 커뮤니케이션 삭제 Socket
+  socket.on(communicationEvents.DELETE_COMMUNICATION, async (payload, callback) => {
+    try {
+      const { taskId, communicationId, token } = payload;
+      console.log(`[SOCKET][communication:delete] 요청 수신`, { socketId: socket.id, taskId, communicationId });
+      
+      if (!token) { throw new UnauthorizedError("UNAUTHORIZED_SOCKET", "인증 토큰이 없습니다."); }
+
+      let decoded;
+      try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+      } catch (err) {
+        throw new UnauthorizedError('INVALID_TOKEN', '유효하지 않은 토큰입니다');
+      }
+
+      const userId = decoded.id;
+      console.log(`[SOCKET][communication:delete] 인증 성공`, { userId, taskId });
+
+      await modalService.deleteCommunication({
+        taskId: Number(taskId),
+        communicationId: Number(communicationId),
+        userId,
+      });
+
+      // 같은 task 방에 broadcast (삭제된 ID 전송)
+      io.to(`task:${taskId}`).emit(
+        communicationEvents.DELETED_COMMUNICATION,
+        {
+          taskId: Number(taskId),
+          communicationId: Number(communicationId),
+        }
+      );
+      console.log(`[SOCKET][communication:deleted] 브로드캐스트 완료`, { taskId });
+      callback?.({ success: true });
+    } catch (err) {
+      console.error('communication:delete 실패', err);
       callback?.({
         success: false,
         errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
