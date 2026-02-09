@@ -17,8 +17,8 @@ class UserService {
 
   // 2. 프로필 수정
   async updateProfile(userId, body) {
-    if (body.nickname && body.nickname.length > 10) {
-      throw new BadRequestError("INVALID_NICKNAME", "닉네임은 최대 10자까지만 가능합니다.");
+    if (body.nickname && body.nickname.length > 100) {
+      throw new BadRequestError("INVALID_NICKNAME", "닉네임은 최대 100자까지만 가능합니다.");
     }
 
     const isUserExist = await userRepository.getUserData(userId);
@@ -32,6 +32,11 @@ class UserService {
 
     // DTO 클래스 사용
     const updateData = UserDto.bodyToProfileDto(body);
+    const fieldsToUpdate = Object.values(updateData).filter(v => v !== undefined);
+
+    if (fieldsToUpdate.length === 0) {
+      return UserDto.responseFromUpdatedUser(isUserExist);
+    }
     
     const updatedUser = await userRepository.updateProfile(userId, updateData);
     
