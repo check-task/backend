@@ -91,6 +91,7 @@ export class TaskResponseDTO extends TaskUtils {
       taskId: task.id,
       folderId: task.folderId,
       foldercolor: task.folder?.color || "값 없음",
+      folderTitle: task.folder?.folderTitle || "미지정",
       status: task.status || "PENDING",
       title: task.title,
       type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
