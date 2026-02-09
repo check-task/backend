@@ -70,11 +70,6 @@ export const logEvents = {
   DELETED_LOG: "log:deleted",
 }
 
-/**
- * 태스크 관련 소켓 이벤트 핸들러
- * @param {Server} io - Socket.IO 서버 인스턴스
- * @param {Socket} socket - Socket 인스턴스
- */
 export const setupTaskHandlers = (io, socket) => {
   // 태스크 방 입장
   socket.on(taskEvents.JOIN_TASK, (taskId) => {
@@ -82,6 +77,7 @@ export const setupTaskHandlers = (io, socket) => {
     console.log(`📌 [${socket.user.id}] 사용자가 태스크 방에 입장했습니다. (Task ID: ${taskId})`);
   });
 
+  // 방 참여자 목록 확인 🐞 DEBUG용
   socket.on('debug:checkRoom', (taskId) => {
     const roomName = `task:${taskId}`;
     const clients = io.sockets.adapter.rooms.get(roomName);
@@ -101,6 +97,78 @@ export const setupTaskHandlers = (io, socket) => {
       console.log('방이 존재하지 않거나 비어있습니다.');
     }
     console.log('====================================');
+  });
+
+  // 과제 수정
+  socket.on(taskEvents.UPDATE_TASK, async (payload, callback) => {
+    try {
+      const { taskId, data } = payload;
+      console.log(`[SOCKET][task:update] 요청 수신`, { taskId });
+
+      // DB 수정 처리
+      const result = await taskService.modifyTask(Number(taskId), data);
+
+      // 최신 상세 정보 조회 후 브로드캐스트
+      const updatedTask = await taskService.getTaskDetail(Number(taskId));
+      io.to(`task:${taskId}`).emit(taskEvents.TASK_UPDATED, updatedTask);
+
+      callback?.({ success: true, data: result });
+    } catch (err) {
+      console.error("task:update 실패", err);
+      callback?.({ success: false, reason: err.message });
+    }
+  });
+
+  // 팀원 역할 변경
+  socket.on(taskEvents.UPDATE_MEMBER, async (payload, callback) => {
+    try {
+      const { taskId, memberId, role } = payload;
+      console.log(`[SOCKET][member:update] 요청 수신`, {
+        taskId,
+        memberId,
+        role,
+      });
+
+      const result = await taskService.modifyMemberRole(
+        Number(taskId),
+        Number(memberId),
+        role,
+      );
+
+      // 같은 방 팀원들에게 알림
+      io.to(`task:${taskId}`).emit(taskEvents.MEMBER_UPDATED, {
+        memberId: result.id,
+        role: result.role,
+        userId: result.userId,
+      });
+
+      callback?.({ success: true, data: result });
+    } catch (err) {
+      console.error("member:update 실패", err);
+      callback?.({ success: false, reason: err.message });
+    }
+  });
+
+  // 단일 세부과제 추가
+  socket.on(taskEvents.CREATE_SUBTASK, async (payload, callback) => {
+    try {
+      const { taskId, subtaskData } = payload;
+      console.log(`[SOCKET][subtask:create] 요청 수신`, { taskId });
+
+      const result = await taskService.createSingleSubTask(
+        socket.user.id,
+        Number(taskId),
+        subtaskData,
+      );
+
+      // 방 전체에 새로운 세부과제 정보 브로드캐스트
+      io.to(`task:${taskId}`).emit(taskEvents.SUBTASK_CREATED, result);
+
+      callback?.({ success: true, data: result });
+    } catch (err) {
+      console.error("subtask:create 실패", err);
+      callback?.({ success: false, reason: err.message });
+    }
   });
 
   // 서브과제 상태 업데이트
@@ -455,80 +523,8 @@ export const setupTaskHandlers = (io, socket) => {
     }
   });
 
-  // 과제 수정
-  socket.on(taskEvents.UPDATE_TASK, async (payload, callback) => {
-    try {
-      const { taskId, data } = payload;
-      console.log(`[SOCKET][task:update] 요청 수신`, { taskId });
 
-      // DB 수정 처리
-      const result = await taskService.modifyTask(Number(taskId), data);
-
-      // 최신 상세 정보 조회 후 브로드캐스트
-      const updatedTask = await taskService.getTaskDetail(Number(taskId));
-      io.to(`task:${taskId}`).emit(taskEvents.TASK_UPDATED, updatedTask);
-
-      callback?.({ success: true, data: result });
-    } catch (err) {
-      console.error("task:update 실패", err);
-      callback?.({ success: false, reason: err.message });
-    }
-  });
-
-  // 팀원 역할 변경
-  socket.on(taskEvents.UPDATE_MEMBER, async (payload, callback) => {
-    try {
-      const { taskId, memberId, role } = payload;
-      console.log(`[SOCKET][member:update] 요청 수신`, {
-        taskId,
-        memberId,
-        role,
-      });
-
-      const result = await taskService.modifyMemberRole(
-        Number(taskId),
-        Number(memberId),
-        role,
-      );
-
-      // 같은 방 팀원들에게 알림
-      io.to(`task:${taskId}`).emit(taskEvents.MEMBER_UPDATED, {
-        memberId: result.id,
-        role: result.role,
-        userId: result.userId,
-      });
-
-      callback?.({ success: true, data: result });
-    } catch (err) {
-      console.error("member:update 실패", err);
-      callback?.({ success: false, reason: err.message });
-    }
-  });
-
-  // 단일 세부과제 추가
-  socket.on(taskEvents.CREATE_SUBTASK, async (payload, callback) => {
-    try {
-      const { taskId, subtaskData } = payload;
-      console.log(`[SOCKET][subtask:create] 요청 수신`, { taskId });
-
-      const result = await taskService.createSingleSubTask(
-        socket.user.id,
-        Number(taskId),
-        subtaskData,
-      );
-
-      // 방 전체에 새로운 세부과제 정보 브로드캐스트
-      io.to(`task:${taskId}`).emit(taskEvents.SUBTASK_CREATED, result);
-
-      callback?.({ success: true, data: result });
-    } catch (err) {
-      console.error("subtask:create 실패", err);
-      callback?.({ success: false, reason: err.message });
-    }
-  });
-  // 커뮤니케이션
-
-  // 커뮤니케이션 생성 Socket
+  // 커뮤니케이션 생성 
   socket.on(
     communicationEvents.CREATE_COMMUNICATION,
     async (payload, callback) => {
@@ -576,7 +572,7 @@ export const setupTaskHandlers = (io, socket) => {
     },
   );
 
-  // 커뮤니케이션 수정 Socket
+  // 커뮤니케이션 수정 
   socket.on(
     communicationEvents.UPDATE_COMMUNICATION,
     async (payload, callback) => {
@@ -625,7 +621,7 @@ export const setupTaskHandlers = (io, socket) => {
     },
   );
 
-  // 커뮤니케이션 삭제 Socket
+  // 커뮤니케이션 삭제 
   socket.on(
     communicationEvents.DELETE_COMMUNICATION,
     async (payload, callback) => {
@@ -671,14 +667,14 @@ export const setupTaskHandlers = (io, socket) => {
       }
     },
   );
+
+  // 회의록 생성
+  // 회의록 수정
+  // 회의록 삭제
 };
 
 
-/**
- * 소켓 응답 헬퍼 함수
- * @param {Function} callback - 콜백 함수
- * @param {Object} data - 응답 데이터
- */
+//소켓 응답 헬퍼 함수
 function respond(callback, data) {
   if (typeof callback === "function") {
     callback({
