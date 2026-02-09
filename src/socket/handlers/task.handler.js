@@ -5,6 +5,24 @@ import { UnauthorizedError } from '../../errors/custom.error.js';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 dotenv.config();
+
+export const taskEvents = {
+  JOIN_TASK: 'joinTaskRoom',
+  UPDATE_SUBTASK: 'updateSubtaskStatus',
+  SUBTASK_UPDATED: 'subtaskStatusUpdated'
+};
+
+//자료 API 관련 SOKET
+export const referenceEvents = {
+  //클라이언트 -> 서버로 명령
+  CREATE_REFERENCE: 'reference:create',
+  UPDATE_REFERENCE: 'reference:update',
+  DELETE_REFERENCE: 'reference:delete',
+  //서버 -> 클라이언트로 결과
+  CREATED_REFERENCE: 'reference:created',
+  UPDATED_REFERENCE: 'reference:updated',
+  DELETED_REFERENCE: 'reference:deleted',
+};
 /**
  * 태스크 관련 소켓 이벤트 핸들러
  * @param {Server} io - Socket.IO 서버 인스턴스
@@ -222,20 +240,3 @@ import { taskEvents } from './handlers/task.handler.js';
 socket.emit(taskEvents.UPDATE_SUBTASK, data);
  */
 
-export const taskEvents = {
-  JOIN_TASK: 'joinTaskRoom',
-  UPDATE_SUBTASK: 'updateSubtaskStatus',
-  SUBTASK_UPDATED: 'subtaskStatusUpdated'
-};
-
-//자료 API 관련 SOKET
-export const referenceEvents = {
-  //클라이언트 -> 서버로 명령
-  CREATE_REFERENCE: 'reference:create',
-  UPDATE_REFERENCE: 'reference:update',
-  DELETE_REFERENCE: 'reference:delete',
-  //서버 -> 클라이언트로 결과
-  CREATED_REFERENCE: 'reference:created',
-  UPDATED_REFERENCE: 'reference:updated',
-  DELETED_REFERENCE: 'reference:deleted',
-};
