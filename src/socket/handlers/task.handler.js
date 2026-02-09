@@ -334,7 +334,7 @@ export const setupTaskHandlers = (io, socket) => {
         comment: newComment
       });
 
-      console.log(`[SOCKET][${EVENTS.CREATED}] 브로드캐스트 완료`);
+      console.log(`[SOCKET][comment:created] 브로드캐스트 완료`);
       callback?.({ success: true, data: newComment });
 
     } catch (err) {
