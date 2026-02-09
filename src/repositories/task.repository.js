@@ -12,14 +12,14 @@ class TaskRepository {
       where: {
         members: { some: { userId: userId } },
         deadline: {
-          lt: new Date(), 
+          lt: new Date(),
         },
       },
       include: {
         folder: true,
       },
       orderBy: {
-        deadline: 'desc', 
+        deadline: 'desc',
       },
     });
   }
@@ -65,14 +65,18 @@ class TaskRepository {
 
   // 과제 목록 조회
   async findAllTasks({ userId, type, folderId, sort }) {
-    console.log("userid:", userId);
+    const now = new Date();
+
     const query = {
       where: {
         members: {
           some: {
             userId: userId
           }
-        }
+        },
+        deadline: {
+            gte: now
+          }
       },
       include: {
         folder: true,
@@ -157,26 +161,26 @@ class TaskRepository {
     });
   }
 
-// 나머지 멤버 역할 리셋
-async resetOtherMembersRole(taskId, memberId, tx) {
-  return await tx.member.updateMany({
-    where: {
-      taskId: taskId,
-      id: { not: memberId }, 
-    },
-    data: {
-      role: false, 
-    },
-  });
-}
+  // 나머지 멤버 역할 리셋
+  async resetOtherMembersRole(taskId, memberId, tx) {
+    return await tx.member.updateMany({
+      where: {
+        taskId: taskId,
+        id: { not: memberId },
+      },
+      data: {
+        role: false,
+      },
+    });
+  }
 
-// 대상 멤버 역할 업데이트
-async updateMemberRole(memberId, isAdmin, tx) {
-  return await tx.member.update({
-    where: { id: memberId },
-    data: { role: isAdmin },
-  });
-}
+  // 대상 멤버 역할 업데이트
+  async updateMemberRole(memberId, isAdmin, tx) {
+    return await tx.member.update({
+      where: { id: memberId },
+      data: { role: isAdmin },
+    });
+  }
 
   // 세부 과제 일괄 삭제
   async deleteAllSubTasks(taskId, tx) {
@@ -230,7 +234,7 @@ async updateMemberRole(memberId, isAdmin, tx) {
     });
   }
 
-  async findMaxRank(userId, tx= prisma) {
+  async findMaxRank(userId, tx = prisma) {
     const result = await tx.taskPriority.aggregate({
       _max: {
         rank: true
