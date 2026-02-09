@@ -146,6 +146,10 @@ class TaskService {
     const currentTask = await taskRepository.findTaskById(taskId);
     if (!currentTask) throw new NotFoundError("수정하려는 과제가 존재하지 않습니다.");
 
+    if (taskData.deadline) {
+      taskData.deadline = new Date(taskData.deadline);
+    }
+
     // 폴더
     if (folderId) {
       const folder = await taskRepository.findFolderById(folderId);
