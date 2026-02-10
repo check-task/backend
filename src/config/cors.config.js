@@ -3,6 +3,7 @@ export const corsOptions = {
     "http://localhost:3000",
     "http://localhost:8000",
     "https://checktask.kro.kr",
+    "https://checktask.p-e.kr",
   ],
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,

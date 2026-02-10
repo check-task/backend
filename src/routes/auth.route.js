@@ -60,7 +60,6 @@ router.get(
       httpOnly: true,
       secure: isProd,
       sameSite: isProd ? "none" : "lax",
-      domain: ".checktask.kro.kr",
       path: "/",
       maxAge: 1000 * 60 * 60 * 24 * 14, // 14일로 설정
     });
