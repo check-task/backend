@@ -81,10 +81,18 @@ export class TaskResponseDTO extends TaskUtils {
         status: st.status === 'COMPLETED' ? 'COMPLETED' : 'PROGRESS',
         isAlarm: st.isAlarm || false,
         commentCount: st._count?.comments || 0,
-        assigneeName: st.assigneeName || "PENDING"
+        comments: st.comments?.map(comment => ({
+          commentId: comment.id,
+          content: comment.content,
+          writer: comment.user?.nickname || "미지정",
+          profileImage: comment.user?.profileImage || null,
+          createdAt: this.formatDate(comment.createdAt, '.')
+        })) || [],
+        assigneeName: st.assignee?.nickname || "PENDING",
+        assigneeProfileImage: st.assignee?.profileImage || null
       })) || [],
       communications: task.communications?.map(c => ({ name: c.name, url: c.url })) || [],
-      meetingLogs: task.logs?.map(log => ({ logId: log.id, title: log.title })) || [],
+      meetingLogs: task.logs?.map(log => ({ logId: log.id, date: this.formatDate(log.date, '-') })) || [],
       references: task.references?.map(r => ({ name: r.name, url: r.url })) || []
     };
   }
