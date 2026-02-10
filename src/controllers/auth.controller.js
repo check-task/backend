@@ -52,6 +52,8 @@ export class AuthController{
 
   async refresh(req, res, next){
     try{
+      console.log("🍪 cookies:", req.cookies);
+      
       const refreshToken = req.cookies?.refreshToken;
       if(!refreshToken){throw new UnauthorizedError("UNAUTHORIZED","Refresh Token이 없습니다.");}
       
