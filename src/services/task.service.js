@@ -228,14 +228,15 @@ class TaskService {
 
   // 과제 목록 조회
   async getTaskList(userId, queryParams = {}) {
-    const { type, folderId, sort } = queryParams;
+    const { type, folderId, sort, status } = queryParams;
 
     // 레포지토리의 findAllTasks 호출
     const tasks = await taskRepository.findAllTasks({
       userId,
       type,
       folderId,
-      sort
+      sort,
+      status
     });
 
     return tasks;

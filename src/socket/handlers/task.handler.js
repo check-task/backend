@@ -449,7 +449,7 @@ export const setupTaskHandlers = (io, socket) => {
   // 과제 수정
   socket.on(taskEvents.UPDATE_TASK, async (payload, callback) => {
     try {
-      const { taskId, data } = payload;
+      const { taskId, ...data } = payload;
       console.log(`[SOCKET][task:update] 요청 수신`, { taskId });
 
       // DB 수정 처리
@@ -499,7 +499,7 @@ export const setupTaskHandlers = (io, socket) => {
   // 단일 세부과제 추가
   socket.on(taskEvents.CREATE_SUBTASK, async (payload, callback) => {
     try {
-      const { taskId, subtaskData } = payload;
+      const { taskId, ...subtaskData } = payload;
       console.log(`[SOCKET][subtask:create] 요청 수신`, { taskId });
 
       const result = await taskService.createSingleSubTask(
