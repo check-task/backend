@@ -59,6 +59,7 @@ class TaskRepository {
             },
             assignee: { 
               select: { 
+                id: true,
                 nickname: true,
                 profileImage: true 
               } 
