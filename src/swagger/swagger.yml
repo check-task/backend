@@ -1158,28 +1158,36 @@ paths:
                       properties:
                         taskId:
                           type: integer
-                          example: 1
+                          example: 13
                         folderId:
                           type: integer
-                          example: 1
+                          nullable: true
+                          example: 2
+                        foldercolor:
+                          type: string
+                          example: "#111111"
                         folderTitle:
+                          type: string
+                          example: "프로그래밍"
+                        status:
                           type: string
                           example: "PENDING"
                         title:
                           type: string
-                          example: "프로젝트1"
+                          example: "데이터베이스 설계 프로젝트 (수정본)"
                         type:
                           type: string
-                          example: "TEAM"
+                          enum: [TEAM, PERSONAL]
+                          example: "PERSONAL"
                         deadline:
                           type: string
-                          example: "2026.06.15"
+                          example: "2026.06.30"
                         dDay:
                           type: string
-                          example: "D-10"
+                          example: "D-140"
                         progressRate:
                           type: integer
-                          example: "50"
+                          example: 33
         '401':
           description: 인증 실패 (로그인 필요)
         '500':
@@ -1191,7 +1199,7 @@ paths:
       tags:
         - Task
       summary: 과제 상세 정보 조회
-      description: 특정 과제의 세부 태스크, 진행률, 팀원 정보 등을 조회합니다.
+      description: 특정 과제의 세부 태스크, 진행률, 폴더 정보, 댓글 목록 등을 상세히 조회합니다.
       security:
         - bearerAuth: []
       parameters:
@@ -1200,6 +1208,7 @@ paths:
           required: true
           schema:
             type: integer
+          example: 22
       responses:
         '200':
           description: 과제 상세 조회 성공
@@ -1219,20 +1228,32 @@ paths:
                     properties:
                       taskId:
                         type: integer
-                        example: 1
+                        example: 22
                       title:
                         type: string
-                        example: "프로젝트1"
+                        example: "소켓으로 수정한 제목"
+                      folderId:
+                        type: integer
+                        example: 1
+                      foldercolor:
+                        type: string
+                        example: "#000000"
+                      folderTitle:
+                        type: string
+                        example: "학교"
+                      status:
+                        type: string
+                        example: "PROGRESS"
                       type:
                         type: string
                         example: "TEAM"
                       deadline:
                         type: string
                         format: date
-                        example: "2026-06-15"
+                        example: "2026-12-31"
                       dDay:
                         type: string
-                        example: "D-10"
+                        example: "D-324"
                       progressRate:
                         type: integer
                         example: 0
@@ -1243,14 +1264,14 @@ paths:
                           properties:
                             subTaskId:
                               type: integer
-                              example: 1
+                              example: 54
                             title:
                               type: string
-                              example: "세부과제 1"
+                              example: "실시간으로 추가된 세부과제2"
                             deadline:
                               type: string
                               format: date
-                              example: "2026-05-10"
+                              example: "2026-05-30"
                             status:
                               type: string
                               example: "PROGRESS"
@@ -1259,20 +1280,58 @@ paths:
                               example: true
                             commentCount:
                               type: integer
-                              example: 0
+                              example: 1
+                            comments:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  commentId:
+                                    type: integer
+                                    example: 1
+                                  content:
+                                    type: string
+                                    example: "댓글1"
+                                  writer:
+                                    type: string
+                                    example: "오소윤"
+                                  profileImage:
+                                    type: string
+                                    format: url
+                                    example: "http://t1.kakaocdn.net/account_images/default_profile.jpeg"
+                                  createdAt:
+                                    type: string
+                                    example: "2026.02.10"
                             assigneeName:
                               type: string
-                              example: "PENDING"
+                              example: "오소윤"
+                            assigneeProfileImage:
+                              type: string
+                              format: url
+                              nullable: true
+                              example: "http://t1.kakaocdn.net/account_images/default_profile.jpeg"
                       communications:
                         type: array
                         items:
                           type: object
-                        example: []
+                          properties:
+                            name:
+                              type: string
+                              example: "커뮤니케이션1"
+                            url:
+                              type: string
+                              example: "https://example.com"
                       meetingLogs:
                         type: array
                         items:
                           type: object
-                        example: []
+                          properties:
+                            logId:
+                              type: integer
+                              example: 1
+                            date:
+                              type: string
+                              example: "2026-02-10"
                       references:
                         type: array
                         items:
@@ -1280,10 +1339,10 @@ paths:
                           properties:
                             name:
                               type: string
-                              example: "레퍼런스1"
+                              example: "참고 문서 1"
                             url:
                               type: string
-                              example: "https://www.example.com"
+                              example: "https://example.com"
         '401':
           description: 인증 실패
         '404':
