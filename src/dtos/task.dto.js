@@ -92,9 +92,9 @@ export class TaskResponseDTO extends TaskUtils {
         assigneeName: st.assignee?.nickname || "PENDING",
         assigneeProfileImage: st.assignee?.profileImage || null
       })) || [],
-      communications: task.communications?.map(c => ({ id: c.id, name: c.name, url: c.url })) || [],
-      meetingLogs: task.logs?.map(log => ({ logId: log.id, date: this.formatDate(log.date, '-') })) || [],
-      references: task.references?.map(r => ({ id: r.id, name: r.name, url: r.url })) || []
+      communications: task.communications?.map(c => ({ ...c })) || [],
+      meetingLogs: task.logs?.map(log => ({ ...log })) || [],
+      references: task.references?.map(r => ({ ...r })) || []
     };
   }
 
