@@ -1,6 +1,10 @@
 import prisma from "../../db.config.js";
 import modalService from '../../services/modal.service.js';
-import { CreateReferenceDto, UpdateReferenceDto, } from '../../dtos/modal.dto.js';
+import {
+  CreateReferenceDto, UpdateReferenceDto,
+  CreateCommunicationDto, UpdateCommunicationDto,
+  CreateLogDto, UpdateLogDto
+} from '../../dtos/modal.dto.js';
 import { CommentService } from '../../services/comment.service.js';
 import taskService from "../../services/task.service.js";
 
@@ -669,6 +673,54 @@ export const setupTaskHandlers = (io, socket) => {
   );
 
   // 회의록 생성
+  socket.on(
+    logEvents.CREATE_LOG,
+    async (payload, callback) => {
+      try {
+        const { taskId, date, agenda, conclusion, discussion } = payload;
+        console.log(`[SOCKET][log:create] 요청 수신`, {
+          socketId: socket.id,
+          taskId,
+          date,
+          agenda,
+          conclusion,
+          discussion,
+        });
+
+        const userId = socket.user.id;
+        console.log(`[SOCKET][log:create] 인증 성공`, {
+          userId,
+          taskId,
+        });
+
+        const data = await modalService.createLog(
+          new CreateLogDto({
+            taskId: Number(taskId),
+            userId,
+            date: new Date(date),
+            agenda,
+            conclusion,
+            discussion,
+          }),
+        );
+
+        io.to(`task:${taskId}`).emit(logEvents.CREATED_LOG, {
+          taskId: Number(taskId),
+          log: data,
+        });
+        console.log(`[SOCKET][log:created] 브로드캐스트 완료`);
+        callback?.({ success: true });
+      }
+      catch (err) {
+        console.error("log:create 실패", err);
+        callback?.({
+          success: false,
+          errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
+          reason: err.reason ?? err.message,
+        });
+      }
+    },
+  );
   // 회의록 수정
   // 회의록 삭제
 };
