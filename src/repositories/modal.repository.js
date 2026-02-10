@@ -82,7 +82,8 @@ class ModalRepository {
   }
 
   async findCommuById(id) {
-    return prisma.communication.findUnique({ where: { id },
+    return prisma.communication.findUnique({
+      where: { id },
       select: {
         id: true,
         name: true,
@@ -120,7 +121,8 @@ class ModalRepository {
   }
 
   async findLogById(id) {
-    return prisma.log.findUnique({ where: { id },
+    return prisma.log.findUnique({
+      where: { id },
       select: {
         id: true,
         date: true,
@@ -131,8 +133,8 @@ class ModalRepository {
     });
   }
 
-  async updateLog(id, data) {
-    return prisma.log.update({ where: { id }, data });
+  async updateLog(logId, data) {
+    return prisma.log.update({ where: { id: logId }, data });
   }
 
   async deleteLog(id) {
