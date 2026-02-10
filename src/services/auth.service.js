@@ -80,9 +80,10 @@ export class KakaoAuthService {
     const nickname = profileInfo.nickname ?? "카카오유저";
     const profileImage = profileInfo.profile_image_url ?? "";
     const email = kakaoAccount.email ?? null;
+    //카카오 비즈앱 최소 동의 정책으로 phone_number 미제공 시 데모데이용 임시 더미 전화번호 사용
     const phoneNum = kakaoAccount.phone_number
       ? kakaoAccount.phone_number.replace("+82 ", "0")
-      : "01000000000";
+      : "010-0000-0000";
 
     const providerId = profile.id.toString();
 
