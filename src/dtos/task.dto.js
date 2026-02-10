@@ -88,12 +88,13 @@ export class TaskResponseDTO extends TaskUtils {
           profileImage: comment.user?.profileImage || null,
           createdAt: comment.createdAt
         })) || [],
+        assigneeId: st.assignee?.id || null,
         assigneeName: st.assignee?.nickname || "PENDING",
         assigneeProfileImage: st.assignee?.profileImage || null
       })) || [],
-      communications: task.communications?.map(c => ({ name: c.name, url: c.url })) || [],
+      communications: task.communications?.map(c => ({ id: c.id, name: c.name, url: c.url })) || [],
       meetingLogs: task.logs?.map(log => ({ logId: log.id, date: this.formatDate(log.date, '-') })) || [],
-      references: task.references?.map(r => ({ name: r.name, url: r.url })) || []
+      references: task.references?.map(r => ({ id: r.id, name: r.name, url: r.url })) || []
     };
   }
 
