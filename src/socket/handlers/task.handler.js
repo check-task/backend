@@ -743,7 +743,7 @@ export const setupTaskHandlers = (io, socket) => {
           taskId,
         });
 
-        const data = await modalService.updateLog(
+        const updatedLog = await modalService.updateLog(
           new UpdateLogDto({
             taskId: Number(taskId),
             logId: Number(logId),
@@ -757,7 +757,7 @@ export const setupTaskHandlers = (io, socket) => {
 
         io.to(`task:${taskId}`).emit(logEvents.UPDATED_LOG, {
           taskId: Number(taskId),
-          log: data,
+          log: updatedLog,
         });
 
         console.log(`[SOCKET][log:updated] 브로드캐스트 완료`);
@@ -774,6 +774,47 @@ export const setupTaskHandlers = (io, socket) => {
     },
   );
   // 회의록 삭제
+  socket.on(
+    logEvents.DELETE_LOG,
+    async (payload, callback) => {
+      try {
+        const { taskId, logId } = payload;
+        console.log(`[SOCKET][log:delete] 요청 수신`, {
+          socketId: socket.id,
+          taskId,
+          logId,
+        });
+
+        const userId = socket.user.id;
+        console.log(`[SOCKET][log:delete] 인증 성공`, {
+          userId,
+          taskId,
+        });
+
+        await modalService.deleteLog({
+          taskId: Number(taskId),
+          logId: Number(logId),
+          userId,
+        });
+
+        io.to(`task:${taskId}`).emit(logEvents.DELETED_LOG, {
+          taskId: Number(taskId),
+          logId: Number(logId),
+        });
+
+        console.log(`[SOCKET][log:deleted] 브로드캐스트 완료`);
+        callback?.({ success: true });
+      }
+      catch (err) {
+        console.error("log:delete 실패", err);
+        callback?.({
+          success: false,
+          errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
+          reason: err.reason ?? err.message,
+        });
+      }
+    },
+  );
 };
 
 
