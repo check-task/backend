@@ -1116,7 +1116,7 @@ paths:
       tags:
         - Task
       summary: 과제 목록 조회
-      description: 필터(유형, 폴더) 및 정렬 조건에 따라 과제 목록을 조회합니다.
+      description: 필터(유형, 폴더, 상태) 및 정렬 조건에 따라 과제 목록을 조회합니다.
       security:
         - bearerAuth: []
       parameters:
@@ -1132,6 +1132,12 @@ paths:
             type: integer
           description: 폴더별 필터
         - in: query
+          name: status
+          schema:
+            type: string
+            enum: [PROGRESS]
+          description: "과제 상태 필터 (PROGRESS 입력 시 마감기한이 지나지 않은 과제만 조회)"
+        - in: query
           name: sort
           schema:
             type: string
@@ -1142,52 +1148,32 @@ paths:
           description: 과제 목록 조회 성공
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  message: 
-                    type: string
-                    example: "서버가 요청을 성공적으로 처리하였습니다."
+                example:
+                  resultType: "SUCCESS"
+                  message: "서버가 요청을 성공적으로 처리하였습니다."
                   data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        taskId:
-                          type: integer
-                          example: 13
-                        folderId:
-                          type: integer
-                          nullable: true
-                          example: 2
-                        foldercolor:
-                          type: string
-                          example: "#111111"
-                        folderTitle:
-                          type: string
-                          example: "프로그래밍"
-                        status:
-                          type: string
-                          example: "PENDING"
-                        title:
-                          type: string
-                          example: "데이터베이스 설계 프로젝트 (수정본)"
-                        type:
-                          type: string
-                          enum: [TEAM, PERSONAL]
-                          example: "PERSONAL"
-                        deadline:
-                          type: string
-                          example: "2026.06.30"
-                        dDay:
-                          type: string
-                          example: "D-140"
-                        progressRate:
-                          type: integer
-                          example: 33
+                    - taskId: 13
+                      folderId: 2
+                      foldercolor: "#111111"
+                      folderTitle: "프로그래밍"
+                      priority: 1
+                      status: "PENDING"
+                      title: "데이터베이스 설계 프로젝트 (수정본)"
+                      type: "PERSONAL"
+                      deadline: "2026.06.30"
+                      dDay: "D-140"
+                      progressRate: 33
+                    - taskId: 5
+                      folderId: null
+                      foldercolor: "값 없음"
+                      folderTitle: "미지정"
+                      priority: 2
+                      status: "PENDING"
+                      title: "자바 Swing 과제 제출"
+                      type: "PERSONAL"
+                      deadline: "2026.05.10"
+                      dDay: "D-89"
+                      progressRate: 0
         '401':
           description: 인증 실패 (로그인 필요)
         '500':

@@ -80,7 +80,7 @@ class TaskRepository {
   }
 
   // 과제 목록 조회
-  async findAllTasks({ userId, type, folderId, sort }) {
+  async findAllTasks({ userId, type, folderId, sort, status }) {
     const now = new Date();
 
     const query = {
@@ -90,9 +90,6 @@ class TaskRepository {
             userId: userId
           }
         },
-        deadline: {
-            gte: now
-          }
       },
       include: {
         folder: true,
@@ -102,6 +99,12 @@ class TaskRepository {
         }
       }
     };
+
+    if (status === 'PROGRESS') {
+      query.where.deadline = {
+        gte: now 
+      };
+    }
 
     if (type) {
       query.where.type = (type === "TEAM") ? "TEAM" : "PERSONAL";
