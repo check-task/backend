@@ -7,7 +7,7 @@ class TaskUtils {
     const deadlineDate = new Date(deadline);
     const diffTime = deadlineDate - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) return "D-Day";
     return diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
   }
@@ -74,7 +74,7 @@ export class TaskResponseDTO extends TaskUtils {
         subTaskId: st.id,
         title: st.title,
         deadline: this.formatDate(st.endDate, '-'),
-        status: st.status === 'COMPLETED' ? 'COMPLETED' : 'PROGRESS', 
+        status: st.status === 'COMPLETED' ? 'COMPLETED' : 'PROGRESS',
         isAlarm: st.isAlarm || false,
         commentCount: st._count?.comments || 0,
         assigneeName: st.assigneeName || "PENDING"
@@ -107,11 +107,11 @@ export class TaskResponseDTO extends TaskUtils {
       tasks: tasks.map(task => ({
         taskId: task.id,
         title: task.title,
-        deadline: this.formatDate(task.deadline, '-'), 
+        deadline: this.formatDate(task.deadline, '-'),
         type: task.type === "PERSONAL" ? "개인" : "팀",
-        status: task.status === 'COMPLETED' ? '완료' : '미완료', 
+        status: task.status === 'COMPLETED' ? '완료' : '미완료',
         folderId: task.folder?.id || null,
-        folderTitle: task.folder?.folderTitle || "미지정",
+        folderTitle: task.folder?.folderTitle || null,
         color: task.folder?.color || "#000000",
       }))
     };

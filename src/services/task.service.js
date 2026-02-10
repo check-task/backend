@@ -48,7 +48,7 @@ class TaskService {
       // 우선 순위 지정
       const maxRank = await taskRepository.findMaxRank(userId, tx);
       await taskRepository.upsertTaskPriority(userId, newTask.id, maxRank + 1, tx);
-      
+
       // 과제 알림 생성
       if (newTask.isAlarm) {
         // 팀 과제인 경우: 멤버 모두에게 알림 생성
@@ -145,6 +145,10 @@ class TaskService {
     // 과제 존재 여부 확인
     const currentTask = await taskRepository.findTaskById(taskId);
     if (!currentTask) throw new NotFoundError("수정하려는 과제가 존재하지 않습니다.");
+
+    if (taskData.deadline) {
+      taskData.deadline = new Date(taskData.deadline);
+    }
 
     // 폴더
     if (folderId) {
@@ -653,60 +657,60 @@ class TaskService {
     });
   }
 
-// 단일 세부 과제 생성 서비스
-async createSingleSubTask(userId, taskId, data) {
-  console.log("📍 서비스로 넘어온 taskId:", taskId);
-  const { title, deadline, isAlarm } = data;
+  // 단일 세부 과제 생성 서비스
+  async createSingleSubTask(userId, taskId, data) {
+    console.log("📍 서비스로 넘어온 taskId:", taskId);
+    const { title, deadline, isAlarm } = data;
 
-  // 부모 과제 존재 여부 확인
-  const parentTask = await taskRepository.findTaskById(taskId);
-  if (!parentTask) throw new NotFoundError("존재하지 않는 과제입니다.");
+    // 부모 과제 존재 여부 확인
+    const parentTask = await taskRepository.findTaskById(taskId);
+    if (!parentTask) throw new NotFoundError("존재하지 않는 과제입니다.");
 
-  // 팀 과제: NULL, 개인 과제: 생성자 본인
-  const assigneeId = parentTask.type === 'TEAM' ? null : userId;
+    // 팀 과제: NULL, 개인 과제: 생성자 본인
+    const assigneeId = parentTask.type === 'TEAM' ? null : userId;
 
-  return await prisma.$transaction(async (tx) => {
-    // 세부 과제 생성
-    const newSubTask = await tx.subTask.create({
-      data: {
-        taskId: taskId,
-        title: title,
-        endDate: new Date(deadline),
-        status: "PENDING",
-        isAlarm: isAlarm || false,
-        assigneeId: assigneeId
-      },
-      include: { assignee: true } 
-    });
+    return await prisma.$transaction(async (tx) => {
+      // 세부 과제 생성
+      const newSubTask = await tx.subTask.create({
+        data: {
+          taskId: taskId,
+          title: title,
+          endDate: new Date(deadline),
+          status: "PENDING",
+          isAlarm: isAlarm || false,
+          assigneeId: assigneeId
+        },
+        include: { assignee: true }
+      });
 
-    // 알림 생성 로직
-    if (newSubTask.isAlarm && newSubTask.assigneeId) {
-      const assignee = newSubTask.assignee;
-      if (assignee) {
-        const alarmHours = assignee.taskAlarm || 24;
-        const alarmDate = new Date(newSubTask.endDate);
-        alarmDate.setHours(alarmDate.getHours() - alarmHours);
+      // 알림 생성 로직
+      if (newSubTask.isAlarm && newSubTask.assigneeId) {
+        const assignee = newSubTask.assignee;
+        if (assignee) {
+          const alarmHours = assignee.taskAlarm || 24;
+          const alarmDate = new Date(newSubTask.endDate);
+          alarmDate.setHours(alarmDate.getHours() - alarmHours);
 
-        await alarmRepository.createSubTaskAlarm(
-          newSubTask.assigneeId,
-          newSubTask.taskId,
-          newSubTask.id,
-          newSubTask.title,
-          alarmDate,
-          tx
-        );
+          await alarmRepository.createSubTaskAlarm(
+            newSubTask.assigneeId,
+            newSubTask.taskId,
+            newSubTask.id,
+            newSubTask.title,
+            alarmDate,
+            tx
+          );
+        }
       }
-    }
 
-    return {
-      subTaskId: newSubTask.id,
-      title: newSubTask.title,
-      deadline: deadline,
-      status: newSubTask.status,
-      assigneeName: newSubTask.assignee ? newSubTask.assignee.name : "none"
-    };
-  });
-}
+      return {
+        subTaskId: newSubTask.id,
+        title: newSubTask.title,
+        deadline: deadline,
+        status: newSubTask.status,
+        assigneeName: newSubTask.assignee ? newSubTask.assignee.name : "none"
+      };
+    });
+  }
 
 
 }

@@ -1,7 +1,7 @@
 import { prisma } from "../db.config.js";
 
 class FolderRepository {
-  // 0. 폴더 조회
+  // 내부 검증용 단일 조회 (수정/삭제 시 필요하므로 유지)
   async getFolderById(folderId) {
     return await prisma.folder.findUnique({
       where: { id: parseInt(folderId) },
@@ -18,6 +18,7 @@ class FolderRepository {
       },
       select: {
         id: true,
+        userId: true,
         folderTitle: true,
         color: true,
       }
@@ -37,6 +38,7 @@ class FolderRepository {
       },
       select: {
         id: true,
+        userId: true,
         folderTitle: true,
         color: true,
       }

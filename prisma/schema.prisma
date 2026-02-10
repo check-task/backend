@@ -110,7 +110,7 @@ model UserAlarm {
 model Folder {
   id          Int      @id @default(autoincrement()) @map("folder_id")
   userId      Int      @map("user_id")
-  folderTitle String   @map("folder_title") @db.VarChar(100)
+  folderTitle String   @map("folder_title") @db.VarChar(11)
   color       String   @db.VarChar(7)
   createdAt   DateTime @default(now()) @map("created_at") @db.DateTime
 
