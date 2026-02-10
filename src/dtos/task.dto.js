@@ -66,6 +66,10 @@ export class TaskResponseDTO extends TaskUtils {
     return {
       taskId: task.id,
       title: task.title,
+      folderId: task.folderId,
+      foldercolor: task.folder?.color || "값 없음",
+      folderTitle: task.folder?.folderTitle || "미지정",
+      status: task.status || "PENDING",
       type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
       deadline: this.formatDate(task.deadline, '-'),
       dDay: this.calculateDDay(task.deadline),
