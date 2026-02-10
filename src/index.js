@@ -21,6 +21,8 @@ console.log(" INDEX.JS LOADED");
 const app = express();
 const port = process.env.PORT;
 
+//HTTPS 프록시 환경에서 secure 쿠키 정상 동작을 위해 설정(PC + 모바일)
+app.set("trust proxy", 1)
 // 3. HTTP 서버 및 소켓 서버 생성
 const httpServer = createServer(app);
 
