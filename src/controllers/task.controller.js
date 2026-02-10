@@ -95,6 +95,7 @@ class TaskController {
         type: req.query.type,
         sort: req.query.sort,
         folderId: req.query.folderId || req.query.folder_id || req.query.folderld,
+        status: req.query.status
       };
       const userId = req.user.id;
 
