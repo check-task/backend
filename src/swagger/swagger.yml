@@ -1302,6 +1302,9 @@ paths:
                                   createdAt:
                                     type: string
                                     example: "2026-02-10T18:50:15.000Z"
+                            assigneeId:
+                              type: integer
+                              example: 3
                             assigneeName:
                               type: string
                               example: "오소윤"
@@ -1315,6 +1318,9 @@ paths:
                         items:
                           type: object
                           properties:
+                            id:
+                              type: integer
+                              example: 1
                             name:
                               type: string
                               example: "커뮤니케이션1"
@@ -1337,6 +1343,9 @@ paths:
                         items:
                           type: object
                           properties:
+                            id:
+                              type: integer
+                              example: 1
                             name:
                               type: string
                               example: "참고 문서 1"
