@@ -56,6 +56,7 @@ class TaskRepository {
             }
           }
         },
+        folder: true,
         references: true,
         logs: true,
         communications: true
