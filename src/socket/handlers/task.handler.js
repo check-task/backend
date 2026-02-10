@@ -1,6 +1,6 @@
 import prisma from "../../db.config.js";
 import modalService from '../../services/modal.service.js';
-import { CreateReferenceDto, UpdateReferenceDto, } from '../../dtos/modal.dto.js';
+import { CreateReferenceDto, UpdateReferenceDto, CreateCommunicationDto, UpdateCommunicationDto } from '../../dtos/modal.dto.js';
 import { CommentService } from '../../services/comment.service.js';
 import taskService from "../../services/task.service.js";
 
