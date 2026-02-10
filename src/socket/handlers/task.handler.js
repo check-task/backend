@@ -698,9 +698,9 @@ export const setupTaskHandlers = (io, socket) => {
             taskId: Number(taskId),
             userId,
             date: new Date(date),
-            agenda,
-            conclusion,
-            discussion,
+            agenda: agenda || null,
+            conclusion: conclusion || null,
+            discussion: discussion || null,
           }),
         );
 
@@ -722,6 +722,57 @@ export const setupTaskHandlers = (io, socket) => {
     },
   );
   // 회의록 수정
+  socket.on(
+    logEvents.UPDATE_LOG,
+    async (payload, callback) => {
+      try {
+        const { taskId, logId, date, agenda, conclusion, discussion } = payload;
+        console.log(`[SOCKET][log:update] 요청 수신`, {
+          socketId: socket.id,
+          taskId,
+          logId,
+          date,
+          agenda,
+          conclusion,
+          discussion,
+        });
+
+        const userId = socket.user.id;
+        console.log(`[SOCKET][log:update] 인증 성공`, {
+          userId,
+          taskId,
+        });
+
+        const data = await modalService.updateLog(
+          new UpdateLogDto({
+            taskId: Number(taskId),
+            logId: Number(logId),
+            userId,
+            date: new Date(date),
+            agenda: agenda || null,
+            conclusion: conclusion || null,
+            discussion: discussion || null,
+          }),
+        );
+
+        io.to(`task:${taskId}`).emit(logEvents.UPDATED_LOG, {
+          taskId: Number(taskId),
+          log: data,
+        });
+
+        console.log(`[SOCKET][log:updated] 브로드캐스트 완료`);
+        callback?.({ success: true });
+      }
+      catch (err) {
+        console.error("log:update 실패", err);
+        callback?.({
+          success: false,
+          errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
+          reason: err.reason ?? err.message,
+        });
+      }
+    },
+  );
   // 회의록 삭제
 };
 
