@@ -1301,7 +1301,7 @@ paths:
                                     example: "http://t1.kakaocdn.net/account_images/default_profile.jpeg"
                                   createdAt:
                                     type: string
-                                    example: "2026.02.10"
+                                    example: "2026-02-10T18:50:15.000Z"
                             assigneeName:
                               type: string
                               example: "오소윤"

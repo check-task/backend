@@ -86,7 +86,7 @@ export class TaskResponseDTO extends TaskUtils {
           content: comment.content,
           writer: comment.user?.nickname || "미지정",
           profileImage: comment.user?.profileImage || null,
-          createdAt: this.formatDate(comment.createdAt, '.')
+          createdAt: comment.createdAt
         })) || [],
         assigneeName: st.assignee?.nickname || "PENDING",
         assigneeProfileImage: st.assignee?.profileImage || null
