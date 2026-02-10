@@ -51,11 +51,27 @@ class TaskRepository {
       include: {
         subTasks: {
           include: {
+            comments: {
+              include: {
+                user: { select: { nickname: true, profileImage: true } } 
+              },
+              orderBy: { createdAt: 'asc' } // 오래된 순으로 정렬
+            },
+            assignee: { 
+              select: { 
+                id: true,
+                nickname: true,
+                profileImage: true 
+              } 
+            },
             _count: {
-              select: { comments: true }
+              select: { 
+                comments: true
+              }
             }
           }
         },
+        folder: true,
         references: true,
         logs: true,
         communications: true

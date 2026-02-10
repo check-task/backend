@@ -1158,28 +1158,36 @@ paths:
                       properties:
                         taskId:
                           type: integer
-                          example: 1
+                          example: 13
                         folderId:
                           type: integer
-                          example: 1
+                          nullable: true
+                          example: 2
+                        foldercolor:
+                          type: string
+                          example: "#111111"
                         folderTitle:
+                          type: string
+                          example: "프로그래밍"
+                        status:
                           type: string
                           example: "PENDING"
                         title:
                           type: string
-                          example: "프로젝트1"
+                          example: "데이터베이스 설계 프로젝트 (수정본)"
                         type:
                           type: string
-                          example: "TEAM"
+                          enum: [TEAM, PERSONAL]
+                          example: "PERSONAL"
                         deadline:
                           type: string
-                          example: "2026.06.15"
+                          example: "2026.06.30"
                         dDay:
                           type: string
-                          example: "D-10"
+                          example: "D-140"
                         progressRate:
                           type: integer
-                          example: "50"
+                          example: 33
         '401':
           description: 인증 실패 (로그인 필요)
         '500':
@@ -1191,7 +1199,7 @@ paths:
       tags:
         - Task
       summary: 과제 상세 정보 조회
-      description: 특정 과제의 세부 태스크, 진행률, 팀원 정보 등을 조회합니다.
+      description: 특정 과제의 세부 태스크, 진행률, 폴더 정보, 댓글 목록 및 회의록/자료의 전체 데이터를 조회합니다.
       security:
         - bearerAuth: []
       parameters:
@@ -1200,90 +1208,76 @@ paths:
           required: true
           schema:
             type: integer
+          example: 22
       responses:
         '200':
           description: 과제 상세 조회 성공
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  message:
-                    type: string
-                    example: "서버가 요청을 성공적으로 처리하였습니다."
-                  data:
-                    type: object
-                    properties:
-                      taskId:
-                        type: integer
-                        example: 1
-                      title:
-                        type: string
-                        example: "프로젝트1"
-                      type:
-                        type: string
-                        example: "TEAM"
-                      deadline:
-                        type: string
-                        format: date
-                        example: "2026-06-15"
-                      dDay:
-                        type: string
-                        example: "D-10"
-                      progressRate:
-                        type: integer
-                        example: 0
-                      subTasks:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            subTaskId:
-                              type: integer
-                              example: 1
-                            title:
-                              type: string
-                              example: "세부과제 1"
-                            deadline:
-                              type: string
-                              format: date
-                              example: "2026-05-10"
-                            status:
-                              type: string
-                              example: "PROGRESS"
-                            isAlarm:
-                              type: boolean
-                              example: true
-                            commentCount:
-                              type: integer
-                              example: 0
-                            assigneeName:
-                              type: string
-                              example: "PENDING"
-                      communications:
-                        type: array
-                        items:
-                          type: object
-                        example: []
-                      meetingLogs:
-                        type: array
-                        items:
-                          type: object
-                        example: []
-                      references:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            name:
-                              type: string
-                              example: "레퍼런스1"
-                            url:
-                              type: string
-                              example: "https://www.example.com"
+              example:
+                resultType: "SUCCESS"
+                message: "서버가 요청을 성공적으로 처리하였습니다."
+                data:
+                  taskId: 22
+                  title: "소켓으로 수정한 제목"
+                  folderId: 1
+                  foldercolor: "#000000"
+                  folderTitle: "학교"
+                  status: "PROGRESS"
+                  type: "TEAM"
+                  deadline: "2026-12-31"
+                  dDay: "D-324"
+                  progressRate: 0
+                  subTasks:
+                    - subTaskId: 53
+                      title: "실시간으로 추가된 세부과제"
+                      deadline: "2026-05-30"
+                      status: "PROGRESS"
+                      isAlarm: true
+                      commentCount: 0
+                      comments: []
+                      assigneeId: null
+                      assigneeName: "PENDING"
+                      assigneeProfileImage: null
+                    - subTaskId: 54
+                      title: "실시간으로 추가된 세부과제2"
+                      deadline: "2026-05-30"
+                      status: "PROGRESS"
+                      isAlarm: true
+                      commentCount: 1
+                      comments:
+                        - commentId: 1
+                          content: "댓글1"
+                          writer: "오소윤"
+                          profileImage: "http://img1.kakaocdn.net/thumb/R640x640.q70/?fname=http://t1.kakaocdn.net/account_images/default_profile.jpeg"
+                          createdAt: "2026-02-10T18:50:15.000Z"
+                      assigneeId: 1
+                      assigneeName: "오소윤"
+                      assigneeProfileImage: "http://img1.kakaocdn.net/thumb/R640x640.q70/?fname=http://t1.kakaocdn.net/account_images/default_profile.jpeg"
+                  communications:
+                    - id: 1
+                      taskId: 22
+                      name: "커뮤니케이션1"
+                      url: "https://example.com"
+                      createdAt: "2026-02-10T19:00:07.000Z"
+                      updatedAt: null
+                  meetingLogs:
+                    - id: 1
+                      taskId: 22
+                      date: "2026-02-10T00:00:00.000Z"
+                      agenda: "agenda1"
+                      conclusion: "conclusion1"
+                      discussion: "discussion1"
+                      createdAt: "2026-02-10T19:00:48.000Z"
+                      updatedAt: null
+                  references:
+                    - id: 35
+                      taskId: 22
+                      name: "참고 문서 1"
+                      url: "https://example.com"
+                      fileUrl: null
+                      createdAt: "2026-02-10T19:10:46.000Z"
+                      updatedAt: null
         '401':
           description: 인증 실패
         '404':

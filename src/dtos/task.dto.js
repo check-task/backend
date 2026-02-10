@@ -66,6 +66,10 @@ export class TaskResponseDTO extends TaskUtils {
     return {
       taskId: task.id,
       title: task.title,
+      folderId: task.folderId,
+      foldercolor: task.folder?.color || "값 없음",
+      folderTitle: task.folder?.folderTitle || "미지정",
+      status: task.status || "PENDING",
       type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
       deadline: this.formatDate(task.deadline, '-'),
       dDay: this.calculateDDay(task.deadline),
@@ -77,11 +81,20 @@ export class TaskResponseDTO extends TaskUtils {
         status: st.status === 'COMPLETED' ? 'COMPLETED' : 'PROGRESS',
         isAlarm: st.isAlarm || false,
         commentCount: st._count?.comments || 0,
-        assigneeName: st.assigneeName || "PENDING"
+        comments: st.comments?.map(comment => ({
+          commentId: comment.id,
+          content: comment.content,
+          writer: comment.user?.nickname || "미지정",
+          profileImage: comment.user?.profileImage || null,
+          createdAt: comment.createdAt
+        })) || [],
+        assigneeId: st.assignee?.id || null,
+        assigneeName: st.assignee?.nickname || "PENDING",
+        assigneeProfileImage: st.assignee?.profileImage || null
       })) || [],
-      communications: task.communications?.map(c => ({ name: c.name, url: c.url })) || [],
-      meetingLogs: task.logs?.map(log => ({ logId: log.id, title: log.title })) || [],
-      references: task.references?.map(r => ({ name: r.name, url: r.url })) || []
+      communications: task.communications?.map(c => ({ ...c })) || [],
+      meetingLogs: task.logs?.map(log => ({ ...log })) || [],
+      references: task.references?.map(r => ({ ...r })) || []
     };
   }
 

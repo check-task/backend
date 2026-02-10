@@ -27,10 +27,7 @@ export class AuthController{
     //카카오 로그아웃
     async logout(req, res, next) {
     try {
-      const refreshToken =
-        req.cookies?.refreshToken ||
-        req.headers.authorization?.replace("Bearer ", "");
-      
+      const refreshToken = req.cookies?.refreshToken;
       if (refreshToken){
         await this.kakaoAuthService.revokeRefreshToken(refreshToken);
       }
@@ -55,9 +52,7 @@ export class AuthController{
 
   async refresh(req, res, next){
     try{
-      const refreshToken =
-        req.cookies?.refreshToken ||
-        req.headers.authorization?.replace("Bearer ", "");
+      const refreshToken = req.cookies?.refreshToken;
       if(!refreshToken){throw new UnauthorizedError("UNAUTHORIZED","Refresh Token이 없습니다.");}
       
       const newAccessToken = await this.kakaoAuthService.refreshAccessToken(refreshToken);
