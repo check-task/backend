@@ -8,7 +8,7 @@ class FolderController {
       const userId = req.user.id;
       const result = await folderService.createFolder(userId, req.body);
       
-      res.status(201).json({ 
+      res.status(200).json({ 
         resultType: "SUCCESS", 
         message: "폴더 생성 성공",
         data: result 
