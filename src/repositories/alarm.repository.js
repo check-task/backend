@@ -253,6 +253,43 @@ class AlarmRepository {
       },
     });
   }
+
+  // (추가) 아직 읽지 않은 과제 알림 조회 (과제 정보 포함)
+  async findPendingTaskAlarms(userId) {
+    return await prisma.userAlarm.findMany({
+      where: {
+        userId,
+        isRead: false,
+        taskId: { not: null },
+        subTaskId: null, // 세부과제 알림 제외
+      },
+      include: {
+        task: true, // 마감일 확인을 위해 과제 정보 포함
+      },
+    });
+  }
+
+  // (추가) 아직 읽지 않은 세부과제 알림 조회 (세부과제 정보 포함)
+  async findPendingSubTaskAlarms(userId) {
+    return await prisma.userAlarm.findMany({
+      where: {
+        userId,
+        isRead: false,
+        subTaskId: { not: null }, // 세부과제 알림만
+      },
+      include: {
+        subTask: true, // 마감일 확인을 위해 세부과제 정보 포함
+      },
+    });
+  }
+
+  // (추가) 알림 시간 업데이트 (개별)
+  async updateAlarmDate(alarmId, newAlarmDate) {
+    return await prisma.userAlarm.update({
+      where: { id: alarmId },
+      data: { alarmDate: newAlarmDate },
+    });
+  }
 }
 
 export default new AlarmRepository();
