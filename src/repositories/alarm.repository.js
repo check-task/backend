@@ -1,5 +1,6 @@
 import prisma from "../db.config.js";
 import dayjs from "dayjs";
+import { calculateAlarmDate } from "../utils/calculateAlarmDate.js";
 
 class AlarmRepository {
   //유저의 알림 조회
@@ -289,6 +290,36 @@ class AlarmRepository {
       where: { id: alarmId },
       data: { alarmDate: newAlarmDate },
     });
+  }
+  async updateAlarmsForTaskDeadline(taskId, newDeadline, tx = prisma) {
+    // 1. 해당 과제의 알림들 조회 (유저의 알림 설정값을 확인하기 위해 user include)
+    const alarms = await tx.userAlarm.findMany({
+      where: {
+        taskId: taskId,
+        subTaskId: null, // 세부과제 알림 제외 (과제 알림만)
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    // 2. 각 알림별로 새로운 마감일 기준 알림 시간 재계산 및 업데이트
+    for (const alarm of alarms) {
+      // 유저별 설정값 확인
+      const alarmHours = alarm.user.deadlineAlarm || 24;
+      // 새로운 알림 시간 계산
+      const newAlarmDate = calculateAlarmDate(newDeadline, alarmHours);
+
+      // DB 업데이트
+      await tx.userAlarm.update({
+        where: { id: alarm.id },
+        data: {
+          alarmDate: newAlarmDate,
+          // 마감일까지 남은 시간 문구도 갱신하고 싶다면 title도 업데이트 가능 (선택사항)
+          // title: `'${alarm.title.split("'")[1]}'의 마감까지 ${alarmHours}시간 남았어요!`,
+        },
+      });
+    }
   }
 }
 

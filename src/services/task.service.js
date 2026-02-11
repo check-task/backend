@@ -161,6 +161,10 @@ class TaskService {
       // 과제 기본 정보 업데이트
       const updatedTask = await taskRepository.updateTask(taskId, { ...taskData, folderId }, tx);
 
+      if (taskData.deadline) {
+        await alarmRepository.updateAlarmsForTaskDeadline(taskId, taskData.deadline, tx);
+      }
+
       // 세부 과제 갱신 
       await taskRepository.deleteAllSubTasks(taskId, tx);
       if (subTasks?.length > 0) {
