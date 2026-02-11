@@ -100,19 +100,45 @@ export class TaskResponseDTO extends TaskUtils {
 
   // 목록 조회 응답
   static fromList(tasks) {
-    return (Array.isArray(tasks) ? tasks : []).map(task => ({
-      taskId: task.id,
-      folderId: task.folderId,
-      foldercolor: task.folder?.color || "값 없음",
-      folderTitle: task.folder?.folderTitle || "미지정",
-      priority: task.priorities?.[0]?.rank ?? null,
-      status: task.status || "PENDING",
-      title: task.title,
-      type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
-      deadline: this.formatDate(task.deadline),
-      dDay: this.calculateDDay(task.deadline),
-      progressRate: task.progress || 0
-    }));
+    const taskList = [];
+    const subTaskList = [];
+
+    (Array.isArray(tasks) ? tasks : []).forEach(task => {
+      // 1. Task 정보 추출
+      taskList.push({
+        taskId: task.id,
+        folderId: task.folderId,
+        foldercolor: task.folder?.color || "값 없음",
+        folderTitle: task.folder?.folderTitle || "미지정",
+        priority: task.priorities?.[0]?.rank ?? null,
+        status: task.status || "PENDING",
+        title: task.title,
+        type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
+        deadline: this.formatDate(task.deadline),
+        dDay: this.calculateDDay(task.deadline),
+        progressRate: task.progress || 0
+      });
+
+      // 2. SubTask 정보 추출 및 평탄화 (Flatten)
+      if (task.subTasks && task.subTasks.length > 0) {
+        task.subTasks.forEach(st => {
+          subTaskList.push({
+            subTaskId: st.id,
+            taskId: task.id, // 어떤 과제의 세부과제인지 식별할 수 있도록 taskId 포함
+            title: st.title,
+            status: st.status || "PENDING",
+            // 필요한 경우 마감일 등 추가
+            deadline: this.formatDate(st.endDate)
+          });
+        });
+      }
+    });
+
+    // 3. 분리된 구조로 반환
+    return {
+      task: taskList,
+      subTask: subTaskList
+    };
   }
 
   // 완료 과제 조회 응답
