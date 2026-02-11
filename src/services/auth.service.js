@@ -127,7 +127,7 @@ export class KakaoAuthService {
         });
         await folderRepository.addFolder(user.id, {
           folderTitle: "기본",
-          color: "black",
+          color: "#081221",
         });
       }
       //토근 생성
