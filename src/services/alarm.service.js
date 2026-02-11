@@ -263,7 +263,7 @@ class AlarmService {
       subTaskId,
       isAlarm
     );
-    if (updatedSubTask.isAlarm = true) {
+    if (updatedSubTask.isAlarm === true) {
       await alarmRepository.createSubTaskAlarm(
         updatedSubTask.assigneeId,
         updatedSubTask.taskId,
@@ -271,6 +271,9 @@ class AlarmService {
         updatedSubTask.title,
         updatedSubTask.endDate
       );
+    }
+    if (updatedSubTask.isAlarm === false) {
+      await alarmRepository.deleteSubTaskAlarm(updatedSubTask.assigneeId, updatedSubTask.id);
     }
 
     // updatedSubTask가 null인 경우 체크
