@@ -3,20 +3,40 @@ class TaskUtils {
   // D-Day 계산
   static calculateDDay(deadline) {
     if (!deadline) return null;
-    const today = new Date();
-    const deadlineDate = new Date(deadline);
-    const diffTime = deadlineDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    // 서버 시간(UTC)을 한국 시간(+9)으로 변환
+    const now = new Date();
+    const kstNow = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+    // 한국 날짜의 '0시 0분 0초'로 세팅
+    const today = new Date(kstNow.getFullYear(), kstNow.getMonth(), kstNow.getDate());
+
+    // 마감일(UTC)을 한국 시간(+9)으로 변환
+    const dDate = new Date(deadline);
+    const kstDeadline = new Date(dDate.getTime() + (9 * 60 * 60 * 1000));
+    // 마감 날짜의 '0시 0분 0초'로 세팅
+    const targetDay = new Date(kstDeadline.getFullYear(), kstDeadline.getMonth(), kstDeadline.getDate());
+
+    // 두 날짜의 차이 계산
+    const diffTime = targetDay - today;
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return "D-Day";
     return diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
   }
 
-  // 날짜 포맷 
+  // KST 기준 날짜 포맷 (YYYY.MM.DD)
   static formatDate(date, separator = '.') {
     if (!date) return null;
-    const dateStr = date instanceof Date ? date.toISOString() : new Date(date).toISOString();
-    return dateStr.split('T')[0].replace(/-/g, separator);
+
+    // 입력받은 날짜(UTC)를 한국 시간으로 변환
+    const targetDate = new Date(date);
+    const kstDate = new Date(targetDate.getTime() + (9 * 60 * 60 * 1000));
+
+    const year = kstDate.getUTCFullYear();
+    const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(kstDate.getUTCDate()).padStart(2, '0');
+
+    return `${year}${separator}${month}${separator}${day}`;
   }
 }
 
