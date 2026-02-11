@@ -2468,7 +2468,11 @@ paths:
           description: |
             - BAD_REQUEST: 토큰이 형식에 맞지 않음.
             - INVALID_INPUT_VALUE: 폴더명이 비어있을 때.
-            - IINVALID_FOLDER_TITLE: 폴더 이름이 길 때.
+            - INVALID_FOLDER_TITLE: 폴더 이름이 길 때.
+            - COLOR_REQUIRED: 색상이 입력되지 않음.
+            - INVALID_COLOR: 색상 형식이 올바르지 않음 (#123456 형식 아님).
+            - MAX_FOLDER_LIMIT: 폴더 개수 5개 초과.
+            - DUPLICATE_COLOR: 이미 사용 중인 색상.
           content:
             application/json:
               schema:
@@ -2476,8 +2480,8 @@ paths:
                 example:
                   resultType: "FAIL"
                   code: 400
-                  errorCode: "BAD_REQUEST | INVALID_INPUT_VALUE | IINVALID_FOLDER_TITLE"
-                  reason: "인증 토큰이 형식에 맞지 않습니다. | 폴더 이름은 필수입니다. | 폴더 이름은 최대 11자까지만 가능합니다."
+                  errorCode: "BAD_REQUEST | INVALID_INPUT_VALUE | INVALID_FOLDER_TITLE | COLOR_REQUIRED | INVALID_COLOR | MAX_FOLDER_LIMIT | DUPLICATE_COLOR"
+                  reason: "인증 토큰이 형식에 맞지 않습니다. | 폴더 이름은 필수입니다. | 폴더 이름은 최대 11자까지만 가능합니다. | 색상은 필수 입력 사항입니다. | 색상은 #을 포함한 7자리 Hex 코드여야 합니다. | 폴더는 최대 5개까지만 생성할 수 있습니다. | 이미 사용 중인 색상입니다."
                   data: null
         '401':
           description: |
@@ -2567,7 +2571,9 @@ paths:
         '400':
           description: |
             - BAD_REQUEST: 토큰이 형식에 맞지 않음. 
-            - IINVALID_FOLDER_TITLE: 폴더 이름이 길 때.     
+            - INVALID_FOLDER_TITLE: 폴더 이름이 길 때.     
+            - INVALID_COLOR: 색상 형식이 올바르지 않음.
+            - DUPLICATE_COLOR: 이미 사용 중인 색상으로 변경 시도.
           content:
             application/json:
               schema:
@@ -2575,8 +2581,8 @@ paths:
                 example:
                   resultType: "FAIL"
                   code: 400
-                  errorCode: "BAD_REQUEST | IINVALID_FOLDER_TITLE"
-                  reason: "인증 토큰이 형식에 맞지 않습니다. | 폴더 이름은 최대 11자까지만 가능합니다."
+                  errorCode: "BAD_REQUEST | INVALID_FOLDER_TITLE | INVALID_COLOR | DUPLICATE_COLOR"
+                  reason: "인증 토큰이 형식에 맞지 않습니다. | 폴더 이름은 최대 11자까지만 가능합니다. | 색상 형식이 올바르지 않습니다. | 이미 사용 중인 색상입니다."
                   data: null     
         '401':
           description: |
