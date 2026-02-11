@@ -206,6 +206,42 @@ class TaskService {
       return { taskId: updatedTask.id };
     });
   }
+  // Task 마감일 변경 서비스
+  async updateTaskDeadline(taskId, deadline) {
+    // 1. Task 존재 여부 확인
+    const task = await taskRepository.findTaskById(taskId);
+    if (!task) {
+      throw new NotFoundError("존재하지 않는 과제입니다.");
+    }
+
+    const newDeadline = new Date(deadline);
+    // 한국 시간으로 변경
+    newDeadline.setHours(newDeadline.getHours() + 9);
+
+
+    // 2. (선택 사항) 세부 과제들의 마감일보다 이른 날짜로 변경 불가하도록 검증
+    // Task 마감일은 세부 과제 마감일보다 늦거나 같아야 함
+    const subTasks = await prisma.subTask.findMany({
+      where: { taskId: taskId }
+    });
+
+    for (const subTask of subTasks) {
+      if (subTask.endDate > newDeadline) {
+        throw new BadRequestError("세부 과제의 마감일보다 이른 날짜로 변경할 수 없습니다.");
+      }
+    }
+
+    // 3. 트랜잭션으로 Task 업데이트 및 알림 시간 재설정
+    return await prisma.$transaction(async (tx) => {
+      // Task 마감일 업데이트
+      const updatedTask = await taskRepository.updateTask(taskId, { deadline: newDeadline }, tx);
+
+      // 관련 알림 시간 업데이트
+      await alarmRepository.updateAlarmsForTaskDeadline(taskId, newDeadline, tx);
+
+      return updatedTask;
+    });
+  }
 
   // 과제 삭제
   async removeTask(taskId) {

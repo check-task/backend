@@ -53,19 +53,19 @@ class TaskRepository {
           include: {
             comments: {
               include: {
-                user: { select: { nickname: true, profileImage: true } } 
+                user: { select: { nickname: true, profileImage: true } }
               },
               orderBy: { createdAt: 'asc' } // 오래된 순으로 정렬
             },
-            assignee: { 
-              select: { 
+            assignee: {
+              select: {
                 id: true,
                 nickname: true,
-                profileImage: true 
-              } 
+                profileImage: true
+              }
             },
             _count: {
-              select: { 
+              select: {
                 comments: true
               }
             }
@@ -102,7 +102,7 @@ class TaskRepository {
 
     if (status === 'PROGRESS') {
       query.where.deadline = {
-        gte: now 
+        gte: now
       };
     }
 
@@ -137,6 +137,13 @@ class TaskRepository {
     }
 
     return processedTasks;
+  }
+
+  async updateTaskDeadline(taskId, deadline, tx = prisma) {
+    return await tx.task.update({
+      where: { id: taskId },
+      data: { deadline }
+    });
   }
 
   // 우선 순위 변경

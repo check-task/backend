@@ -110,6 +110,26 @@ class TaskController {
       next(error);
     }
   }
+  // Task 마감일 변경
+  async updateTaskDeadline(req, res, next) {
+    try {
+      const { taskId } = req.params;
+      const { deadline } = req.body;
+
+      const updatedTask = await taskService.updateTaskDeadline(parseInt(taskId), deadline);
+
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "Task 마감일이 성공적으로 변경되었습니다.",
+        data: {
+          taskId: updatedTask.id,
+          deadline: updatedTask.deadline,
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 
   // 우선 순위 변경
   async updateTaskPriorities(req, res, next) {
