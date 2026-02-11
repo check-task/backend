@@ -19,11 +19,14 @@ export const jwtStrategy = new JwtStrategy(
       const user = await prisma.user.findFirst({
         where: {
           provider: payload.provider,       // "kakao"
-          providerId: payload.providerId, // 카카오 profile.id
+          providerId: payload.providerId, // 카카오 profile.id  
         },
       });
 
-      if (!user) return done(null, false);
+      if (!user || user.deletedAt) {
+        return done(null, false);
+      }
+
       return done(null, user);
     } catch (err) {
       return done(err, false);

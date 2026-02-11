@@ -3,7 +3,7 @@ import passport from "passport";
 import { kakaoMiddleware } from "../middlewares/kakao.middleware.js";
 import { AuthController } from "../controllers/auth.controller.js";
 import { BadRequestError } from "../errors/custom.error.js";
-import { redis } from "../config/redis.js";
+import { redis } from "../config/redis.config.js";
 
 const router = Router();
 const authController = new AuthController();
@@ -52,6 +52,11 @@ router.get(
     const redirectBaseUrl = REDIRECT_URL_MAP[req.query.state || "prod"];
     if (!redirectBaseUrl) { return res.status(500).send("리다이렉트 URL이 설정되지 않았습니다."); }
 
+    //탈퇴 회원 분기
+    if (req.user.withdrawnUser) {
+      return res.redirect(`${redirectBaseUrl}/auth/withdrawn`);
+    }
+
     const { refreshToken } = req.user;
     const isProd = process.env.NODE_ENV === "production";
 
@@ -95,7 +100,13 @@ router.delete(
 
 //카카오 로그아웃
 router.post("/logout", authController.logout.bind(authController));
+//Access Token 발급
 router.post("/refresh", authController.refresh.bind(authController));
-
+//재가입시 복구
+router.post(
+  "/restore",
+  // passport.authenticate("jwt", { session: false }),
+  authController.restore.bind(authController)
+);
 
 export default router;
