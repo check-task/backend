@@ -1157,28 +1157,41 @@ paths:
                   resultType: "SUCCESS"
                   message: "서버가 요청을 성공적으로 처리하였습니다."
                   data:
-                    - taskId: 13
-                      folderId: 2
-                      foldercolor: "#111111"
-                      folderTitle: "프로그래밍"
-                      priority: 1
-                      status: "PENDING"
-                      title: "데이터베이스 설계 프로젝트 (수정본)"
-                      type: "PERSONAL"
-                      deadline: "2026.06.30"
-                      dDay: "D-140"
-                      progressRate: 33
-                    - taskId: 5
-                      folderId: null
-                      foldercolor: "값 없음"
-                      folderTitle: "미지정"
-                      priority: 2
-                      status: "PENDING"
-                      title: "자바 Swing 과제 제출"
-                      type: "PERSONAL"
-                      deadline: "2026.05.10"
-                      dDay: "D-89"
-                      progressRate: 0
+                    # ✅ 변경된 구조: task와 subTask로 분리
+                    task:
+                      - taskId: 13
+                        folderId: 2
+                        foldercolor: "#111111"
+                        folderTitle: "프로그래밍"
+                        priority: 1
+                        status: "PENDING"
+                        title: "데이터베이스 설계 프로젝트 (수정본)"
+                        type: "PERSONAL"
+                        deadline: "2026.06.30"
+                        dDay: "D-140"
+                        progressRate: 33
+                      - taskId: 5
+                        folderId: null
+                        foldercolor: "값 없음"
+                        folderTitle: "미지정"
+                        priority: 2
+                        status: "PENDING"
+                        title: "자바 Swing 과제 제출"
+                        type: "PERSONAL"
+                        deadline: "2026.05.10"
+                        dDay: "D-89"
+                        progressRate: 0
+                    subTask:
+                      - subTaskId: 101
+                        taskId: 13
+                        title: "DB 스키마 설계"
+                        status: "COMPLETED"
+                        deadline: "2026.06.20"
+                      - subTaskId: 102
+                        taskId: 13
+                        title: "API 명세서 작성"
+                        status: "PENDING"
+                        deadline: "2026.06.25"
         '401':
           description: 인증 실패 (로그인 필요)
         '500':
