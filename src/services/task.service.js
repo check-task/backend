@@ -168,7 +168,14 @@ class TaskService {
       // 세부 과제 갱신 
       await taskRepository.deleteAllSubTasks(taskId, tx);
       if (subTasks?.length > 0) {
-        await taskRepository.addSubTasks(taskId, subTasks, tx);
+
+        const formattedSubTasks = subTasks.map(st => ({
+          ...st,
+          endDate: st.endDate ? new Date(st.endDate) : null, 
+          taskId: taskId // taskId도 확실히 포함
+        }));
+
+        await taskRepository.addSubTasks(taskId, formattedSubTasks, tx);
 
         // 새로 생성된 세부과제에 대한 알림 생성
         const createdSubTasksList = await tx.subTask.findMany({
