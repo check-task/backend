@@ -11,27 +11,48 @@ class AlarmRepository {
       order = "desc",
     } = options;
 
-    const kstDate = dayjs().add(9, "hour").toDate();
+    // 환경 타지 않도록 순수 Date 객체 사용 (현재 시간 + 9시간)
+    const kstDate = new Date(Date.now() + 9 * 60 * 60 * 1000);
 
     const where = {
       userId,
       alarmDate: {
-        lte: kstDate,
+        lte: kstDate, // 미래 알림 제외
       },
-      // ...(cursor && { id: { lt: cursor } }),
     };
 
-    return await prisma.userAlarm.findMany({
+    const alarms = await prisma.userAlarm.findMany({
       where,
-      // ✅ 수정: 정렬 기준이 같을 때 id로 순서를 보장하도록 배열로 변경
+      // ✅ 과제와 세부과제 정보를 함께 조회 (진척도 계산용)
+      include: {
+        task: {
+          include: { subTasks: true }
+        }
+      },
       orderBy: [
         { [orderBy]: order },
-        { id: order } // id도 같은 방향으로 정렬 (보통 desc)
+        { id: order }
       ],
-      // ✅ 추가: Prisma의 native cursor 사용
       cursor: cursor ? { id: cursor } : undefined,
-      skip: cursor ? 1 : 0, // 커서값 자체는 제외하고 그 다음부터 조회
+      skip: cursor ? 1 : 0,
       take: limit + 1,
+    });
+
+    // ✅ 조회된 알림 목록을 순회하며 진척도 실시간 반영
+    return alarms.map(alarm => {
+      // 과제 알림이고(taskId 있음, subTaskId 없음), 관련 과제 정보가 있는 경우
+      if (alarm.taskId && !alarm.subTaskId && alarm.task && alarm.task.subTasks) {
+        const total = alarm.task.subTasks.length;
+        const completed = alarm.task.subTasks.filter(st => st.status === 'COMPLETED').length;
+        const currentProgress = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        // 알림 내용 업데이트 (덮어쓰기)
+        alarm.alarmContent = `'현재 ${currentProgress}%완성 중이에요. 빨리 끝내고 쉬어요!`;
+      }
+
+      // 응답 최적화를 위해 include 했던 task 객체는 제거하고 반환 (선택 사항)
+      const { task, ...alarmData } = alarm;
+      return { ...alarmData, alarmContent: alarm.alarmContent };
     });
   }
 
@@ -68,13 +89,25 @@ class AlarmRepository {
 
   //세부과제 알림 생성
   async createSubTaskAlarm(userId, taskId, subTaskId, subTaskTitle, alarmDate, tx = prisma) {
+
+    const user = await tx.user.findUnique({
+      where: { id: userId },
+      select: { taskAlarm: true },
+    });
+
+    const subTask = await tx.subTask.findUnique({
+      where: { id: subTaskId },
+    });
+
+    const taskAlarm = user.taskAlarm;
+
     return await tx.userAlarm.create({
       data: {
         userId,
         taskId,
         subTaskId,
-        title: "세부과제 생성 알림",
-        alarmContent: `${subTaskTitle} 세부과제가 생성되었습니다`,
+        title: `'${subTaskTitle}'의 마감까지 ${taskAlarm}시간 남았어요!`,
+        alarmContent: `'현재 ${subTask.status === 'COMPLETED' ? '완료' : '진행 중'} 상태에요. 빨리 끝내고 쉬어요!`,
         alarmDate,
         isRead: false,
         createdAt: new Date(Date.now() + 9 * 60 * 60 * 1000),
