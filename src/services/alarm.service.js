@@ -31,7 +31,7 @@ class AlarmService {
     });
 
     // 페이징 로직
-    const effectiveLimit = limit || 7;
+    const effectiveLimit = limit || 10;
     const hasNextPage = alarms.length > effectiveLimit;
     const data = hasNextPage ? alarms.slice(0, effectiveLimit) : alarms;
     const nextCursor =

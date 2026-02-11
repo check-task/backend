@@ -18,26 +18,47 @@ class AlarmRepository {
       alarmDate: {
         lte: kstDate,
       },
-      ...(cursor && { id: { lt: cursor } }),
+      // ...(cursor && { id: { lt: cursor } }),
     };
 
     return await prisma.userAlarm.findMany({
       where,
-      orderBy: {
-        [orderBy]: order,
-      },
+      // ✅ 수정: 정렬 기준이 같을 때 id로 순서를 보장하도록 배열로 변경
+      orderBy: [
+        { [orderBy]: order },
+        { id: order } // id도 같은 방향으로 정렬 (보통 desc)
+      ],
+      // ✅ 추가: Prisma의 native cursor 사용
+      cursor: cursor ? { id: cursor } : undefined,
+      skip: cursor ? 1 : 0, // 커서값 자체는 제외하고 그 다음부터 조회
       take: limit + 1,
     });
   }
 
   //과제 알림 생성
   async createTaskAlarm(userId, taskId, taskTitle, alarmDate, tx = prisma) {
+
+    const user = await tx.user.findUnique({
+      where: { id: userId },
+      select: { deadlineAlarm: true },
+    });
+
+    const task = await tx.task.findUnique({
+      where: { id: taskId },
+      include: { subTasks: true },
+    });
+    const totalSubTasks = task?.subTasks?.length || 0;
+    const completedSubTasks = task?.subTasks?.filter(st => st.status === 'COMPLETED').length || 0;
+    const progressRate = totalSubTasks > 0 ? Math.round((completedSubTasks / totalSubTasks) * 100) : 0;
+
+    const deadlineAlarm = user.deadlineAlarm;
+
     return await tx.userAlarm.create({
       data: {
         userId,
         taskId,
-        title: "과제 생성 알림",
-        alarmContent: `${taskTitle} 과제가 생성되었습니다`,
+        title: `'${taskTitle}'의 마감까지 ${deadlineAlarm}시간 남았어요!`,
+        alarmContent: `'현재 ${progressRate}%완성 중이에요. 빨리 끝내고 쉬어요!`,
         alarmDate,
         isRead: false,
         createdAt: new Date(Date.now() + 9 * 60 * 60 * 1000),
