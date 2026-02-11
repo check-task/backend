@@ -103,78 +103,6 @@ export const setupTaskHandlers = (io, socket) => {
     console.log('====================================');
   });
 
-  // 과제 수정
-  socket.on(taskEvents.UPDATE_TASK, async (payload, callback) => {
-    try {
-      const { taskId, data } = payload;
-      console.log(`[SOCKET][task:update] 요청 수신`, { taskId });
-
-      // DB 수정 처리
-      const result = await taskService.modifyTask(Number(taskId), data);
-
-      // 최신 상세 정보 조회 후 브로드캐스트
-      const updatedTask = await taskService.getTaskDetail(Number(taskId));
-      io.to(`task:${taskId}`).emit(taskEvents.TASK_UPDATED, updatedTask);
-
-      callback?.({ success: true, data: result });
-    } catch (err) {
-      console.error("task:update 실패", err);
-      callback?.({ success: false, reason: err.message });
-    }
-  });
-
-  // 팀원 역할 변경
-  socket.on(taskEvents.UPDATE_MEMBER, async (payload, callback) => {
-    try {
-      const { taskId, memberId, role } = payload;
-      console.log(`[SOCKET][member:update] 요청 수신`, {
-        taskId,
-        memberId,
-        role,
-      });
-
-      const result = await taskService.modifyMemberRole(
-        Number(taskId),
-        Number(memberId),
-        role,
-      );
-
-      // 같은 방 팀원들에게 알림
-      io.to(`task:${taskId}`).emit(taskEvents.MEMBER_UPDATED, {
-        memberId: result.id,
-        role: result.role,
-        userId: result.userId,
-      });
-
-      callback?.({ success: true, data: result });
-    } catch (err) {
-      console.error("member:update 실패", err);
-      callback?.({ success: false, reason: err.message });
-    }
-  });
-
-  // 단일 세부과제 추가
-  socket.on(taskEvents.CREATE_SUBTASK, async (payload, callback) => {
-    try {
-      const { taskId, subtaskData } = payload;
-      console.log(`[SOCKET][subtask:create] 요청 수신`, { taskId });
-
-      const result = await taskService.createSingleSubTask(
-        socket.user.id,
-        Number(taskId),
-        subtaskData,
-      );
-
-      // 방 전체에 새로운 세부과제 정보 브로드캐스트
-      io.to(`task:${taskId}`).emit(taskEvents.SUBTASK_CREATED, result);
-
-      callback?.({ success: true, data: result });
-    } catch (err) {
-      console.error("subtask:create 실패", err);
-      callback?.({ success: false, reason: err.message });
-    }
-  });
-
   // 서브과제 상태 업데이트
   socket.on(
     taskEvents.UPDATE_SUBTASK,
@@ -539,8 +467,7 @@ export const setupTaskHandlers = (io, socket) => {
   socket.on(taskEvents.UPDATE_TASK, async (payload, callback) => {
     try {
       const { taskId, ...data } = payload;
-      console.log(`[SOCKET][task:update] 요청 수신`, { taskId });
-
+      console.log(`[SOCKET][task:update] 요청 수신`, { taskId, data });
       // DB 수정 처리
       const result = await taskService.modifyTask(Number(taskId), data);
 
