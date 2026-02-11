@@ -207,31 +207,49 @@ class TaskService {
     });
   }
   // Task 마감일 변경 서비스
-  async updateTaskDeadline(taskId, deadline) {
+  async updateTaskDeadline(userId, taskId, deadline) {
     // 1. Task 존재 여부 확인
     const task = await taskRepository.findTaskById(taskId);
     if (!task) {
       throw new NotFoundError("존재하지 않는 과제입니다.");
     }
 
+    // 2. 수정 권한 확인 (중요!)
+    // 해당 유저가 과제의 Owner(생성자/관리자)인지 확인합니다.
+    const member = await prisma.member.findFirst({
+      where: {
+        taskId: taskId,
+        userId: userId,
+        role: false // role: false가 Owner 권한
+      }
+    });
+
+    if (!member) {
+      throw new ForbiddenError("과제 마감일을 수정할 권한이 없습니다.");
+    }
+
+    // 3. 날짜 형식 유효성 검사
     const newDeadline = new Date(deadline);
-    // 한국 시간으로 변경
+    if (isNaN(newDeadline.getTime())) {
+      throw new BadRequestError("유효하지 않은 날짜 형식입니다.");
+    }
+
+    // 한국 시간으로 변경 (기존 로직 유지)
     newDeadline.setHours(newDeadline.getHours() + 9);
 
-
-    // 2. (선택 사항) 세부 과제들의 마감일보다 이른 날짜로 변경 불가하도록 검증
-    // Task 마감일은 세부 과제 마감일보다 늦거나 같아야 함
+    // 4. 세부 과제들의 마감일보다 이른 날짜로 변경 불가하도록 검증
     const subTasks = await prisma.subTask.findMany({
       where: { taskId: taskId }
     });
 
     for (const subTask of subTasks) {
-      if (subTask.endDate > newDeadline) {
+      // Date 객체끼리 비교
+      if (new Date(subTask.endDate) > newDeadline) {
         throw new BadRequestError("세부 과제의 마감일보다 이른 날짜로 변경할 수 없습니다.");
       }
     }
 
-    // 3. 트랜잭션으로 Task 업데이트 및 알림 시간 재설정
+    // 5. 트랜잭션으로 Task 업데이트 및 알림 시간 재설정
     return await prisma.$transaction(async (tx) => {
       // Task 마감일 업데이트
       const updatedTask = await taskRepository.updateTask(taskId, { deadline: newDeadline }, tx);

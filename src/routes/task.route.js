@@ -39,9 +39,8 @@ router.patch(
 );
 
 // Task 마감일 변경 API
-router.patch('/:taskId/deadline', taskController.updateTaskDeadline);
+router.patch('/:taskId/deadline', authenticate, taskController.updateTaskDeadline);
 // 세부task 날짜 변경 API
-
 router.patch(
   '/subtask/:subTaskId/deadline',
   authenticate,
