@@ -112,6 +112,11 @@ paths:
                               type: integer
                               nullable: true
                               example: null
+                            type:
+                              type: string
+                              nullable: true
+                              enum: [PERSONAL, TEAM]
+                              example: TEAM
                       meta:
                         type: object
                         properties:
