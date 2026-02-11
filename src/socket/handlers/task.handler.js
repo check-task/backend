@@ -253,7 +253,7 @@ export const setupTaskHandlers = (io, socket) => {
         const updatedSubTask = await prisma.subTask.update({
           where: { id: numericSubTaskId },
           data: {
-            deadline: deadlineDate,
+            endDate: deadlineDate,
             updatedAt: new Date(),
           },
         });
