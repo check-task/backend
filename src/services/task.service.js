@@ -1,6 +1,6 @@
 import taskRepository from "../repositories/task.repository.js";
 import { BadRequestError, NotFoundError, ForbiddenError } from "../errors/custom.error.js";
-import { getUserData } from "../repositories/user.repository.js";
+import { userRepository } from "../repositories/user.repository.js";
 import { TaskResponseDTO } from "../dtos/task.dto.js";
 import { prisma } from "../db.config.js";
 import { calculateAlarmDate } from "../utils/calculateAlarmDate.js";
@@ -9,7 +9,7 @@ import alarmRepository from "../repositories/alarm.repository.js";
 class TaskService {
   // 완료 과제 조회
   async getCompletedTasks(userId) {
-    const user = await getUserData(userId);
+    const user = await userRepository.getUserData(userId);
     if (!user) {
       throw new NotFoundError("USER_NOT_FOUND", "해당 사용자를 찾을 수 없습니다.");
     }
@@ -168,7 +168,14 @@ class TaskService {
       // 세부 과제 갱신 
       await taskRepository.deleteAllSubTasks(taskId, tx);
       if (subTasks?.length > 0) {
-        await taskRepository.addSubTasks(taskId, subTasks, tx);
+
+        const formattedSubTasks = subTasks.map(st => ({
+          ...st,
+          endDate: st.endDate ? new Date(st.endDate) : null, 
+          taskId: taskId // taskId도 확실히 포함
+        }));
+
+        await taskRepository.addSubTasks(taskId, formattedSubTasks, tx);
 
         // 새로 생성된 세부과제에 대한 알림 생성
         const createdSubTasksList = await tx.subTask.findMany({
