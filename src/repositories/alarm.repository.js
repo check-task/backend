@@ -50,9 +50,11 @@ class AlarmRepository {
         alarm.alarmContent = `'현재 ${currentProgress}%완성 중이에요. 빨리 끝내고 쉬어요!`;
       }
 
+      const taskType = alarm.task.type;
+
       // 응답 최적화를 위해 include 했던 task 객체는 제거하고 반환 (선택 사항)
       const { task, ...alarmData } = alarm;
-      return { ...alarmData, alarmContent: alarm.alarmContent };
+      return { ...alarmData, alarmContent: alarm.alarmContent, taskType };
     });
   }
 
