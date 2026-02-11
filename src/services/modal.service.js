@@ -64,7 +64,7 @@ class ModalService {
 
     return modalRepository.deleteRef(referenceId);
   }
-  
+
   // 커뮤니케이션
   async createCommunication(dto) {
     const { taskId, userId, name, url } = dto;
@@ -133,7 +133,7 @@ class ModalService {
     if (!log) throw new NotFoundError('회의록이 존재하지 않습니다.');
 
     await modalRepository.updateLog(logId, { ...(date && { date }), ...(agenda && { agenda }), ...(conclusion && { conclusion }), ...(discussion && { discussion }) });
-    return modalRepository.findLogById(taskId);
+    return modalRepository.findLogById(logId);
   }
 
   async deleteLog({ taskId, logId, userId }) {

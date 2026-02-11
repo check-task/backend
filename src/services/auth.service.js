@@ -4,6 +4,7 @@ import { BadRequestError, InternalServerError } from "../errors/custom.error.js"
 import axios from "axios";
 import crypto from "crypto";
 import { redis } from "../config/redis.js";
+import { folderRepository } from "../repositories/folder.repository.js";
 
 export class KakaoAuthService {
   constructor(){
@@ -123,6 +124,10 @@ export class KakaoAuthService {
             provider: "KAKAO",
             providerId,
           },
+        });
+        await folderRepository.addFolder(user.id, {
+          folderTitle: "기본",
+          color: "#081221",
         });
       }
       //토근 생성
