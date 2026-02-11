@@ -31,16 +31,16 @@ router.patch("/:taskId/member/:memberId", authenticate, taskController.updateTea
 // POST /api/v1/task/:taskId/subTask -- 단일 세부 과제 추가
 router.post("/:taskId/subTask", authenticate, taskController.addSubTask)
 
-// 세부 TASK 완료 처리 API 
-// 세부 TASK 상태 업데이트
+// 세부 TASK 상태 업데이트 API 
 router.patch(
   '/subtask/:subTaskId/status',
   authenticate,
   taskController.updateSubTaskStatus
 );
 
+// Task 마감일 변경 API
+router.patch('/:taskId/deadline', authenticate, taskController.updateTaskDeadline);
 // 세부task 날짜 변경 API
-// 세부 TASK 마감일 변경
 router.patch(
   '/subtask/:subTaskId/deadline',
   authenticate,

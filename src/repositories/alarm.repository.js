@@ -291,6 +291,8 @@ class AlarmRepository {
       data: { alarmDate: newAlarmDate },
     });
   }
+
+  // Task 마감일 변경 시 알림 시간 업데이트
   async updateAlarmsForTaskDeadline(taskId, newDeadline, tx = prisma) {
     // 1. 해당 과제의 알림들 조회 (유저의 알림 설정값을 확인하기 위해 user include)
     const alarms = await tx.userAlarm.findMany({

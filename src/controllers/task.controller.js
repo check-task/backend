@@ -1,5 +1,6 @@
 import taskService from "../services/task.service.js";
 import { TaskRequestDTO, TaskResponseDTO } from "../dtos/task.dto.js";
+import { BadRequestError } from "../errors/custom.error.js";
 
 class TaskController {
   // 완료 과제 조회
@@ -105,6 +106,36 @@ class TaskController {
         resultType: "SUCCESS",
         message: "서버가 요청을 성공적으로 처리하였습니다.",
         data: TaskResponseDTO.fromList(tasks)
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  // Task 마감일 변경
+  async updateTaskDeadline(req, res, next) {
+    try {
+      const { taskId } = req.params;
+      const { deadline } = req.body;
+      const userId = req.user.id; // 유저 ID 추출
+
+      // 입력값 검증
+      if (!taskId || isNaN(parseInt(taskId))) {
+        // throw new Error("유효하지 않은 Task ID입니다.");
+        throw new BadRequestError("INVALID_PARAMETER", "유효하지 않은 Task ID입니다.");
+      }
+      if (!deadline) {
+        throw new BadRequestError("INVALID_BODY", "마감일은 필수입니다.");
+      }
+
+      const updatedTask = await taskService.updateTaskDeadline(userId, parseInt(taskId), deadline);
+
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "Task 마감일이 성공적으로 변경되었습니다.",
+        data: {
+          taskId: updatedTask.id,
+          deadline: updatedTask.deadline,
+        }
       });
     } catch (error) {
       next(error);
