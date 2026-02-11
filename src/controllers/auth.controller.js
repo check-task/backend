@@ -1,5 +1,6 @@
 import { KakaoAuthService } from "../services/auth.service.js";
 import { UnauthorizedError } from "../errors/custom.error.js";
+import { prisma } from "../db.config.js";
 
 export class AuthController{
     constructor(){
@@ -27,7 +28,9 @@ export class AuthController{
     //카카오 로그아웃
     async logout(req, res, next) {
     try {
-      const refreshToken = req.cookies?.refreshToken;
+      const refreshToken =
+        req.cookies?.refreshToken ||
+        req.headers.authorization?.replace("Bearer ", "");
       if (refreshToken){
         await this.kakaoAuthService.revokeRefreshToken(refreshToken);
       }
@@ -53,8 +56,10 @@ export class AuthController{
   async refresh(req, res, next){
     try{
       console.log("🍪 cookies:", req.cookies);
-      
-      const refreshToken = req.cookies?.refreshToken;
+
+      const refreshToken =
+        req.cookies?.refreshToken ||
+        req.headers.authorization?.replace("Bearer ", "");
       if(!refreshToken){throw new UnauthorizedError("UNAUTHORIZED","Refresh Token이 없습니다.");}
       
       const newAccessToken = await this.kakaoAuthService.refreshAccessToken(refreshToken);
@@ -70,6 +75,39 @@ export class AuthController{
       next(error);
     }
   }
+
+  //재가입시 기존 정보 복구
+  async restore(req, res, next){
+    try{
+      const { providerId } = req.body;
+      
+      if (!providerId) {throw new BadRequestError("PROVIDER_ID_REQUIRED","providerId가 필요합니다.");}
+
+      const user = await prisma.user.findFirst({
+        where:{
+          provider: "KAKAO",
+          providerId,
+          deletedAt: { not: null },
+        }
+      });
+
+      if(!user){ throw new BadRequestError("USER_NOT_FOUND","복구할 탈퇴 계정을 찾을 수 없습니다.");}
+
+      await prisma.user.update({
+        where:{ id: user.id },
+        data:{ deletedAt: null }
+      });
+
+      return res.status(200).json({
+        resultType:"SUCCESS",
+        message:"계정이 복구되었습니다."
+      });
+
+    }catch(error){
+      next(error);
+    }
+  }
+
 }
 
 

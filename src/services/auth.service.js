@@ -1,9 +1,9 @@
 import { prisma } from "../db.config.js";
 import jwt from "jsonwebtoken";
-import { BadRequestError, InternalServerError } from "../errors/custom.error.js"
+import { BadRequestError, InternalServerError, UnauthorizedError } from "../errors/custom.error.js"
 import axios from "axios";
 import crypto from "crypto";
-import { redis } from "../config/redis.js";
+import { redis } from "../config/redis.config.js";
 import { folderRepository } from "../repositories/folder.repository.js";
 
 export class KakaoAuthService {
@@ -99,17 +99,13 @@ export class KakaoAuthService {
       
       let isNewUser = false;
 
-      //탈퇴 사용자면 자동 복구
-      if(user && user.deletedAt){
-        user = await prisma.user.update({
-          where: {
-            id: user.id
-          },
-          data: {
-            deletedAt: null,
-          },
-        });
-      }
+      // 탈퇴 사용자 차단
+    if (user && user.deletedAt) {
+      return {
+        withdrawnUser: true,
+        providerId,
+      };
+    }
 
       //신규 사용자 생성
       if (!user) {
@@ -152,7 +148,7 @@ export class KakaoAuthService {
   //카카오 회원 탈퇴
   async withdrawKakaoUser(user){
     if(!user){
-      throw new BadRequestError("INVALID_USER","유효하지 않은 사용자입니다.");
+      throw new UnauthorizedError("UNAUTHORIZED","인증 정보가 없습니다.");
     }
     if (user.deletedAt) {
       throw new BadRequestError("ALREADY_WITHDRAWN","이미 탈퇴 처리된 사용자입니다.");
