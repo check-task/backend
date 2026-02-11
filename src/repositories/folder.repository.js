@@ -1,10 +1,27 @@
 import { prisma } from "../db.config.js";
 
 class FolderRepository {
-  // 내부 검증용 단일 조회 (수정/삭제 시 필요하므로 유지)
+  // 내부 검증용 단일 조회
   async getFolderById(folderId) {
     return await prisma.folder.findUnique({
       where: { id: parseInt(folderId) },
+    });
+  }
+
+  // 유저의 폴더 개수 조회 (기본 폴더 포함됨)
+  async countByUserId(userId) {
+    return await prisma.folder.count({
+      where: { userId: userId },
+    });
+  }
+
+  // 유저가 특정 색상을 이미 사용 중인지 조회
+  async findByUserAndColor(userId, color) {
+    return await prisma.folder.findFirst({
+      where: {
+        userId: userId,
+        color: color,
+      },
     });
   }
 
