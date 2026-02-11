@@ -6,78 +6,56 @@ class FolderService {
   
   // 1. 폴더 생성
   async createFolder(userId, body) {
+    const currentCount = await folderRepository.countByUserId(userId);
+    if (currentCount >= 5) {
+      throw new BadRequestError("MAX_FOLDER_LIMIT", "폴더는 최대 5개까지만 생성할 수 있습니다.");
+    }
+
     const folderData = FolderDto.bodyToFolderDto(body);
+
+    const duplicateColorFolder = await folderRepository.findByUserAndColor(userId, folderData.color);
+    if (duplicateColorFolder) {
+      throw new BadRequestError("DUPLICATE_COLOR", "이미 사용 중인 색상입니다. 다른 색상을 선택해주세요.");
+    }
     
     const newFolder = await folderRepository.addFolder(userId, folderData);
-    
     return FolderDto.responseFromFolder(newFolder);
   }
 
   // 2. 폴더 수정
   async updateFolder(userId, folderId, body) {
-    try {
-      // 검증을 위해 getFolderById 사용 (Repository에 남아있어야 함)
-      const folder = await folderRepository.getFolderById(folderId);
+    // (1) 폴더 존재 및 권한 확인
+    const folder = await folderRepository.getFolderById(folderId);
+    if (!folder) throw new NotFoundError("FOLDER_NOT_FOUND", "해당 폴더를 찾을 수 없습니다.");
+    if (folder.userId !== userId) throw new ForbiddenError("FORBIDDEN", "수정 권한이 없습니다.");
 
-      if (!folder) {
-        throw new NotFoundError("FOLDER_NOT_FOUND", "해당 폴더를 찾을 수 없습니다.");
-      }
+    const updateData = FolderDto.updateBodyToFolderDto(body);
 
-      if (folder.userId !== userId) {
-        throw new ForbiddenError("FORBIDDEN", "수정 권한이 없습니다.");
-      }
-
-      const updateData = {};
-      
-      if (body.folderTitle && body.folderTitle.trim() !== "") {
-        const trimmedTitle = body.folderTitle.trim();
-        
-        if (trimmedTitle.length > 11) {
-          throw new BadRequestError("INVALID_LENGTH", "폴더 이름은 공백 포함 11자 이내여야 합니다.");
-        }
-        updateData.folderTitle = trimmedTitle;
-      }
-      
-      if (body.color && body.color.trim() !== "") {
-        const trimmedColor = body.color.trim();
-        const colorRegex = /^#[0-9A-Fa-f]{6}$/;
-
-        if (!colorRegex.test(trimmedColor)) {
-          throw new BadRequestError("INVALID_COLOR", "색상은 #을 포함한 7자리 Hex 코드여야 합니다.");
-        }
-        updateData.color = trimmedColor;
-      }
-
-      if (Object.keys(updateData).length === 0) {
-        return FolderDto.responseFromFolder(folder);
-      }
-
-      // 3. DB 업데이트
-      const updatedFolder = await folderRepository.updateFolder(userId, folderId, updateData);
-      
-      return FolderDto.responseFromFolder(updatedFolder);
-
-    } catch (error) {
-      console.error("Error in updateFolder:", error);
-      if (error.statusCode) throw error;
-      throw new InternalServerError();
+    if (Object.keys(updateData).length === 0) {
+      return FolderDto.responseFromFolder(folder);
     }
+
+    // (4) 색상이 변경되는 경우에만 중복 체크
+    if (updateData.color && updateData.color !== folder.color) {
+      const duplicateColorFolder = await folderRepository.findByUserAndColor(userId, updateData.color);
+      
+      // 내 폴더가 아닌 다른 폴더가 이미 그 색상을 쓰고 있다면 에러
+      if (duplicateColorFolder) {
+         throw new BadRequestError("DUPLICATE_COLOR", "이미 사용 중인 색상입니다.");
+      }
+    }
+
+    const updatedFolder = await folderRepository.updateFolder(userId, folderId, updateData);
+    return FolderDto.responseFromFolder(updatedFolder);
   }
 
   // 3. 폴더 삭제
   async deleteFolder(userId, folderId) {
     const folder = await folderRepository.getFolderById(folderId);
-
-    if (!folder) {
-      throw new NotFoundError("FOLDER_NOT_FOUND", "해당 폴더를 찾을 수 없습니다.");
-    }
-
-    if (folder.userId !== userId) {
-      throw new ForbiddenError("FORBIDDEN", "삭제 권한이 없습니다.");
-    }
+    if (!folder) throw new NotFoundError("FOLDER_NOT_FOUND", "해당 폴더를 찾을 수 없습니다.");
+    if (folder.userId !== userId) throw new ForbiddenError("FORBIDDEN", "삭제 권한이 없습니다.");
 
     await folderRepository.removeFolder(userId, folderId);
-    return;
   }
 }
 

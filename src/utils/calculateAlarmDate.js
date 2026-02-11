@@ -15,7 +15,7 @@ export const calculateAlarmDate = (deadline, alarmHours) => {
     // Date 객체에서 날짜만 추출 (로컬 시간 기준)
     const year = deadline.getFullYear();
     const month = String(deadline.getMonth() + 1).padStart(2, '0');
-    const day = String(deadline.getDate() + 1).padStart(2, '0');
+    const day = String(deadline.getDate()).padStart(2, '0');
     dateStr = `${year}-${month}-${day}`;
   } else {
     // 이미 문자열인 경우

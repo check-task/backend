@@ -63,7 +63,7 @@ class TaskService {
             // 모든 멤버에게 알림 생성
             const alarmPromises = members.map(async (member) => {
               const user = member.user;
-              const alarmHours = user.taskAlarm || 24;
+              const alarmHours = user.deadlineAlarm || 24;
               const alarmDate = calculateAlarmDate(newTask.deadline, alarmHours);
 
               return alarmRepository.createTaskAlarm(
@@ -80,11 +80,11 @@ class TaskService {
           // 개인 과제인 경우: 생성자에게만 알림 생성
           const creator = await tx.user.findUnique({
             where: { id: userId },
-            select: { taskAlarm: true },
+            select: { deadlineAlarm: true },
           });
 
           if (creator) {
-            const alarmHours = creator.taskAlarm || 24;
+            const alarmHours = creator.deadlineAlarm || 24;
             const alarmDate = calculateAlarmDate(newTask.deadline, alarmHours);
 
             await alarmRepository.createTaskAlarm(
@@ -160,6 +160,10 @@ class TaskService {
     return await prisma.$transaction(async (tx) => {
       // 과제 기본 정보 업데이트
       const updatedTask = await taskRepository.updateTask(taskId, { ...taskData, folderId }, tx);
+
+      if (taskData.deadline) {
+        await alarmRepository.updateAlarmsForTaskDeadline(taskId, taskData.deadline, tx);
+      }
 
       // 세부 과제 갱신 
       await taskRepository.deleteAllSubTasks(taskId, tx);

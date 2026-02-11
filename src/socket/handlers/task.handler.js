@@ -238,22 +238,27 @@ export const setupTaskHandlers = (io, socket) => {
   // 세부과제 마감일 업데이트
   socket.on(
     taskEvents.UPDATE_DEADLINE,
-    async ({ taskId, subTaskId, deadline }, callback) => {
+    async ({ taskId, subTaskId, endDate: deadline }, callback) => {
       try {
         const numericSubTaskId = Number(subTaskId);
         const deadlineDate = new Date(deadline);
 
+        // 날짜 유효성 검사
+        if (isNaN(deadlineDate.getTime())) {
+          throw new Error('유효하지 않은 날짜 형식입니다.');
+        }
+
         console.log(`🔄 [${socket.id}] 서브태스크 마감일 업데이트 시도:`, {
           taskId,
           subTaskId: numericSubTaskId,
-          deadline: deadlineDate,
+          deadline: deadlineDate.toISOString(),
         });
 
         // 1. DB 업데이트
         const updatedSubTask = await prisma.subTask.update({
           where: { id: numericSubTaskId },
           data: {
-            deadline: deadlineDate,
+            endDate: deadlineDate,
             updatedAt: new Date(),
           },
         });
@@ -266,7 +271,7 @@ export const setupTaskHandlers = (io, socket) => {
         // 2. 방에 있는 모든 클라이언트에게 마감일 업데이트 알림
         io.to(`task:${taskId}`).emit(taskEvents.DEADLINE_UPDATED, {
           subTaskId: numericSubTaskId,
-          deadline: updatedSubTask.deadline?.toISOString(),
+          deadline: updatedSubTask.endDate?.toISOString(),
           updatedAt: updatedSubTask.updatedAt.toISOString(),
         });
 
@@ -277,13 +282,16 @@ export const setupTaskHandlers = (io, socket) => {
           data: updatedSubTask,
         });
       } catch (error) {
+        const errorMessage = error.message || '마감일 업데이트 중 오류가 발생했습니다.';
         console.error(
-          `❌ [${socket.id}] 서브태스크 마감일 업데이트 실패:`,
-          error,
+          `❌ [${socket.id}] 서브태스크 마감일 업데이트 실패: ${errorMessage}`,
+          { error }
         );
         respond(callback, {
           success: false,
-          error: error.message,
+          message: errorMessage,
+          error: errorMessage,
+          timestamp: new Date().toISOString(),
         });
       }
     },
