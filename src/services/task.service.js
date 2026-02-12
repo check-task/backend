@@ -332,16 +332,34 @@ class TaskService {
   async getTaskList(userId, queryParams = {}) {
     const { type, folderId, sort, status } = queryParams;
 
-    // 레포지토리의 findAllTasks 호출
+    const myTeamFolder = await prisma.folder.findFirst({
+      where: { userId, folderTitle: "팀" }
+    });
+
+    if (folderId && myTeamFolder && parseInt(folderId) === myTeamFolder.id) {
+        folderId = undefined; 
+        type = 'TEAM';        
+    }
+
     const tasks = await taskRepository.findAllTasks({
       userId,
       type,
-      folderId,
+      folderId, 
       sort,
       status
     });
 
-    return tasks;
+    return tasks.map(task => {
+        if (task.type === 'TEAM' && myTeamFolder) {
+            return {
+                ...task,
+                folderId: myTeamFolder.id,       
+                folderTitle: myTeamFolder.folderTitle,
+                foldercolor: myTeamFolder.color  
+            };
+        }
+        return task;
+    });
   }
 
   // 우선순위 변경
