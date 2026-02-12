@@ -1,4 +1,4 @@
-# :sparkles: Check Task Back-End :sparkles: (임시)
+# :sparkles: Check Task Back-End :sparkles:
 ## Team
 |<img width="250" height="250" alt="image" src="https://github.com/user-attachments/assets/bb166557-3a96-4715-b7e9-eab379b29541" />|<img width="220" height="220" alt="image" src="https://github.com/user-attachments/assets/38c7fdaa-2ca7-4421-a34c-7bbc93ce0ba1" />|<img width="220" height="220" alt="image" src="https://github.com/user-attachments/assets/5a245a4d-3e5b-4c24-95d8-b74fdacb6ef4" />|<img width="150" height="150" alt="image" src="https://github.com/user-attachments/assets/fd09a935-a8ee-40eb-87ea-c2170c753e14" />|<img width="280" height="280" alt="image" src="https://github.com/user-attachments/assets/a31dffc4-7508-45ee-8842-e15b6e9ed317" />|
 |:-:|:-:|:-:|:-:|:-:|
@@ -6,7 +6,7 @@
 |Back-End <br>(팀장)|Back-End|Back-End|Back-End|Back-End
 <br>
 
-## ⚙️ 시스템 구성도 (수정 중..)
+## ⚙️ 시스템 구성도
 <img width="1639" height="621" alt="Group 3" src="https://github.com/user-attachments/assets/70094c33-b732-4769-a033-5d23246b408c" />
 <br>
 
@@ -138,4 +138,61 @@ npm start
 <br>
 
 ## API 설계
-### 성공/에러 시 공통으로 쓰는 JSON
+### ▷성공/에러 시 공통으로 쓰는 JSON
+```json
+//성공 시
+{
+  "resultType": "SUCCESS",
+  "message": "string"
+  "data": {
+		...
+  }
+}
+
+// 실패 시
+{
+  "resultType": "FAIL",
+  "code": 500,
+  "errorCode": "INTERNAL_SERVER_ERROR",
+  "reason": "서버 내부 오류가 발생했습니다",
+  "data": null
+}
+```
+### ▷커스텀 에러 코드
+- 상속 구조
+  | Base Class | 설명 |
+   | --- | --- | 
+   | CustomError | 모든 에러의 부모 클래스 (statusCode, errorCode, reason, data 포함) |
+- 에러 타입 정리
+   | Status Code | Default Error Code | 기본 메시지|
+   | --- | --- | --- |
+   | 400 | BAD_REQUEST | 잘못된 요청입니다 |
+   | 401 | UNAUTHORIZED | 인증에 실패했습니다|
+   | 403 | FORBIDDEN | 접근 권한이 없습니다 |
+  | 404 | NOT_FOUND | 리소스를 찾을 수 없습니다 |
+  | 500 | INTERNAL_SERVER_ERROR | 서버 내부 오류가 발생했습니다 |
+<br>
+
+##  주요 API 목록
+| 기능명 | Method | Endpoint | 설명 |
+| --- | --- | --- | --- |
+| 카카오 로그인 | GET | /api/v1/auth/kakao | 카카오 OAuth 로그인 요청 |
+| Access Token 재발급 | POST | /api/v1/auth/refresh | Refresh Token 기반 Access Token 재발급 |
+| 과제 생성 | POST | /api/v1/task | 개인/팀 과제 생성 |
+| 과제 목록 조회 | GET | /api/v1/task | 필터링(개인/팀/마감일/진척도 등) 기반 과제 조회 |
+| 과제 상세조회 | GET | /api/v1/task/{taskId} | 과제 + 세부과제 + 자료 + 커뮤니케이션 통합 조회 |
+| 과제 수정 | PATCH | /api/v1/task/{taskId} | 과제 정보 수정 |
+| 과제 삭제 | DELETE | /api/v1/task/{taskId} | 과제 삭제 |
+| 세부 과제 상태 변경 | PATCH | /api/v1/task/subtask/{subTaskId}/status | 세부과제 완료/진행 상태 변경 |
+| 팀원 초대 링크 생성 | POST | /api/v1/task/{taskId}/invitation | 팀 과제 초대 URL 생성 |
+| 알림 목록 조회 | GET | /api/v1/alarm | 현재 사용자 알림 목록 조회 |
+| 알림 읽기 처리 | PATCH | /api/v1/alarm/{alarmId} | 특정 알림 읽음 처리 |
+| 알림 전체 삭제 | DELETE | /api/v1/alarm/all | 모든 알림 삭제 |
+| 알림 설정 변경 | PATCH | /api/v1/alarm/settings/task | 사용자 알림 설정 변경 |
+| 내 정보 조회 | GET | /api/v1/user/me | 로그인 사용자 정보 조회 |
+| 프로필 수정 | PATCH | /api/v1/user/profile | 닉네임 등 사용자 정보 수정 |
+| 폴더 생성 | POST | /api/v1/user/folder | 사용자 폴더 생성 |
+| 폴더 조회 | GET | /api/v1/user/folder | 사용자 폴더 목록 조회 |
+| 자료 추가 | POST | /api/v1/reference/data/{taskId} | URL 또는 파일 자료 업로드 |
+| 커뮤니케이션 생성 | POST | /api/v1/reference/communication/{taskId} | 과제별 커뮤니케이션 생성 |
+| 회의록 생성 | POST | /api/v1/reference/log/{taskId} | 과제 회의록 작성 |
