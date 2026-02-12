@@ -37,6 +37,6 @@ export const getTaskMembersService = async (taskId) => {
   return members.map((m) => ({
     profileImage: m.user.profileImage,
     nickname: m.user.nickname,
-    role: m.role === 0 ? 'owner' : 'member'  // 0: owner, 1: member
+    role: (m.role === 0 || m.role === false) ? 'owner' : 'member' // 0: owner, 1: member
   }));
 };
