@@ -21,6 +21,7 @@
 | **Language** | ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white) | 서버 사이드 비즈니스 로직 처리 및 API 서버 구축 |
 | **Web Server** | ![NGINX](https://img.shields.io/badge/NGINX-009639?style=flat-square&logo=nginx&logoColor=white) | 리버스 프록시 설정을 통한 보안 및 API 요청 전달 |
 | **Database** | ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=flat-square&logo=mysql&logoColor=white) | 관계형 데이터베이스를 활용한 데이터 관리 및 CRUD 처리 |
+| **Compute** | ![Amazon EC2](https://img.shields.io/badge/Amazon_EC2-FF9900?style=flat-square&logo=amazonec2&logoColor=white) | 클라우드 가상 서버 인스턴스를 통한 애플리케이션 호스팅 |
 | **Storage** | ![AWS S3](https://img.shields.io/badge/AWS_S3-569A31?style=flat-square&logo=amazons3&logoColor=white) | 사용자 업로드 파일(이미지, 문서 등) 저장 및 객체 URL 관리 |
 | **CI/CD** | ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white) | 코드 변경 시 자동 빌드, 테스트 및 서버 자동 배포 환경 구축 |
 
@@ -183,18 +184,20 @@ npm start
 }
 ```
 ### ▷커스텀 에러 코드
-- 상속 구조
-  | Base Class | 설명 |
-   | --- | --- | 
-   | CustomError | 모든 에러의 부모 클래스 (statusCode, errorCode, reason, data 포함) |
-- 에러 타입 정리
-   | Status Code | Default Error Code | 기본 메시지|
-   | --- | --- | --- |
-   | 400 | BAD_REQUEST | 잘못된 요청입니다 |
-   | 401 | UNAUTHORIZED | 인증에 실패했습니다|
-   | 403 | FORBIDDEN | 접근 권한이 없습니다 |
-  | 404 | NOT_FOUND | 리소스를 찾을 수 없습니다 |
-  | 500 | INTERNAL_SERVER_ERROR | 서버 내부 오류가 발생했습니다 |
+
+#### **상속 구조**
+| Base Class | 설명 |
+| :--- | :--- |
+| `CustomError` | 모든 에러의 부모 클래스 (`statusCode`, `errorCode`, `reason`, `data` 포함) |
+
+#### **에러 타입 정리**
+| Status Code | Default Error Code | 기본 메시지 |
+| :---: | :--- | :--- |
+| 400 | `BAD_REQUEST` | 잘못된 요청입니다 |
+| 401 | `UNAUTHORIZED` | 인증에 실패했습니다 |
+| 403 | `FORBIDDEN` | 접근 권한이 없습니다 |
+| 404 | `NOT_FOUND` | 리소스를 찾을 수 없습니다 |
+| 500 | `INTERNAL_SERVER_ERROR` | 서버 내부 오류가 발생했습니다 |
 <br>
 
 ## 📝 주요 API 목록
