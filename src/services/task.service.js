@@ -67,8 +67,17 @@ class TaskService {
       if (folder.userId !== userId) {
         throw new ForbiddenError("권한이 없는 폴더입니다.");
       }
-      if (folder.folderTitle === "팀" || folder.folderTitle === "팀 과제") {
-        throw new BadRequestError("INVALID_FOLDER", "개인 과제는 팀 과제 전용 폴더에 생성할 수 없습니다.");
+    }
+      // CASE A: 팀 과제 ('TEAM')
+    if (taskData.type === 'TEAM') {
+      if (!folder || folder.folderTitle !== "팀") {
+        throw new BadRequestError("INVALID_FOLDER", "팀 과제는 '팀' 폴더에만 생성할 수 있습니다.");
+      }
+    } 
+    // CASE B: 개인 과제 ('PERSONAL')
+    else {
+      if (folder && folder.folderTitle === "팀") {
+        throw new BadRequestError("INVALID_FOLDER", "개인 과제는 '팀' 폴더에 생성할 수 없습니다.");
       }
     }
 
@@ -332,16 +341,34 @@ class TaskService {
   async getTaskList(userId, queryParams = {}) {
     const { type, folderId, sort, status } = queryParams;
 
-    // 레포지토리의 findAllTasks 호출
+    const myTeamFolder = await prisma.folder.findFirst({
+      where: { userId, folderTitle: "팀" }
+    });
+
+    if (folderId && myTeamFolder && parseInt(folderId) === myTeamFolder.id) {
+        folderId = undefined; 
+        type = 'TEAM';        
+    }
+
     const tasks = await taskRepository.findAllTasks({
       userId,
       type,
-      folderId,
+      folderId, 
       sort,
       status
     });
 
-    return tasks;
+    return tasks.map(task => {
+        if (task.type === 'TEAM' && myTeamFolder) {
+            return {
+                ...task,
+                folderId: myTeamFolder.id,       
+                folderTitle: myTeamFolder.folderTitle,
+                foldercolor: myTeamFolder.color  
+            };
+        }
+        return task;
+    });
   }
 
   // 우선순위 변경
@@ -745,19 +772,20 @@ class TaskService {
   }
 
   // 팀원 정보 수정
-  async modifyMemberRole(taskId, memberId, role) {
-    const member = await taskRepository.findMemberInTask(taskId, memberId);
-    if (!member) throw new NotFoundError("멤버를 찾을 수 없음");
+  async modifyMemberRole(taskId, userId, role) {
+    const member = await taskRepository.findMemberInTask(taskId, userId);
+  
+  if (!member) throw new NotFoundError("해당 과제에서 해당 유저를 찾을 수 없음");
 
-    const isAdmin = role === 1;
+  const isAdmin = role === 1;
 
-    return await prisma.$transaction(async (tx) => {
-      if (isAdmin) {
-        await taskRepository.resetOtherMembersRole(taskId, memberId, tx);
-      }
+  return await prisma.$transaction(async (tx) => {
+    if (isAdmin) {
+      await taskRepository.resetOtherMembersRole(taskId, userId, tx);
+    }
 
-      return await taskRepository.updateMemberRole(memberId, isAdmin, tx);
-    });
+    return await taskRepository.updateMemberRole(member.id, isAdmin, tx);
+  });
   }
 
   // 단일 세부 과제 생성 서비스
