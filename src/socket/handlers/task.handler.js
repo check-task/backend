@@ -387,6 +387,18 @@ export const setupTaskHandlers = (io, socket) => {
       const { taskId, subTaskId, content } = payload;
       const userId = socket.user.id;
 
+      //로그 확인----
+      const numericTaskId = Number(taskId);
+      const numericSubTaskId = Number(subTaskId);
+      const roomName = `task:${numericTaskId}`;
+
+      console.log("===================================");
+      console.log("[comment:create 요청 수신]");
+      console.log("userId:", userId);
+      console.log("taskId:", numericTaskId);
+      console.log("subTaskId:", numericSubTaskId);
+      console.log("===================================");
+      //------
       console.log(`[SOCKET][comment:create] 요청 수신`, { userId, taskId, subTaskId, content });
 
       // Service 호출
@@ -394,6 +406,13 @@ export const setupTaskHandlers = (io, socket) => {
         userId: userId,
         content: content,
       });
+
+      const clients = io.sockets.adapter.rooms.get(roomName);
+      console.log("[emit 정보]");
+      console.log("taskId:", roomName);
+      console.log("인원:", clients ? clients.size : 0);
+      console.log("commentId:", newComment.id);
+      console.log("===================================");
 
       // 같은 Task 방에 있는 사람들에게 알림
       io.to(`task:${taskId}`).emit(commentEvents.CREATED_COMMENT, {
