@@ -7,8 +7,8 @@ export const getTaskMembers = async (req, res, next) => {
 
     return res.status(200).json({
       resultType: "SUCCESS",
-      error: null,
-      success: {
+      message: "팀원 목록 조회에 성공했습니다.",
+      data: {
         members: members,
         count: members.length
       }
