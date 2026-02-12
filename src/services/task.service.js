@@ -38,7 +38,7 @@ class TaskService {
       if (!folder) throw new NotFoundError("존재하지 않는 폴더입니다.");
     }
 
-    let targetFolderId = folderId; // 최종적으로 저장될 폴더 ID
+    let targetFolderId = folderId;
 
     if (taskData.type === 'TEAM') {
       // 1. 팀 과제라면 무조건 '팀' 폴더를 찾습니다.
