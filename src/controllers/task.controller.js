@@ -1,4 +1,5 @@
 import taskService from "../services/task.service.js";
+import { uploadToS3 } from '../middlewares/upload.middleware.js';
 import { TaskRequestDTO, TaskResponseDTO } from "../dtos/task.dto.js";
 import { BadRequestError } from "../errors/custom.error.js";
 
@@ -40,21 +41,46 @@ class TaskController {
 
   // 과제 수정
   async updateTask(req, res, next) {
-    try {
-      const { taskId } = req.params;
-      const taskRequest = TaskRequestDTO.toUpdate(req.body);
-
-      const result = await taskService.modifyTask(parseInt(taskId), taskRequest);
-
-      res.status(200).json({
-        resultType: "SUCCESS",
-        message: "요청이 성공적으로 처리되었습니다.",
-        data: result
-      });
-    } catch (error) {
-      next(error);
+  try {
+    const { taskId } = req.params;
+    
+    let customFileNames = [];
+    if (req.body.fileNames) {
+      const rawNames = req.body.fileNames;
+      if (typeof rawNames === 'string' && rawNames.startsWith('[')) {
+        customFileNames = JSON.parse(rawNames);
+      } else if (typeof rawNames === 'string') {
+        customFileNames = rawNames.split(',').map(name => name.trim());
+      } else {
+        customFileNames = rawNames; 
+      }
     }
+
+    let fileReferences = [];
+    if (req.files && req.files.length > 0) {
+      for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
+        const fileUrl = await uploadToS3(file);
+        
+        fileReferences.push({
+          name: (customFileNames && customFileNames[i]) ? customFileNames[i] : file.originalname, 
+          fileUrl: fileUrl
+        });
+      }
+    }
+
+    const taskRequest = TaskRequestDTO.toUpdate(req.body, fileReferences);
+    const result = await taskService.modifyTask(parseInt(taskId), taskRequest);
+
+    res.status(200).json({
+      resultType: "SUCCESS",
+      message: "과제가 성공적으로 수정되었습니다.",
+      data: result
+    });
+  } catch (error) {
+    next(error);
   }
+}
 
   // 과제 삭제
   async deleteTask(req, res, next) {
@@ -163,7 +189,8 @@ class TaskController {
   // 팀원 정보 수정 (역할 변경)
   async updateTeamMember(req, res, next) {
     try {
-      const { taskId, memberId } = req.params;
+      const taskId = req.body.taskId || req.params.taskId;
+      const memberId = req.body.memberId || req.params.memberId;
       const { role } = req.body;
 
       const result = await taskService.modifyMemberRole(

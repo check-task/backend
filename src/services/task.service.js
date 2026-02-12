@@ -170,7 +170,7 @@ class TaskService {
   }
 
   // 과제 수정
-  async modifyTask(taskId, data) {
+  async modifyTask(taskId, data = {}) {
     const { subTasks, references, folderId, ...taskData } = data;
 
     // 과제 존재 여부 확인
@@ -236,9 +236,12 @@ class TaskService {
       }
 
       // 자료 갱신 
-      await taskRepository.deleteAllReferences(taskId, tx);
-      if (references?.length > 0) {
-        await taskRepository.addReferences(taskId, references, tx);
+      if (references) {
+        await taskRepository.deleteAllReferences(taskId, tx);
+
+        if (references.length > 0) {
+          await taskRepository.addReferences(taskId, references, tx);
+        }
       }
 
       return { taskId: updatedTask.id };
