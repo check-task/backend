@@ -38,6 +38,37 @@ class TaskService {
       if (!folder) throw new NotFoundError("존재하지 않는 폴더입니다.");
     }
 
+    let targetFolderId = folderId; // 최종적으로 저장될 폴더 ID
+
+    if (taskData.type === 'TEAM') {
+      // 1. 팀 과제라면 무조건 '팀' 폴더를 찾습니다.
+      const teamFolder = await prisma.folder.findFirst({
+        where: {
+          userId: userId,
+          folderTitle: "팀"
+        }
+      });
+
+      if (!teamFolder) {
+        throw new NotFoundError("팀 과제 전용 폴더를 찾을 수 없습니다.");
+      }
+
+      // 2. 강제로 '팀' 폴더 ID로
+      targetFolderId = teamFolder.id;
+
+    } else if (folderId) {
+      // 3. 개인 과제인데 폴더를 선택한 경우 -> 유효성 및 권한 검사
+      const folder = await taskRepository.findFolderById(folderId);
+      
+      if (!folder) {
+        throw new NotFoundError("존재하지 않는 폴더입니다.");
+      }
+      
+      if (folder.userId !== userId) {
+        throw new ForbiddenError("권한이 없는 폴더입니다.");
+      }
+    }
+
     return await prisma.$transaction(async (tx) => {
       // 과제 생성
       const newTask = await taskRepository.createTask({ ...taskData, folderId }, tx);
@@ -139,7 +170,7 @@ class TaskService {
   }
 
   // 과제 수정
-  async modifyTask(taskId, data) {
+  async modifyTask(taskId, data = {}) {
     const { subTasks, references, folderId, ...taskData } = data;
 
     // 과제 존재 여부 확인
@@ -205,9 +236,12 @@ class TaskService {
       }
 
       // 자료 갱신 
-      await taskRepository.deleteAllReferences(taskId, tx);
-      if (references?.length > 0) {
-        await taskRepository.addReferences(taskId, references, tx);
+      if (references) {
+        await taskRepository.deleteAllReferences(taskId, tx);
+
+        if (references.length > 0) {
+          await taskRepository.addReferences(taskId, references, tx);
+        }
       }
 
       return { taskId: updatedTask.id };

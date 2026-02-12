@@ -1,6 +1,11 @@
 import express from "express";
+import multer from "multer";
+
 import taskController from "../controllers/task.controller.js";
 import authenticate from "../middlewares/authenticate.middleware.js";
+
+const upload = multer({ storage: multer.memoryStorage() });
+
 
 const router = express.Router();
 
@@ -14,7 +19,7 @@ router.post("/", authenticate, taskController.createTask);
 router.patch("/priority", authenticate, taskController.updateTaskPriorities);
 
 // PATCH /api/v1/task/:taskId -- 과제 수정
-router.patch("/:taskId", authenticate, taskController.updateTask);
+router.patch("/:taskId", authenticate, upload.array('files'), taskController.updateTask);
 
 // DELETE /api/v1/task/:taskId -- 과제 삭제
 router.delete("/:taskId", authenticate, taskController.deleteTask);
