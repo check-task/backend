@@ -2186,12 +2186,21 @@ paths:
             application/json:
               schema:
                 type: object
-                example:
-                  resultType: "FAIL"
-                  code: 401
-                  errorCode: "UNAUTHORIZED"
-                  reason: "인증에 실패했습니다. 로그인이 필요합니다."
-                  data: null
+                properties:
+                  resultType:
+                    type: string
+                    example: "FAIL"
+                  code:
+                    type: integer
+                    example: 401
+                  errorCode:
+                    type: string
+                    example: "TOKEN_INVALID"
+                  reason:
+                    type: string
+                    example: "토큰이 유효하지 않습니다."
+                  data:
+                    type: "null"
         '403':
           description: 권한 없음
           content:
