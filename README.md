@@ -1,5 +1,5 @@
 # :sparkles: Check Task Back-End :sparkles:
-|<img src="https://github.com/user-attachments/assets/c947e8be-abd6-43c4-a499-fcf6865019b0" height="150" />|<img width="220" height="220" alt="image" src="https://github.com/user-attachments/assets/38c7fdaa-2ca7-4421-a34c-7bbc93ce0ba1" />|<img width="220" height="220" alt="image" src="https://github.com/user-attachments/assets/5a245a4d-3e5b-4c24-95d8-b74fdacb6ef4" />|<img width="200" height="200" alt="image" src="https://github.com/user-attachments/assets/fd09a935-a8ee-40eb-87ea-c2170c753e14" />|<img width="480" height="480" alt="image" src="https://github.com/user-attachments/assets/a31dffc4-7508-45ee-8842-e15b6e9ed317" />|
+|<img src="https://github.com/user-attachments/assets/c947e8be-abd6-43c4-a499-fcf6865019b0" height="150" />|<img width="220" height="220" alt="image" src="https://github.com/user-attachments/assets/38c7fdaa-2ca7-4421-a34c-7bbc93ce0ba1" />|<img width="220" height="220" alt="image" src="https://github.com/user-attachments/assets/5a245a4d-3e5b-4c24-95d8-b74fdacb6ef4" />|<img width="180" height="180" alt="image" src="https://github.com/user-attachments/assets/fd09a935-a8ee-40eb-87ea-c2170c753e14" />|<img width="200" height="200" alt="image" src="https://github.com/user-attachments/assets/a31dffc4-7508-45ee-8842-e15b6e9ed317" />|
 |:-:|:-:|:-:|:-:|:-:|
 |김정민<br/>[@JungMINI-developer](https://github.com/JungMINI-developer)|오소윤<br/>[@soyun0318](https://github.com/soyun0318)|정규은<br/>[@jeongkyueun](https://github.com/jeongkyueun)|양우영<br/>[@yangwooyoung123](https://github.com/yangwooyoung123)|선준우<br/>[@junu999](https://github.com/junu999)|
 |Back-End <br>(팀장)|Back-End|Back-End|Back-End|Back-End
@@ -106,7 +106,8 @@ npm start
 <br>
 
 
-## 주요 기능 API
+## API 설계
+###
 <br>
 
 
@@ -125,9 +126,4 @@ npm start
   - 브랜치명: ```커밋유형/이슈번호```
 <br>
   
-
-
-
-
-## 👥 Team 👥
 
