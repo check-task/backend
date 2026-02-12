@@ -29,6 +29,10 @@ class FolderService {
     if (!folder) throw new NotFoundError("FOLDER_NOT_FOUND", "해당 폴더를 찾을 수 없습니다.");
     if (folder.userId !== userId) throw new ForbiddenError("FORBIDDEN", "수정 권한이 없습니다.");
 
+    if (folder.folderTitle === "팀") {
+      throw new BadRequestError("PROTECTED_FOLDER", "'팀' 폴더는 수정할 수 없습니다.");
+    }
+
     const updateData = FolderDto.updateBodyToFolderDto(body);
 
     if (Object.keys(updateData).length === 0) {
@@ -54,6 +58,10 @@ class FolderService {
     const folder = await folderRepository.getFolderById(folderId);
     if (!folder) throw new NotFoundError("FOLDER_NOT_FOUND", "해당 폴더를 찾을 수 없습니다.");
     if (folder.userId !== userId) throw new ForbiddenError("FORBIDDEN", "삭제 권한이 없습니다.");
+
+    if (folder.folderTitle === "팀") {
+      throw new BadRequestError("PROTECTED_FOLDER", "'팀' 폴더는 삭제할 수 없습니다.");
+    }
 
     await folderRepository.removeFolder(userId, folderId);
   }
