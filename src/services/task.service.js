@@ -67,8 +67,17 @@ class TaskService {
       if (folder.userId !== userId) {
         throw new ForbiddenError("권한이 없는 폴더입니다.");
       }
-      if (folder.folderTitle === "팀" || folder.folderTitle === "팀 과제") {
-        throw new BadRequestError("INVALID_FOLDER", "개인 과제는 팀 과제 전용 폴더에 생성할 수 없습니다.");
+    }
+      // CASE A: 팀 과제 ('TEAM')
+    if (taskData.type === 'TEAM') {
+      if (!folder || folder.folderTitle !== "팀") {
+        throw new BadRequestError("INVALID_FOLDER", "팀 과제는 '팀' 폴더에만 생성할 수 있습니다.");
+      }
+    } 
+    // CASE B: 개인 과제 ('PERSONAL')
+    else {
+      if (folder && folder.folderTitle === "팀") {
+        throw new BadRequestError("INVALID_FOLDER", "개인 과제는 '팀' 폴더에 생성할 수 없습니다.");
       }
     }
 
