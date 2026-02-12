@@ -33,8 +33,9 @@ export const getTaskMembersService = async (taskId) => {
     },
   });
 
-  // 4. 화면에 필요한 필드만 반환 (프로필이미지, 닉네임, 역할)
+  // 4. 화면에 필요한 필드만 반환 (아이디, 프로필이미지, 닉네임, 역할)
   return members.map((m) => ({
+    id: m.user.id,
     profileImage: m.user.profileImage,
     nickname: m.user.nickname,
     role: (m.role === 0 || m.role === false) ? 'owner' : 'member' // 0: owner, 1: member
