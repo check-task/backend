@@ -7,7 +7,7 @@
 | 백엔드 총괄<br/>초기 세팅<br/>알림 기능 구현 | 과제 관련 기능 구현 | 팀 과제 세부 기능 구현 | 로그인 기능 구현<br/>배포 및 운영 환경 구성 | 유저 관련 기능 구현 |
 
 ## ⚙️ 시스템 구성도
-<img width="1639" height="621" alt="Group 3" src="https://github.com/user-attachments/assets/70094c33-b732-4769-a033-5d23246b408c" />
+<img width="1639" height="621" alt="Group 3" src="https://github.com/user-attachments/assets/48898d5b-61b2-4761-9a12-b83c5d44e92c" />
 <br>
 
 
