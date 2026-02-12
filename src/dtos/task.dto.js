@@ -64,7 +64,7 @@ export class TaskRequestDTO {
       title: data.title,
       folderId: data.folderId,
       deadline: data.deadline ? new Date(data.deadline) : undefined,
-      type: data.type === "팀" ? "TEAM" : (data.type === "개인" ? "PERSONAL" : undefined),
+      type: data.type === "TEAM" ? "TEAM" : (data.type === "PERSONAL" ? "PERSONAL" : undefined),
       subTasks: (data.subTasks || []).map(st => ({
         title: st.title,
         endDate: st.endDate ? new Date(st.endDate) : new Date(),
