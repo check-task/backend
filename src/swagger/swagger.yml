@@ -1302,7 +1302,11 @@ paths:
       tags:
         - Task
       summary: 과제 수정
-      description: 과제의 기본 정보 및 세부 태스크를 수정합니다.
+      description: |
+        과제 정보와 여러 개의 파일을 수정합니다.
+        - **files**: 여러 개의 파일을 한꺼번에 선택할 수 있습니다.
+        - **fileNames**: 업로드한 파일 순서대로 이름을 쉽표(,)로 구분해서 적어주세요. 
+          (예: `보고서최종, 참고자료1`)
       security:
         - bearerAuth: []
       parameters:
@@ -1314,7 +1318,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data: 
             schema:
               type: object
               properties:
@@ -1337,37 +1341,23 @@ paths:
                   type: integer
                   example: 2
                 subTasks:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      title:
-                        type: string
-                        example: "세부과제 1"
-                      endDate:
-                        type: string
-                        format: date
-                        example: "2026-05-10"
-                      status:
-                        type: string
-                        example: "COMPLETED"
-                      isAlarm:
-                        type: boolean
-                        example: true
-                      assigneeId:
-                        type: integer
-                        example: 5
+                  type: string 
+                  description: "세부 과제 배열 (JSON string)"
+                  example: '[{"title": "세부과제 1", "endDate": "2026-05-10", "status": "COMPLETED", "isAlarm": true, "assigneeId": 5}]'
                 references:
-                  type: array
+                  type: string 
+                  description: "기존 유지할 자료 목록 (JSON string)"
+                  example: '[{"name": "자료1", "url": "https://mariadb.org/documentation/"}]'
+                fileNames:
+                  type: string
+                  description: "파일 원본 이름 대신 저장할 이름 (쉼표 구분)"
+                  example: "과제발표자료, 참고도면"
+                files:
+                  type: array 
                   items:
-                    type: object
-                    properties:
-                      name:
-                        type: string
-                        example: "자료1"
-                      url:
-                        type: string
-                        example: "https://mariadb.org/documentation/"
+                    type: string
+                    format: binary 
+                  description: "업로드할 파일들을 모두 선택하세요."
       responses:
         '200':
           description: 과제 수정 성공
@@ -1764,7 +1754,14 @@ paths:
           application/json:
             schema:
               type: object
+              required: [taskId, memberId, role]
               properties:
+                taskId:
+                  type: integer
+                  example: 1
+                memberId:
+                  type: integer
+                  example: 5
                 role:
                   type: integer
                   description: "0: 일반, 1: 관리자"

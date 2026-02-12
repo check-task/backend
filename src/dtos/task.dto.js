@@ -59,18 +59,34 @@ export class TaskRequestDTO {
   }
 
   // 과제 수정
-  static toUpdate(data) {
+  static toUpdate(data, uploadedFiles = []) {
+    const subTasks = typeof data.subTasks === 'string' ? JSON.parse(data.subTasks) : (data.subTasks || []);
+    const existingRefs = typeof data.references === 'string' ? JSON.parse(data.references) : (data.references || []);
+
     return {
       title: data.title,
-      folderId: data.folderId,
-      deadline: data.deadline ? new Date(data.deadline) : undefined,
-      type: data.type === "TEAM" ? "TEAM" : (data.type === "PERSONAL" ? "PERSONAL" : undefined),
-      subTasks: (data.subTasks || []).map(st => ({
-        title: st.title,
-        endDate: st.endDate ? new Date(st.endDate) : new Date(),
-        status: st.status || "PENDING"
-      })),
-      references: data.references || []
+      folderId: data.folderId ? Number(data.folderId) : undefined,
+      deadline: data.deadline,
+      type: (data.type === "TEAM" || data.type === "팀") ? "TEAM" : "PERSONAL",
+      subTasks: subTasks
+        .filter(st => st !== null && st !== undefined) // 빈 객체 제거
+        .map(st => ({
+          title: st.title || "제목 없음", 
+          endDate: st.endDate ? new Date(st.endDate) : new Date(),
+          status: st.status || "PENDING"
+        })),
+      references: [
+        ...existingRefs.map(ref => ({
+          name: ref.name,
+          url: ref.url || null,
+          fileUrl: ref.fileUrl || ref.file_url || null 
+        })),
+        ...uploadedFiles.map(file => ({
+          name: file.name,
+          url: null,
+          fileUrl: file.fileUrl || file.file_url 
+        }))
+      ]
     };
   }
 }
