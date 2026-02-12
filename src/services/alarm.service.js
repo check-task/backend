@@ -263,17 +263,29 @@ class AlarmService {
       subTaskId,
       isAlarm
     );
-    if (updatedSubTask.isAlarm === true) {
-      await alarmRepository.createSubTaskAlarm(
-        updatedSubTask.assigneeId,
-        updatedSubTask.taskId,
-        updatedSubTask.id,
-        updatedSubTask.title,
-        updatedSubTask.endDate
-      );
-    }
-    if (updatedSubTask.isAlarm === false) {
-      await alarmRepository.deleteSubTaskAlarm(updatedSubTask.assigneeId, updatedSubTask.id);
+
+    // [수정] 담당자가 있는 경우에만 알림 생성/삭제 로직 수행
+    if (updatedSubTask.assigneeId) {
+      if (updatedSubTask.isAlarm === true) {
+        // 알림 켜짐: 알림 생성
+        // 알림 생성 시 필요한 시간 계산 로직 추가 (필요 시)
+        // 현재 코드에서는 endDate를 그대로 쓰고 있는데, 
+        // 일반적으로는 '마감 N시간 전'으로 계산된 시간이 들어가야 할 수 있습니다.
+        // 기존 로직 유지:
+        await alarmRepository.createSubTaskAlarm(
+          updatedSubTask.assigneeId,
+          updatedSubTask.taskId,
+          updatedSubTask.id,
+          updatedSubTask.title,
+          updatedSubTask.endDate
+        );
+      } else {
+        // 알림 꺼짐: 기존 알림 삭제
+        await alarmRepository.deleteSubTaskAlarm(
+          updatedSubTask.assigneeId,
+          updatedSubTask.id
+        );
+      }
     }
 
     // updatedSubTask가 null인 경우 체크
