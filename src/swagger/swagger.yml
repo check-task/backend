@@ -1729,7 +1729,7 @@ paths:
           description: 서버 내부 오류
 
   # 팀원 정보(역할) 수정
-  /api/v1/task/{taskId}/member/{memberId}:
+  /api/v1/task/{taskId}/member/{userId}:
     patch:
       tags:
         - Task
@@ -1744,7 +1744,7 @@ paths:
           schema:
             type: integer
         - in: path
-          name: memberId
+          name: userId
           required: true
           schema:
             type: integer
@@ -1754,12 +1754,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [taskId, memberId, role]
+              required: [taskId, userId, role]
               properties:
                 taskId:
                   type: integer
                   example: 1
-                memberId:
+                userId:
                   type: integer
                   example: 5
                 role:
