@@ -46,7 +46,7 @@ BACKEND
 <br>
 
 
-## 프로젝트 실행 방법
+## ⚙️ 프로젝트 실행 방법
 ### 1️⃣ 의존성 설치
 ```bash
 npm install
@@ -137,7 +137,7 @@ npm start
 5. Review & Merge
 <br>
 
-## API 설계
+## ⚙️ API 설계
 ### ▷성공/에러 시 공통으로 쓰는 JSON
 ```json
 //성공 시
@@ -173,7 +173,7 @@ npm start
   | 500 | INTERNAL_SERVER_ERROR | 서버 내부 오류가 발생했습니다 |
 <br>
 
-##  주요 API 목록
+## 📝 주요 API 목록
 | 기능명 | Method | Endpoint | 설명 |
 | --- | --- | --- | --- |
 | 카카오 로그인 | GET | /api/v1/auth/kakao | 카카오 OAuth 로그인 요청 |
