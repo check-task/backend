@@ -501,27 +501,27 @@ export const setupTaskHandlers = (io, socket) => {
     }
   });
 
-  // 팀원 역할 변경
+  // 팀원 역할 변경 소켓 핸들러 수정
   socket.on(taskEvents.UPDATE_MEMBER, async (payload, callback) => {
     try {
-      const { taskId, memberId, role } = payload;
-      console.log(`[SOCKET][member:update] 요청 수신`, {
-        taskId,
-        memberId,
-        role,
-      });
+      // 📍 memberId 대신 userId를 받도록 수정
+      const { taskId, userId, role } = payload; 
+      console.log(`[SOCKET][member:update] 요청 수신`, { taskId, userId, role });
 
+      // 우리가 아까 고친 서비스 함수 호출
       const result = await taskService.modifyMemberRole(
         Number(taskId),
-        Number(memberId),
+        Number(userId), // 📍 userId로 전달
         role,
       );
 
       // 같은 방 팀원들에게 알림
       io.to(`task:${taskId}`).emit(taskEvents.MEMBER_UPDATED, {
         memberId: result.id,
-        role: result.role,
         userId: result.userId,
+        taskId: result.taskId,
+        // 📍 0(Owner) 또는 1(Member) 매핑 적용
+        role: result.role ? 0 : 1 
       });
 
       callback?.({ success: true, data: result });
