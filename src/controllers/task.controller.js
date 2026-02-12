@@ -190,12 +190,12 @@ class TaskController {
   async updateTeamMember(req, res, next) {
     try {
       const taskId = req.body.taskId || req.params.taskId;
-      const memberId = req.body.memberId || req.params.memberId;
+      const userId = req.body.userId || req.params.userId;
       const { role } = req.body;
 
       const result = await taskService.modifyMemberRole(
         parseInt(taskId),
-        parseInt(memberId),
+        parseInt(userId),
         role
       );
 

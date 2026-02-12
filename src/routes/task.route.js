@@ -30,8 +30,8 @@ router.get("/:taskId", authenticate, taskController.getTaskDetail);
 // GET /api/v1/task?sort=우선순위 -- 과제 목록 조회
 router.get("/", authenticate, taskController.getTasks);
 
-// PATCH /api/v1/task/:taskId/member/:memberId -- 팀원 정보 수정
-router.patch("/:taskId/member/:memberId", authenticate, taskController.updateTeamMember);
+// PATCH /api/v1/task/:taskId/member/:userId -- 팀원 정보 수정
+router.patch("/:taskId/member/:userId", authenticate, taskController.updateTeamMember);
 
 // POST /api/v1/task/:taskId/subTask -- 단일 세부 과제 추가
 router.post("/:taskId/subTask", authenticate, taskController.addSubTask)

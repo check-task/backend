@@ -745,19 +745,20 @@ class TaskService {
   }
 
   // 팀원 정보 수정
-  async modifyMemberRole(taskId, memberId, role) {
-    const member = await taskRepository.findMemberInTask(taskId, memberId);
-    if (!member) throw new NotFoundError("멤버를 찾을 수 없음");
+  async modifyMemberRole(taskId, userId, role) {
+    const member = await taskRepository.findMemberInTask(taskId, userId);
+  
+  if (!member) throw new NotFoundError("해당 과제에서 해당 유저를 찾을 수 없음");
 
-    const isAdmin = role === 1;
+  const isAdmin = role === 1;
 
-    return await prisma.$transaction(async (tx) => {
-      if (isAdmin) {
-        await taskRepository.resetOtherMembersRole(taskId, memberId, tx);
-      }
+  return await prisma.$transaction(async (tx) => {
+    if (isAdmin) {
+      await taskRepository.resetOtherMembersRole(taskId, userId, tx);
+    }
 
-      return await taskRepository.updateMemberRole(memberId, isAdmin, tx);
-    });
+    return await taskRepository.updateMemberRole(member.id, isAdmin, tx);
+  });
   }
 
   // 단일 세부 과제 생성 서비스
