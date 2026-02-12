@@ -744,21 +744,25 @@ class TaskService {
     });
   }
 
-  // 팀원 정보 수정
+  // 멤버 역할 수정 
   async modifyMemberRole(taskId, userId, role) {
     const member = await taskRepository.findMemberInTask(taskId, userId);
-  
-  if (!member) throw new NotFoundError("해당 과제에서 해당 유저를 찾을 수 없음");
+    if (!member) throw new NotFoundError("해당 과제에서 해당 유저를 찾을 수 없음");
 
-  const isAdmin = role === 1;
+    // 📍 0이 들어오면 방장(Owner)이 되려는 것
+    const isTargetBecomingOwner = (role === 0);
 
-  return await prisma.$transaction(async (tx) => {
-    if (isAdmin) {
-      await taskRepository.resetOtherMembersRole(taskId, userId, tx);
-    }
+    return await prisma.$transaction(async (tx) => {
+      if (isTargetBecomingOwner) {
+        // 1. 새로운 방장을 제외한 나머지는 모두 '일반 멤버(true)'로 변경
+        await taskRepository.resetOtherMembersRole(taskId, userId, tx);
+      }
 
-    return await taskRepository.updateMemberRole(member.id, isAdmin, tx);
-  });
+      // 2. 📍 핵심: 방장(Owner)이면 false를, 아니면 true를 DB에 저장
+      const dbRoleValue = isTargetBecomingOwner ? false : true;
+
+      return await taskRepository.updateMemberRole(member.id, dbRoleValue, tx);
+    });
   }
 
   // 단일 세부 과제 생성 서비스

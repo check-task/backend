@@ -186,12 +186,10 @@ class TaskController {
     }
   }
 
-  // 팀원 정보 수정 (역할 변경)
   async updateTeamMember(req, res, next) {
     try {
-      const taskId = req.body.taskId || req.params.taskId;
-      const userId = req.body.userId || req.params.userId;
-      const { role } = req.body;
+      const { taskId, userId } = req.params;
+      const { role } = req.body; // 프론트에서 0(Owner) 또는 1(Member)이 옴
 
       const result = await taskService.modifyMemberRole(
         parseInt(taskId),
@@ -201,12 +199,13 @@ class TaskController {
 
       res.status(200).json({
         resultType: "SUCCESS",
-        message: "요청이 성공적으로 처리되었습니다.",
+        message: "멤버 권한이 변경되었습니다.",
         data: {
           memberId: result.id,
           userId: result.userId,
           taskId: result.taskId,
-          role: result.role ? 1 : 0,
+          // 📍 DB가 false(0)면 0(Owner), true(1)면 1(Member) 반환
+          role: result.role ? 1 : 0 
         }
       });
     } catch (error) {
