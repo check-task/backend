@@ -121,9 +121,15 @@ export class KakaoAuthService {
             providerId,
           },
         });
+        //기본 폴더 생성
         await folderRepository.addFolder(user.id, {
           folderTitle: "기본",
           color: "#081221",
+        });
+        //팀 폴더 생성
+        await folderRepository.addFolder(user.id, {
+          folderTitle: "팀",
+          color: "#FFC93F", 
         });
       }
       //토근 생성
