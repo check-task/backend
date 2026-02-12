@@ -174,25 +174,43 @@ npm start
 <br>
 
 ## 📝 주요 API 목록
+
+### 🔐 OAuth Domain
 | 기능명 | Method | Endpoint | 설명 |
-| --- | --- | --- | --- |
-| 카카오 로그인 | GET | /api/v1/auth/kakao | 카카오 OAuth 로그인 요청 |
-| Access Token 재발급 | POST | /api/v1/auth/refresh | Refresh Token 기반 Access Token 재발급 |
-| 과제 생성 | POST | /api/v1/task | 개인/팀 과제 생성 |
-| 과제 목록 조회 | GET | /api/v1/task | 필터링(개인/팀/마감일/진척도 등) 기반 과제 조회 |
-| 과제 상세조회 | GET | /api/v1/task/{taskId} | 과제 + 세부과제 + 자료 + 커뮤니케이션 통합 조회 |
-| 과제 수정 | PATCH | /api/v1/task/{taskId} | 과제 정보 수정 |
-| 과제 삭제 | DELETE | /api/v1/task/{taskId} | 과제 삭제 |
-| 세부 과제 상태 변경 | PATCH | /api/v1/task/subtask/{subTaskId}/status | 세부과제 완료/진행 상태 변경 |
-| 팀원 초대 링크 생성 | POST | /api/v1/task/{taskId}/invitation | 팀 과제 초대 URL 생성 |
-| 알림 목록 조회 | GET | /api/v1/alarm | 현재 사용자 알림 목록 조회 |
-| 알림 읽기 처리 | PATCH | /api/v1/alarm/{alarmId} | 특정 알림 읽음 처리 |
-| 알림 전체 삭제 | DELETE | /api/v1/alarm/all | 모든 알림 삭제 |
-| 알림 설정 변경 | PATCH | /api/v1/alarm/settings/task | 사용자 알림 설정 변경 |
-| 내 정보 조회 | GET | /api/v1/user/me | 로그인 사용자 정보 조회 |
-| 프로필 수정 | PATCH | /api/v1/user/profile | 닉네임 등 사용자 정보 수정 |
-| 폴더 생성 | POST | /api/v1/user/folder | 사용자 폴더 생성 |
-| 폴더 조회 | GET | /api/v1/user/folder | 사용자 폴더 목록 조회 |
-| 자료 추가 | POST | /api/v1/reference/data/{taskId} | URL 또는 파일 자료 업로드 |
-| 커뮤니케이션 생성 | POST | /api/v1/reference/communication/{taskId} | 과제별 커뮤니케이션 생성 |
-| 회의록 생성 | POST | /api/v1/reference/log/{taskId} | 과제 회의록 작성 |
+| :--- | :---: | :--- | :--- |
+| 카카오 로그인 | GET | `/api/v1/auth/kakao` | 카카오 OAuth 로그인 요청 |
+| Access Token 재발급 | POST | `/api/v1/auth/refresh` | Refresh Token 기반 Access Token 재발급 |
+
+### 📋 Task Domain
+| 기능명 | Method | Endpoint | 설명 |
+| :--- | :---: | :--- | :--- |
+| 과제 생성 | POST | `/api/v1/task` | 개인/팀 과제 생성 |
+| 과제 목록 조회 | GET | `/api/v1/task` | 필터링(개인/팀/마감일/진척도 등) 기반 과제 조회 |
+| 과제 상세조회 | GET | `/api/v1/task/{taskId}` | 과제 + 세부과제 + 자료 + 커뮤니케이션 통합 조회 |
+| 과제 수정 | PATCH | `/api/v1/task/{taskId}` | 과제 정보 수정 |
+| 과제 삭제 | DELETE | `/api/v1/task/{taskId}` | 과제 삭제 |
+| 세부 과제 상태 변경 | PATCH | `/api/v1/task/subtask/{subTaskId}/status` | 세부과제 완료/진행 상태 변경 |
+| 팀원 초대 링크 생성 | POST | `/api/v1/task/{taskId}/invitation` | 팀 과제 초대 URL 생성 |
+
+### 🔔 Alarm Domain
+| 기능명 | Method | Endpoint | 설명 |
+| :--- | :---: | :--- | :--- |
+| 알림 목록 조회 | GET | `/api/v1/alarm` | 현재 사용자 알림 목록 조회 |
+| 알림 읽기 처리 | PATCH | `/api/v1/alarm/{alarmId}` | 특정 알림 읽음 처리 |
+| 알림 전체 삭제 | DELETE | `/api/v1/alarm/all` | 모든 알림 삭제 |
+| 알림 설정 변경 | PATCH | `/api/v1/alarm/settings/task` | 사용자 알림 설정 변경 |
+
+### 👤 User Domain
+| 기능명 | Method | Endpoint | 설명 |
+| :--- | :---: | :--- | :--- |
+| 내 정보 조회 | GET | `/api/v1/user/me` | 로그인 사용자 정보 조회 |
+| 프로필 수정 | PATCH | `/api/v1/user/profile` | 닉네임 등 사용자 정보 수정 |
+| 폴더 생성 | POST | `/api/v1/user/folder` | 사용자 폴더 생성 |
+| 폴더 조회 | GET | `/api/v1/user/folder` | 사용자 폴더 목록 조회 |
+
+### 📂 Reference Domain
+| 기능명 | Method | Endpoint | 설명 |
+| :--- | :---: | :--- | :--- |
+| 자료 추가 | POST | `/api/v1/reference/data/{taskId}` | URL 또는 파일 자료 업로드 |
+| 커뮤니케이션 생성 | POST | `/api/v1/reference/communication/{taskId}` | 과제별 커뮤니케이션 생성 |
+| 회의록 생성 | POST | `/api/v1/reference/log/{taskId}` | 과제 회의록 작성 |
