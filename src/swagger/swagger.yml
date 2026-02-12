@@ -1526,6 +1526,7 @@ paths:
                   reason: "서버 내부 오류가 발생했습니다."
                   data: null
     # 과제 삭제
+    /api/v1/task/{taskId}:
     delete:
       tags:
         - Task
