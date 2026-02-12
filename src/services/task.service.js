@@ -43,7 +43,7 @@ class TaskService {
       const newTask = await taskRepository.createTask({ ...taskData, folderId }, tx);
 
       // 과제 생성자를 owner로 멤버에 자동 추가
-      await taskRepository.createMember(userId, newTask.id, false, tx); // false = owner
+      const member = await taskRepository.createMember(userId, newTask.id, false, tx); 
 
       // 우선 순위 지정
       const maxRank = await taskRepository.findMaxRank(userId, tx);
