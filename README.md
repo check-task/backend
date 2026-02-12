@@ -7,7 +7,7 @@
 <br>
 
 ## ⚙️ 시스템 구성도 (수정 중..)
-<img width="1639" height="621" alt="Group 2" src="https://github.com/user-attachments/assets/aba05ba5-61bb-43d6-b36a-ec6d44c2bf59" />
+<img width="1639" height="621" alt="Group 3" src="https://github.com/user-attachments/assets/70094c33-b732-4769-a033-5d23246b408c" />
 <br>
 
 ## 📁 시스템 디렉토리 구조
