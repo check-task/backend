@@ -760,25 +760,26 @@ class TaskService {
     });
   }
 
-  // 팀원 정보 수정
-  async modifyMemberRole(taskId, memberId, role) {
-    const member = await taskRepository.findMemberInTask(taskId, memberId);
-    if (!member) throw new NotFoundError("멤버를 찾을 수 없음");
+  // 멤버 역할 수정 
+  async modifyMemberRole(taskId, userId, role) {
+    const member = await taskRepository.findMemberInTask(taskId, userId);
+    if (!member) throw new NotFoundError("해당 과제에서 해당 유저를 찾을 수 없음");
 
-    const isAdmin = role === 1;
+    const isTargetBecomingOwner = (role === 0);
 
     return await prisma.$transaction(async (tx) => {
-      if (isAdmin) {
-        await taskRepository.resetOtherMembersRole(taskId, memberId, tx);
+      if (isTargetBecomingOwner) {
+        await taskRepository.resetOtherMembersRole(taskId, userId, tx);
       }
 
-      return await taskRepository.updateMemberRole(memberId, isAdmin, tx);
+      const dbRoleValue = isTargetBecomingOwner ? false : true;
+
+      return await taskRepository.updateMemberRole(member.id, dbRoleValue, tx);
     });
   }
 
   // 단일 세부 과제 생성 서비스
   async createSingleSubTask(userId, taskId, data) {
-    console.log("📍 서비스로 넘어온 taskId:", taskId);
     const { title, deadline, isAlarm } = data;
 
     // 부모 과제 존재 여부 확인
