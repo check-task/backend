@@ -1098,8 +1098,8 @@ paths:
               example:
                 resultType: "FAIL"
                 code: 400
-                errorCode: "BAD_REQUEST | TEAM_FOLDER_REQUIRED"
-                reason: "과제명은 필수입니다. | 팀 과제는 '팀' 폴더에만 생성할 수 있습니다."
+                errorCode: "BAD_REQUEST | TEAM_FOLDER_REQUIRED | INVALID_FOLDER"
+                reason: "과제명은 필수입니다. | 팀 과제는 '팀' 폴더에만 생성할 수 있습니다. | 개인 과제는 팀 과제 전용 폴더에 생성할 수 없습니다."
                 data: null
         '401':
           description: 인증 실패 (토큰 만료 또는 누락)

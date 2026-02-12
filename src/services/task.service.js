@@ -67,6 +67,9 @@ class TaskService {
       if (folder.userId !== userId) {
         throw new ForbiddenError("권한이 없는 폴더입니다.");
       }
+      if (folder.folderTitle === "팀" || folder.folderTitle === "팀 과제") {
+        throw new BadRequestError("INVALID_FOLDER", "개인 과제는 팀 과제 전용 폴더에 생성할 수 없습니다.");
+      }
     }
 
     return await prisma.$transaction(async (tx) => {
