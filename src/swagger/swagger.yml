@@ -1092,14 +1092,14 @@ paths:
                         type: integer
                         example: 13
         '400':
-          description: 잘못된 요청 (필수 값 누락 또는 형식 오류)
+          description: 잘못된 요청 (필수 값 누락 또는 형식 오류, 팀 과제 폴더 규칙 위반 등)
           content:
             application/json:
               example:
                 resultType: "FAIL"
                 code: 400
-                errorCode: "BAD_REQUEST"
-                reason: "과제명은 필수입니다."
+                errorCode: "BAD_REQUEST | TEAM_FOLDER_REQUIRED"
+                reason: "과제명은 필수입니다. | 팀 과제는 '팀' 폴더에만 생성할 수 있습니다."
                 data: null
         '401':
           description: 인증 실패 (토큰 만료 또는 누락)
@@ -2817,6 +2817,7 @@ paths:
             - INVALID_FOLDER_TITLE: 폴더 이름이 길 때.     
             - INVALID_COLOR: 색상 형식이 올바르지 않음.
             - DUPLICATE_COLOR: 이미 사용 중인 색상으로 변경 시도.
+            - PROTECTED_FOLDER: '팀' 폴더를 수정하려고 시도함.
           content:
             application/json:
               schema:
@@ -2824,8 +2825,8 @@ paths:
                 example:
                   resultType: "FAIL"
                   code: 400
-                  errorCode: "BAD_REQUEST | INVALID_FOLDER_TITLE | INVALID_COLOR | DUPLICATE_COLOR"
-                  reason: "인증 토큰이 형식에 맞지 않습니다. | 폴더 이름은 최대 11자까지만 가능합니다. | 색상 형식이 올바르지 않습니다. | 이미 사용 중인 색상입니다."
+                  errorCode: "BAD_REQUEST | INVALID_FOLDER_TITLE | INVALID_COLOR | DUPLICATE_COLOR | PROTECTED_FOLDER"
+                  reason: "인증 토큰이 형식에 맞지 않습니다. | 폴더 이름은 최대 11자까지만 가능합니다. | 색상 형식이 올바르지 않습니다. | 이미 사용 중인 색상입니다. | '팀' 폴더는 수정할 수 없습니다."
                   data: null     
         '401':
           description: |
@@ -2913,6 +2914,18 @@ paths:
                     type: object
                     nullable: true
                     example: null
+        '400':
+          description: 잘못된 요청 (보호된 폴더 삭제 시도)
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "PROTECTED_FOLDER"
+                  reason: "'팀' 폴더는 삭제할 수 없습니다."
+                  data: null
         '401':
           description: |
             - TOKEN_NOT_FOUND: 인증 토큰이 없음.      
