@@ -1414,6 +1414,7 @@ paths:
 
 
     # 과제 삭제
+    /api/v1/task/{taskId}:
     delete:
       tags:
         - Task
