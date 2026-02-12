@@ -177,17 +177,7 @@ class TaskRepository {
     });
   }
 
-  // 멤버 존재 여부 확인
-  async findMemberInTask(taskId, userId) {
-    return await prisma.member.findFirst({
-      where: {
-        taskId: parseInt(taskId),
-        userId: parseInt(userId) 
-      }
-    });
-  }
-
-  // 나머지 멤버 역할 리셋
+  // 나머지 멤버 역할 리셋 (방장 한 명을 제외하고 모두 멤버로)
   async resetOtherMembersRole(taskId, userId, tx) {
     return await tx.member.updateMany({
       where: {
@@ -195,16 +185,26 @@ class TaskRepository {
         userId: { not: parseInt(userId) }, 
       },
       data: {
-        role: false,
+        role: true, 
       },
     });
   }
 
   // 대상 멤버 역할 업데이트
-  async updateMemberRole(memberId, isAdmin, tx) {
+  async updateMemberRole(memberId, dbRoleValue, tx) {
     return await tx.member.update({
-      where: { id: memberId }, // userId는 중복될 수 있으므로(다른 과제 등) id(PK) 사용
-      data: { role: isAdmin },
+      where: { id: memberId },
+      data: { role: dbRoleValue }, 
+    });
+  }
+
+  // 멤버 존재 여부 확인 
+  async findMemberInTask(taskId, userId) {
+    return await prisma.member.findFirst({
+      where: {
+        taskId: parseInt(taskId),
+        userId: parseInt(userId) 
+      }
     });
   }
 

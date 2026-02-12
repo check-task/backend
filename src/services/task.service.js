@@ -17,11 +17,46 @@ class TaskService {
     return await taskRepository.getCompletedTasks(userId);
   }
 
-  // 과제 등록
+  async getTaskList(userId, queryParams = {}) {
+    let { type, folderId, sort, status } = queryParams;
+
+    const myTeamFolder = await prisma.folder.findFirst({
+      where: { userId, folderTitle: "팀" } 
+    });
+
+    if (folderId && myTeamFolder && parseInt(folderId) === myTeamFolder.id) {
+        folderId = undefined;
+        type = 'TEAM';        
+    }
+
+    // 3. 실제 DB 조회
+    const tasks = await taskRepository.findAllTasks({
+      userId,
+      type,
+      folderId, 
+      sort,
+      status
+    });
+
+    return tasks.map(task => {
+        if (task.type === 'TEAM' && myTeamFolder) {
+            return {
+                ...task,
+                folderId: myTeamFolder.id,       
+                folderTitle: myTeamFolder.folderTitle,
+                foldercolor: myTeamFolder.color 
+            };
+        }
+        return task;
+    });
+  }
+
   async registerTask(userId, data) {
     const { subTasks, references, folderId, ...taskData } = data;
 
-    console.log("생성 시도 유저 ID:", userId)
+    console.log("생성 시도 유저 ID:", userId);
+
+    // 1. 유저 존재 확인
     const user = await prisma.user.findUnique({
       where: { id: userId }
     });
@@ -32,57 +67,42 @@ class TaskService {
 
     if (!taskData.title) throw new BadRequestError("과제명은 필수입니다.");
 
-    // folderId가 있을 때만 폴더 존재 여부 확인
+    let folder = null;
+
     if (folderId) {
-      const folder = await taskRepository.findFolderById(folderId);
-      if (!folder) throw new NotFoundError("존재하지 않는 폴더입니다.");
-    }
-
-    let targetFolderId = folderId;
-
-    if (taskData.type === 'TEAM') {
-      // 1. 팀 과제라면 무조건 '팀' 폴더를 찾습니다.
-      const teamFolder = await prisma.folder.findFirst({
-        where: {
-          userId: userId,
-          folderTitle: "팀"
-        }
-      });
-
-      if (!teamFolder) {
-        throw new NotFoundError("팀 과제 전용 폴더를 찾을 수 없습니다.");
-      }
-
-      // 2. 강제로 '팀' 폴더 ID로
-      targetFolderId = teamFolder.id;
-
-    } else if (folderId) {
-      // 3. 개인 과제인데 폴더를 선택한 경우 -> 유효성 및 권한 검사
-      const folder = await taskRepository.findFolderById(folderId);
+      folder = await taskRepository.findFolderById(folderId);
       
+      // 폴더가 없으면 에러
       if (!folder) {
         throw new NotFoundError("존재하지 않는 폴더입니다.");
       }
       
+      // 내 폴더가 아니면 에러 (보안)
       if (folder.userId !== userId) {
         throw new ForbiddenError("권한이 없는 폴더입니다.");
       }
     }
-      // CASE A: 팀 과제 ('TEAM')
+
+    
+    // CASE A: 팀 과제 ('TEAM')
     if (taskData.type === 'TEAM') {
+      // 규칙: "팀" 폴더가 아니면 무조건 에러! (선택 안 해도 에러, 다른 폴더여도 에러)
+      // ⚠️ 주의: DB 폴더명이 "팀 과제"라면 여기도 "팀 과제"로 수정하세요.
       if (!folder || folder.folderTitle !== "팀") {
         throw new BadRequestError("INVALID_FOLDER", "팀 과제는 '팀' 폴더에만 생성할 수 있습니다.");
       }
     } 
     // CASE B: 개인 과제 ('PERSONAL')
     else {
+      // 규칙: "팀" 폴더를 선택했다면 에러! (팀 폴더 침범 불가)
       if (folder && folder.folderTitle === "팀") {
         throw new BadRequestError("INVALID_FOLDER", "개인 과제는 '팀' 폴더에 생성할 수 없습니다.");
       }
     }
 
+    // 트랜잭션 시작
     return await prisma.$transaction(async (tx) => {
-      // 과제 생성
+      // 과제 생성 (검증된 folderId 사용)
       const newTask = await taskRepository.createTask({ ...taskData, folderId }, tx);
 
       // 과제 생성자를 owner로 멤버에 자동 추가
@@ -92,18 +112,15 @@ class TaskService {
       const maxRank = await taskRepository.findMaxRank(userId, tx);
       await taskRepository.upsertTaskPriority(userId, newTask.id, maxRank + 1, tx);
 
-      // 과제 알림 생성
+      // --- [알림 생성 로직 유지] ---
       if (newTask.isAlarm) {
-        // 팀 과제인 경우: 멤버 모두에게 알림 생성
         if (newTask.type === 'TEAM') {
-          // 멤버 조회 (생성자 포함)
           const members = await tx.member.findMany({
             where: { taskId: newTask.id },
             include: { user: true },
           });
 
           if (members.length > 0) {
-            // 모든 멤버에게 알림 생성
             const alarmPromises = members.map(async (member) => {
               const user = member.user;
               const alarmHours = user.deadlineAlarm || 24;
@@ -120,7 +137,6 @@ class TaskService {
             await Promise.all(alarmPromises);
           }
         } else {
-          // 개인 과제인 경우: 생성자에게만 알림 생성
           const creator = await tx.user.findUnique({
             where: { id: userId },
             select: { deadlineAlarm: true },
@@ -141,18 +157,16 @@ class TaskService {
         }
       }
 
-      // 하위 데이터 저장
+      // --- [하위 데이터 저장 로직 유지] ---
       if (subTasks && subTasks.length > 0) {
         await taskRepository.addSubTasks(newTask.id, subTasks, tx);
 
-        // 세부과제 생성 후 알림 생성
         const createdSubTasksList = await tx.subTask.findMany({
           where: { taskId: newTask.id },
           include: { assignee: true },
         });
 
         for (const subTask of createdSubTasksList) {
-          // 세부과제 담당자에게 알림 생성
           if (subTask.isAlarm && subTask.assigneeId) {
             const assignee = subTask.assignee;
             if (assignee) {
@@ -193,10 +207,18 @@ class TaskService {
       taskData.deadline = new Date(taskData.deadline);
     }
 
-    // 폴더
+    // 폴더 변경 시 유효성 검사 (추가된 부분)
     if (folderId) {
       const folder = await taskRepository.findFolderById(folderId);
       if (!folder) throw new NotFoundError("변경하려는 폴더가 존재하지 않습니다.");
+      
+      // [보호 로직] 수정 시에도 팀/개인 폴더 규칙 적용
+      if (currentTask.type === 'TEAM' && folder.folderTitle !== '팀') {
+         throw new BadRequestError("INVALID_FOLDER", "팀 과제는 '팀' 폴더로만 이동할 수 있습니다.");
+      }
+      if (currentTask.type === 'PERSONAL' && folder.folderTitle === '팀') {
+         throw new BadRequestError("INVALID_FOLDER", "개인 과제는 '팀' 폴더로 이동할 수 없습니다.");
+      }
     }
 
     // 트랜잭션
@@ -259,6 +281,7 @@ class TaskService {
       return { taskId: updatedTask.id };
     });
   }
+  
   // Task 마감일 변경 서비스
   async updateTaskDeadline(userId, taskId, deadline) {
     // 1. Task 존재 여부 확인
@@ -335,40 +358,6 @@ class TaskService {
     }
 
     return task;
-  }
-
-  // 과제 목록 조회
-  async getTaskList(userId, queryParams = {}) {
-    const { type, folderId, sort, status } = queryParams;
-
-    const myTeamFolder = await prisma.folder.findFirst({
-      where: { userId, folderTitle: "팀" }
-    });
-
-    if (folderId && myTeamFolder && parseInt(folderId) === myTeamFolder.id) {
-        folderId = undefined; 
-        type = 'TEAM';        
-    }
-
-    const tasks = await taskRepository.findAllTasks({
-      userId,
-      type,
-      folderId, 
-      sort,
-      status
-    });
-
-    return tasks.map(task => {
-        if (task.type === 'TEAM' && myTeamFolder) {
-            return {
-                ...task,
-                folderId: myTeamFolder.id,       
-                folderTitle: myTeamFolder.folderTitle,
-                foldercolor: myTeamFolder.color  
-            };
-        }
-        return task;
-    });
   }
 
   // 우선순위 변경
@@ -771,26 +760,26 @@ class TaskService {
     });
   }
 
-  // 팀원 정보 수정
+  // 멤버 역할 수정 
   async modifyMemberRole(taskId, userId, role) {
     const member = await taskRepository.findMemberInTask(taskId, userId);
-  
-  if (!member) throw new NotFoundError("해당 과제에서 해당 유저를 찾을 수 없음");
+    if (!member) throw new NotFoundError("해당 과제에서 해당 유저를 찾을 수 없음");
 
-  const isAdmin = role === 1;
+    const isTargetBecomingOwner = (role === 0);
 
-  return await prisma.$transaction(async (tx) => {
-    if (isAdmin) {
-      await taskRepository.resetOtherMembersRole(taskId, userId, tx);
-    }
+    return await prisma.$transaction(async (tx) => {
+      if (isTargetBecomingOwner) {
+        await taskRepository.resetOtherMembersRole(taskId, userId, tx);
+      }
 
-    return await taskRepository.updateMemberRole(member.id, isAdmin, tx);
-  });
+      const dbRoleValue = isTargetBecomingOwner ? false : true;
+
+      return await taskRepository.updateMemberRole(member.id, dbRoleValue, tx);
+    });
   }
 
   // 단일 세부 과제 생성 서비스
   async createSingleSubTask(userId, taskId, data) {
-    console.log("📍 서비스로 넘어온 taskId:", taskId);
     const { title, deadline, isAlarm } = data;
 
     // 부모 과제 존재 여부 확인
