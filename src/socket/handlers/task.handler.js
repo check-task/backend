@@ -396,7 +396,7 @@ export const setupTaskHandlers = (io, socket) => {
       });
 
       // 같은 Task 방에 있는 사람들에게 알림
-      socket.to(`task:${taskId}`).emit(commentEvents.CREATED_COMMENT, {
+      io.to(`task:${taskId}`).emit(commentEvents.CREATED_COMMENT, {
         taskId: Number(taskId),
         subTaskId: Number(subTaskId),
         comment: newComment
@@ -425,7 +425,7 @@ export const setupTaskHandlers = (io, socket) => {
       const updatedComment = await CommentService.updateComment(Number(commentId), userId, content);
 
       //나 제외하고 모두에게 보냄.
-      socket.to(`task:${taskId}`).emit(commentEvents.UPDATED_COMMENT, {
+      io.to(`task:${taskId}`).emit(commentEvents.UPDATED_COMMENT, {
         taskId: Number(taskId),
         subTaskId: Number(subTaskId),
         comment: updatedComment
