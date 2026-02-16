@@ -99,13 +99,25 @@ export class KakaoAuthService {
       
       let isNewUser = false;
 
-      // 탈퇴 사용자 차단
-    if (user && user.deletedAt) {
-      return {
-        withdrawnUser: true,
-        providerId,
-      };
-    }
+      //탈퇴 사용자면 자동 복구
+      if(user && user.deletedAt){
+        user = await prisma.user.update({
+          where: {
+            id: user.id
+          },
+          data: {
+            deletedAt: null,
+          },
+        });
+      }
+      
+    //   // 탈퇴 사용자 차단
+    // if (user && user.deletedAt) {
+    //   return {
+    //     withdrawnUser: true,
+    //     providerId,
+    //   };
+    // }
 
       //신규 사용자 생성
       if (!user) {

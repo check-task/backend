@@ -1,6 +1,6 @@
 import { KakaoAuthService } from "../services/auth.service.js";
 import { UnauthorizedError } from "../errors/custom.error.js";
-import { prisma } from "../db.config.js";
+// import { prisma } from "../db.config.js";
 
 export class AuthController{
     constructor(){
@@ -76,37 +76,37 @@ export class AuthController{
     }
   }
 
-  //재가입시 기존 정보 복구
-  async restore(req, res, next){
-    try{
-      const { providerId } = req.body;
+  // //재가입시 기존 정보 복구
+  // async restore(req, res, next){
+  //   try{
+  //     const { providerId } = req.body;
       
-      if (!providerId) {throw new BadRequestError("PROVIDER_ID_REQUIRED","providerId가 필요합니다.");}
+  //     if (!providerId) {throw new BadRequestError("PROVIDER_ID_REQUIRED","providerId가 필요합니다.");}
 
-      const user = await prisma.user.findFirst({
-        where:{
-          provider: "KAKAO",
-          providerId,
-          deletedAt: { not: null },
-        }
-      });
+  //     const user = await prisma.user.findFirst({
+  //       where:{
+  //         provider: "KAKAO",
+  //         providerId,
+  //         deletedAt: { not: null },
+  //       }
+  //     });
 
-      if(!user){ throw new BadRequestError("USER_NOT_FOUND","복구할 탈퇴 계정을 찾을 수 없습니다.");}
+  //     if(!user){ throw new BadRequestError("USER_NOT_FOUND","복구할 탈퇴 계정을 찾을 수 없습니다.");}
 
-      await prisma.user.update({
-        where:{ id: user.id },
-        data:{ deletedAt: null }
-      });
+  //     await prisma.user.update({
+  //       where:{ id: user.id },
+  //       data:{ deletedAt: null }
+  //     });
 
-      return res.status(200).json({
-        resultType:"SUCCESS",
-        message:"계정이 복구되었습니다."
-      });
+  //     return res.status(200).json({
+  //       resultType:"SUCCESS",
+  //       message:"계정이 복구되었습니다."
+  //     });
 
-    }catch(error){
-      next(error);
-    }
-  }
+  //   }catch(error){
+  //     next(error);
+  //   }
+  // }
 
 }
 
