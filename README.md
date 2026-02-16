@@ -136,7 +136,7 @@ npm start
 | --- | --- | --- |
 | main | 실제 배포되어 운영되는 서버의 코드 | main |
 | develop | 다음 배포를 위해 개발된 기능들이 통합되는 브랜치 | develop |
-| feature | 단위 기능 개발을 위한 브랜치 develop에서 분기 | eature/issue-번호 |
+| feature | 단위 기능 개발을 위한 브랜치 develop에서 분기 | feature/issue-번호 |
 - 브랜치명: ```커밋유형/이슈번호```
 
 ### ▷ 이슈 유형

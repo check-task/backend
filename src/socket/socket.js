@@ -1,7 +1,5 @@
 import { Server } from "socket.io";
-import { setupCommentHandlers } from "./handlers/comment.handler.js";
 import { setupTaskHandlers } from "./handlers/task.handler.js";
-import { setupDeadlineHandlers } from "./handlers/deadline.handler.js";
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 dotenv.config();
