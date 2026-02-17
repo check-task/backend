@@ -8,7 +8,7 @@ class FolderRepository {
     });
   }
 
-  // 유저의 폴더 개수 조회 (기본 폴더 포함됨)
+  // 유저의 폴더 개수 조회 (기본 폴더 포함)
   async countByUserId(userId) {
     return await prisma.folder.count({
       where: { userId: userId },
@@ -21,6 +21,16 @@ class FolderRepository {
       where: {
         userId: userId,
         color: color,
+      },
+    });
+  }
+
+  // 유저가 특정 이름의 폴더를 이미 가지고 있는지 조회
+  async findByUserAndTitle(userId, folderTitle) {
+    return await prisma.folder.findFirst({
+      where: {
+        userId: userId,
+        folderTitle: folderTitle,
       },
     });
   }

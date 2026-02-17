@@ -13,6 +13,11 @@ class FolderService {
 
     const folderData = FolderDto.bodyToFolderDto(body);
 
+    const duplicateNameFolder = await folderRepository.findByUserAndTitle(userId, folderData.folderTitle);
+    if (duplicateNameFolder) {
+      throw new BadRequestError("DUPLICATE_NAME", "이미 존재하는 폴더 이름입니다.");
+    }
+
     const duplicateColorFolder = await folderRepository.findByUserAndColor(userId, folderData.color);
     if (duplicateColorFolder) {
       throw new BadRequestError("DUPLICATE_COLOR", "이미 사용 중인 색상입니다. 다른 색상을 선택해주세요.");
@@ -37,6 +42,14 @@ class FolderService {
 
     if (Object.keys(updateData).length === 0) {
       return FolderDto.responseFromFolder(folder);
+    }
+
+    // 이름이 변경되는 경우, 중복 이름 확인
+    if (updateData.folderTitle && updateData.folderTitle !== folder.folderTitle) {
+      const duplicateNameFolder = await folderRepository.findByUserAndTitle(userId, updateData.folderTitle);
+      if (duplicateNameFolder) {
+        throw new BadRequestError("DUPLICATE_NAME", "이미 존재하는 폴더 이름입니다.");
+      }
     }
 
     // (4) 색상이 변경되는 경우에만 중복 체크
