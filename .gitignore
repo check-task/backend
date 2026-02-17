@@ -2,7 +2,7 @@
 .env
 
 # Prisma
-prisma/migrations
+# prisma/migrations
 
 # Logs
 logs
