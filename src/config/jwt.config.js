@@ -23,11 +23,9 @@ export const jwtStrategy = new JwtStrategy(
         },
       });
 
-      //수정 전
-      if (!user) return done(null, false);
-      // if (!user || user.deletedAt) {
-      //   return done(null, false);
-      // }
+      if (!user || user.deletedAt) {
+        return done(null, false);
+      }
 
       return done(null, user);
     } catch (err) {

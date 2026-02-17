@@ -1,5 +1,5 @@
 import { KakaoAuthService } from "../services/auth.service.js";
-import { UnauthorizedError } from "../errors/custom.error.js";
+import { BadRequestError, UnauthorizedError } from "../errors/custom.error.js";
 // import { prisma } from "../db.config.js";
 
 export class AuthController{
@@ -76,38 +76,42 @@ export class AuthController{
     }
   }
 
-  // //재가입시 기존 정보 복구
-  // async restore(req, res, next){
-  //   try{
-  //     const { providerId } = req.body;
-      
-  //     if (!providerId) {throw new BadRequestError("PROVIDER_ID_REQUIRED","providerId가 필요합니다.");}
+  //재가입시 기존 정보 복구
+  async restore(req, res, next) {
+    try {
+      const { token } = req.body;
 
-  //     const user = await prisma.user.findFirst({
-  //       where:{
-  //         provider: "KAKAO",
-  //         providerId,
-  //         deletedAt: { not: null },
-  //       }
-  //     });
+      if (!token) {
+        throw new BadRequestError("TOKEN_REQUIRED", "복구 토큰이 필요합니다.");
+      }
 
-  //     if(!user){ throw new BadRequestError("USER_NOT_FOUND","복구할 탈퇴 계정을 찾을 수 없습니다.");}
+      const { accessToken, refreshToken } =
+        await this.kakaoAuthService.restoreKakaoUser(token);
 
-  //     await prisma.user.update({
-  //       where:{ id: user.id },
-  //       data:{ deletedAt: null }
-  //     });
+      const isProd = process.env.NODE_ENV === "production";
 
-  //     return res.status(200).json({
-  //       resultType:"SUCCESS",
-  //       message:"계정이 복구되었습니다."
-  //     });
+      // refreshToken 쿠키 세팅
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+        path: "/",
+        maxAge: 1000 * 60 * 60 * 24 * 14,
+      });
 
-  //   }catch(error){
-  //     next(error);
-  //   }
-  // }
+      return res.status(200).json({
+        resultType: "SUCCESS",
+        message: "계정이 복구되었으며 로그인되었습니다.",
+        data: {
+          accessToken,
+          accessTokenExpireIn: 3600,
+        },
+      });
 
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 
