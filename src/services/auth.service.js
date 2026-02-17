@@ -98,26 +98,23 @@ export class KakaoAuthService {
       });
       
       let isNewUser = false;
-
-      //탈퇴 사용자면 자동 복구
-      if(user && user.deletedAt){
-        user = await prisma.user.update({
-          where: {
-            id: user.id
-          },
-          data: {
-            deletedAt: null,
-          },
-        });
-      }
       
-    //   // 탈퇴 사용자 차단
-    // if (user && user.deletedAt) {
-    //   return {
-    //     withdrawnUser: true,
-    //     providerId,
-    //   };
-    // }
+      // 탈퇴 사용자 차단
+      if (user && user.deletedAt) {
+        const restoreToken = crypto.randomUUID();
+
+        await redis.set(
+          `restore_token:${restoreToken}`,
+          providerId,
+          "EX",
+          60 * 5 //5분
+        );
+
+        return {
+          withdrawnUser: true,
+          restoreToken,
+        };
+      }
 
       //신규 사용자 생성
       if (!user) {
@@ -196,4 +193,50 @@ export class KakaoAuthService {
       // 이미 만료된 경우도 로그아웃은 성공 처리
     }
   }
+
+  async restoreKakaoUser(restoreToken) {
+    if (!restoreToken) {
+      throw new BadRequestError("TOKEN_REQUIRED", "복구 토큰이 필요합니다.");
+    }
+
+    const providerId = await redis.get(`restore_token:${restoreToken}`);
+
+    if (!providerId) {
+      throw new BadRequestError("INVALID_TOKEN", "유효하지 않거나 만료된 토큰입니다.");
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        provider: "KAKAO",
+        providerId,
+        deletedAt: { not: null },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestError("USER_NOT_FOUND", "복구할 사용자가 없습니다.");
+    }
+
+    // 계정 복구
+    const restoredUser = await prisma.user.update({
+      where: { id: user.id },
+      data: { deletedAt: null },
+    });
+
+    // 1회성 토큰 삭제 
+    await redis.del(`restore_token:${restoreToken}`);
+
+    // 로그인 토큰 발급
+    const accessToken = this.generateAccessToken(restoredUser);
+    const { refreshToken, tokenId } = this.generateRefreshToken(restoredUser);
+
+    await this.saveRefreshToken(tokenId, restoredUser.id);
+
+    return {
+      user: restoredUser,
+      accessToken,
+      refreshToken,
+    };
+  }
 }
+
