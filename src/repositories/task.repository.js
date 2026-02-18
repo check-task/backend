@@ -266,13 +266,10 @@ class TaskRepository {
     });
   }
 
-  async deleteMember(taskId, memberId) {
+  async deleteMember(memberId) {
     const deleted = await db.member.delete({
       where: {
-        taskId_memberId: {
-          taskId,
-          memberId,
-        },
+        id: memberId
       },
     });
     return deleted ? true : false;

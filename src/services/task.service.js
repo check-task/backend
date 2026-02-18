@@ -788,7 +788,7 @@ class TaskService {
     const member = await taskRepository.findMemberInTask(taskId, memberId);
     if (!member) throw new NotFoundError("멤버를 찾을 수 없음");
 
-    await taskRepository.deleteMember(taskId, memberId);
+    await taskRepository.deleteMember(member.id);
 
     return {
       id: member.id,
