@@ -230,6 +230,18 @@ async updateMemberRole(memberId, isAdmin, tx) {
     });
   }
 
+  async deleteMember(taskId, memberId) {
+    const deleted = await db.member.delete({
+      where: {
+        taskId_memberId: {
+          taskId,
+          memberId,
+        },
+      },
+    });
+    return deleted ? true : false;
+  }
+  
   async findMaxRank(userId, tx= prisma) {
     const result = await tx.taskPriority.aggregate({
       _max: {

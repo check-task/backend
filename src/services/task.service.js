@@ -644,31 +644,51 @@ class TaskService {
     });
   }
 
-// 단일 세부 과제 생성 서비스
-async createSingleSubTask(userId, taskId, data) {
-  console.log("📍 서비스로 넘어온 taskId:", taskId);
-  const { title, deadline, isAlarm } = data;
+  // 팀원 추방
+  async outMember(taskId, memberId, userId) {
+    const requestingUser = await taskRepository.findMemberInTask(taskId, userId);
+    if (!requestingUser) throw new NotFoundError("요청한 유저가 팀에 없습니다.");
+    if (requestingUser.role !== 1) throw new Error("권한이 없습니다. 팀장만 추방할 수 있습니다.");
+    
+    const member = await taskRepository.findMemberInTask(taskId, memberId);
+    if (!member) throw new NotFoundError("멤버를 찾을 수 없음");
 
-  // 부모 과제 존재 여부 확인
-  const parentTask = await taskRepository.findTaskById(taskId);
-  if (!parentTask) throw new NotFoundError("존재하지 않는 과제입니다.");
+    const deleted = await taskRepository.deleteMember(taskId, memberId);
+    if (!deleted) throw new Error("멤버 삭제 실패");
 
-  // 팀 과제: NULL, 개인 과제: 생성자 본인
-  const assigneeId = parentTask.type === 'TEAM' ? null : userId;
+    return {
+      id: member.id,
+      userId: member.userId,
+      taskId: member.taskId,
+      role: member.role,
+    };
+  }
 
-  return await prisma.$transaction(async (tx) => {
-    // 세부 과제 생성
-    const newSubTask = await tx.subTask.create({
-      data: {
-        taskId: taskId,
-        title: title,
-        endDate: new Date(deadline),
-        status: "PENDING",
-        isAlarm: isAlarm || false,
-        assigneeId: assigneeId
-      },
-      include: { assignee: true } 
-    });
+  // 단일 세부 과제 생성 서비스
+  async createSingleSubTask(userId, taskId, data) {
+    console.log("📍 서비스로 넘어온 taskId:", taskId);
+    const { title, deadline, isAlarm } = data;
+
+    // 부모 과제 존재 여부 확인
+    const parentTask = await taskRepository.findTaskById(taskId);
+    if (!parentTask) throw new NotFoundError("존재하지 않는 과제입니다.");
+
+    // 팀 과제: NULL, 개인 과제: 생성자 본인
+    const assigneeId = parentTask.type === 'TEAM' ? null : userId;
+
+    return await prisma.$transaction(async (tx) => {
+      // 세부 과제 생성
+      const newSubTask = await tx.subTask.create({
+        data: {
+          taskId: taskId,
+          title: title,
+          endDate: new Date(deadline),
+          status: "PENDING",
+          isAlarm: isAlarm || false,
+          assigneeId: assigneeId
+        },
+        include: { assignee: true } 
+      });
 
     // 알림 생성 로직
     if (newSubTask.isAlarm && newSubTask.assigneeId) {
