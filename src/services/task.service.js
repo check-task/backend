@@ -783,7 +783,7 @@ class TaskService {
     const requestingUser = await taskRepository.findMemberInTask(taskId, userId);
     console.log("팀장확인:", requestingUser);
     if (!requestingUser) throw new NotFoundError("요청한 유저가 팀에 없습니다.");
-    if (requestingUser.role !== 0) throw new UnauthorizedError("권한이 없습니다. 팀장만 추방할 수 있습니다.");
+    if (requestingUser.role !== false) throw new UnauthorizedError("권한이 없습니다. 팀장만 추방할 수 있습니다.");
     
     const member = await taskRepository.findMemberInTask(taskId, memberId);
     if (!member) throw new NotFoundError("멤버를 찾을 수 없음");
