@@ -267,7 +267,7 @@ class TaskRepository {
   }
 
   async deleteMember(memberId) {
-    const deleted = await db.member.delete({
+    const deleted = await prisma.member.delete({
       where: {
         id: memberId
       },
