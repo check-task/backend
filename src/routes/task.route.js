@@ -1,6 +1,11 @@
 import express from "express";
+import multer from "multer";
+
 import taskController from "../controllers/task.controller.js";
 import authenticate from "../middlewares/authenticate.middleware.js";
+
+const upload = multer({ storage: multer.memoryStorage() });
+
 
 const router = express.Router();
 
@@ -14,7 +19,7 @@ router.post("/", authenticate, taskController.createTask);
 router.patch("/priority", authenticate, taskController.updateTaskPriorities);
 
 // PATCH /api/v1/task/:taskId -- 과제 수정
-router.patch("/:taskId", authenticate, taskController.updateTask);
+router.patch("/:taskId", authenticate, upload.array('files'), taskController.updateTask);
 
 // DELETE /api/v1/task/:taskId -- 과제 삭제
 router.delete("/:taskId", authenticate, taskController.deleteTask);
@@ -25,8 +30,8 @@ router.get("/:taskId", authenticate, taskController.getTaskDetail);
 // GET /api/v1/task?sort=우선순위 -- 과제 목록 조회
 router.get("/", authenticate, taskController.getTasks);
 
-// PATCH /api/v1/task/:taskId/member/:memberId -- 팀원 정보 수정
-router.patch("/:taskId/member/:memberId", authenticate, taskController.updateTeamMember);
+// PATCH /api/v1/task/:taskId/member/:userId -- 팀원 정보 수정
+router.patch("/:taskId/member/:userId", authenticate, taskController.updateTeamMember);
 
 // 팀원 관계 삭제
 router.delete('/:taskId/member/:memberId', authenticate, taskController.deleteTeamMember);
@@ -34,16 +39,16 @@ router.delete('/:taskId/member/:memberId', authenticate, taskController.deleteTe
 // POST /api/v1/task/:taskId/subTask -- 단일 세부 과제 추가
 router.post("/:taskId/subTask", authenticate, taskController.addSubTask)
 
-// 세부 TASK 완료 처리 API 
-// 세부 TASK 상태 업데이트
+// 세부 TASK 상태 업데이트 API 
 router.patch(
   '/subtask/:subTaskId/status',
   authenticate,
   taskController.updateSubTaskStatus
 );
 
+// Task 마감일 변경 API
+router.patch('/:taskId/deadline', authenticate, taskController.updateTaskDeadline);
 // 세부task 날짜 변경 API
-// 세부 TASK 마감일 변경
 router.patch(
   '/subtask/:subTaskId/deadline',
   authenticate,

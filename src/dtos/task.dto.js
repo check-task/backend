@@ -3,20 +3,40 @@ class TaskUtils {
   // D-Day 계산
   static calculateDDay(deadline) {
     if (!deadline) return null;
-    const today = new Date();
-    const deadlineDate = new Date(deadline);
-    const diffTime = deadlineDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
+    // 서버 시간(UTC)을 한국 시간(+9)으로 변환
+    const now = new Date();
+    const kstNow = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+    // 한국 날짜의 '0시 0분 0초'로 세팅
+    const today = new Date(kstNow.getFullYear(), kstNow.getMonth(), kstNow.getDate());
+
+    // 마감일(UTC)을 한국 시간(+9)으로 변환
+    const dDate = new Date(deadline);
+    const kstDeadline = new Date(dDate.getTime() + (9 * 60 * 60 * 1000));
+    // 마감 날짜의 '0시 0분 0초'로 세팅
+    const targetDay = new Date(kstDeadline.getFullYear(), kstDeadline.getMonth(), kstDeadline.getDate());
+
+    // 두 날짜의 차이 계산
+    const diffTime = targetDay - today;
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
     if (diffDays === 0) return "D-Day";
     return diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
   }
 
-  // 날짜 포맷 
+  // KST 기준 날짜 포맷 (YYYY.MM.DD)
   static formatDate(date, separator = '.') {
     if (!date) return null;
-    const dateStr = date instanceof Date ? date.toISOString() : new Date(date).toISOString();
-    return dateStr.split('T')[0].replace(/-/g, separator);
+
+    // 입력받은 날짜(UTC)를 한국 시간으로 변환
+    const targetDate = new Date(date);
+    const kstDate = new Date(targetDate.getTime() + (9 * 60 * 60 * 1000));
+
+    const year = kstDate.getUTCFullYear();
+    const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(kstDate.getUTCDate()).padStart(2, '0');
+
+    return `${year}${separator}${month}${separator}${day}`;
   }
 }
 
@@ -39,18 +59,34 @@ export class TaskRequestDTO {
   }
 
   // 과제 수정
-  static toUpdate(data) {
+  static toUpdate(data, uploadedFiles = []) {
+    const subTasks = typeof data.subTasks === 'string' ? JSON.parse(data.subTasks) : (data.subTasks || []);
+    const existingRefs = typeof data.references === 'string' ? JSON.parse(data.references) : (data.references || []);
+
     return {
       title: data.title,
-      folderId: data.folderId,
-      deadline: data.deadline ? new Date(data.deadline) : undefined,
-      type: data.type === "팀" ? "TEAM" : (data.type === "개인" ? "PERSONAL" : undefined),
-      subTasks: (data.subTasks || []).map(st => ({
-        title: st.title,
-        endDate: st.endDate ? new Date(st.endDate) : new Date(),
-        status: st.status || "PENDING"
-      })),
-      references: data.references || []
+      folderId: data.folderId ? Number(data.folderId) : undefined,
+      deadline: data.deadline,
+      type: (data.type === "TEAM" || data.type === "팀") ? "TEAM" : "PERSONAL",
+      subTasks: subTasks
+        .filter(st => st !== null && st !== undefined) // 빈 객체 제거
+        .map(st => ({
+          title: st.title || "제목 없음", 
+          endDate: st.endDate ? new Date(st.endDate) : new Date(),
+          status: st.status || "PENDING"
+        })),
+      references: [
+        ...existingRefs.map(ref => ({
+          name: ref.name,
+          url: ref.url || null,
+          fileUrl: ref.fileUrl || ref.file_url || null 
+        })),
+        ...uploadedFiles.map(file => ({
+          name: file.name,
+          url: null,
+          fileUrl: file.fileUrl || file.file_url 
+        }))
+      ]
     };
   }
 }
@@ -66,6 +102,10 @@ export class TaskResponseDTO extends TaskUtils {
     return {
       taskId: task.id,
       title: task.title,
+      folderId: task.folderId,
+      foldercolor: task.folder?.color || "값 없음",
+      folderTitle: task.folder?.folderTitle || "미지정",
+      status: task.status || "PENDING",
       type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
       deadline: this.formatDate(task.deadline, '-'),
       dDay: this.calculateDDay(task.deadline),
@@ -74,29 +114,67 @@ export class TaskResponseDTO extends TaskUtils {
         subTaskId: st.id,
         title: st.title,
         deadline: this.formatDate(st.endDate, '-'),
-        status: st.status === 'COMPLETED' ? 'COMPLETED' : 'PROGRESS', 
+        status: st.status === 'COMPLETED' ? 'COMPLETED' : 'PROGRESS',
         isAlarm: st.isAlarm || false,
         commentCount: st._count?.comments || 0,
-        assigneeName: st.assigneeName || "PENDING"
+        comments: st.comments?.map(comment => ({
+          commentId: comment.id,
+          content: comment.content,
+          writer: comment.user?.nickname || "미지정",
+          profileImage: comment.user?.profileImage || null,
+          createdAt: comment.createdAt
+        })) || [],
+        assigneeId: st.assignee?.id || null,
+        assigneeName: st.assignee?.nickname || "PENDING",
+        assigneeProfileImage: st.assignee?.profileImage || null
       })) || [],
-      communications: task.communications?.map(c => ({ name: c.name, url: c.url })) || [],
-      meetingLogs: task.logs?.map(log => ({ logId: log.id, title: log.title })) || [],
-      references: task.references?.map(r => ({ name: r.name, url: r.url })) || []
+      communications: task.communications?.map(c => ({ ...c })) || [],
+      meetingLogs: task.logs?.map(log => ({ ...log })) || [],
+      references: task.references?.map(r => ({ ...r })) || []
     };
   }
 
   // 목록 조회 응답
   static fromList(tasks) {
-    return (Array.isArray(tasks) ? tasks : []).map(task => ({
-      taskId: task.id,
-      folderId: task.folderId,
-      folderTitle: task.folder?.title || "PENDING",
-      title: task.title,
-      type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
-      deadline: this.formatDate(task.deadline),
-      dDay: this.calculateDDay(task.deadline),
-      progressRate: task.progress || 0
-    }));
+    const taskList = [];
+    const subTaskList = [];
+
+    (Array.isArray(tasks) ? tasks : []).forEach(task => {
+      // 1. Task 정보 추출
+      taskList.push({
+        taskId: task.id,
+        folderId: task.folderId,
+        foldercolor: task.folder?.color || "값 없음",
+        folderTitle: task.folder?.folderTitle || "미지정",
+        priority: task.priorities?.[0]?.rank ?? null,
+        status: task.status || "PENDING",
+        title: task.title,
+        type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
+        deadline: this.formatDate(task.deadline),
+        dDay: this.calculateDDay(task.deadline),
+        progressRate: task.progress || 0
+      });
+
+      // 2. SubTask 정보 추출 및 평탄화 (Flatten)
+      if (task.subTasks && task.subTasks.length > 0) {
+        task.subTasks.forEach(st => {
+          subTaskList.push({
+            subTaskId: st.id,
+            taskId: task.id, // 어떤 과제의 세부과제인지 식별할 수 있도록 taskId 포함
+            title: st.title,
+            status: st.status || "PENDING",
+            // 필요한 경우 마감일 등 추가
+            deadline: this.formatDate(st.endDate)
+          });
+        });
+      }
+    });
+
+    // 3. 분리된 구조로 반환
+    return {
+      task: taskList,
+      subTask: subTaskList
+    };
   }
 
   // 완료 과제 조회 응답
@@ -105,11 +183,11 @@ export class TaskResponseDTO extends TaskUtils {
       tasks: tasks.map(task => ({
         taskId: task.id,
         title: task.title,
-        deadline: this.formatDate(task.deadline, '-'), 
+        deadline: this.formatDate(task.deadline, '-'),
         type: task.type === "PERSONAL" ? "개인" : "팀",
-        status: task.status === 'COMPLETED' ? '완료' : '미완료', 
+        status: task.status === 'COMPLETED' ? '완료' : '미완료',
         folderId: task.folder?.id || null,
-        folderTitle: task.folder?.folderTitle || "미지정",
+        folderTitle: task.folder?.folderTitle || null,
         color: task.folder?.color || "#000000",
       }))
     };

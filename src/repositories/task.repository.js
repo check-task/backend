@@ -12,14 +12,14 @@ class TaskRepository {
       where: {
         members: { some: { userId: userId } },
         deadline: {
-          lt: new Date(), 
+          lt: new Date(),
         },
       },
       include: {
         folder: true,
       },
       orderBy: {
-        deadline: 'desc', 
+        deadline: 'desc',
       },
     });
   }
@@ -51,11 +51,27 @@ class TaskRepository {
       include: {
         subTasks: {
           include: {
+            comments: {
+              include: {
+                user: { select: { nickname: true, profileImage: true } }
+              },
+              orderBy: { createdAt: 'asc' } // 오래된 순으로 정렬
+            },
+            assignee: {
+              select: {
+                id: true,
+                nickname: true,
+                profileImage: true
+              }
+            },
             _count: {
-              select: { comments: true }
+              select: {
+                comments: true
+              }
             }
           }
         },
+        folder: true,
         references: true,
         logs: true,
         communications: true
@@ -64,15 +80,16 @@ class TaskRepository {
   }
 
   // 과제 목록 조회
-  async findAllTasks({ userId, type, folderId, sort }) {
-    console.log("userid:", userId);
+  async findAllTasks({ userId, type, folderId, sort, status }) {
+    const now = new Date();
+
     const query = {
       where: {
         members: {
           some: {
             userId: userId
           }
-        }
+        },
       },
       include: {
         folder: true,
@@ -82,6 +99,12 @@ class TaskRepository {
         }
       }
     };
+
+    if (status === 'PROGRESS') {
+      query.where.deadline = {
+        gte: now
+      };
+    }
 
     if (type) {
       query.where.type = (type === "TEAM") ? "TEAM" : "PERSONAL";
@@ -116,6 +139,13 @@ class TaskRepository {
     return processedTasks;
   }
 
+  async updateTaskDeadline(taskId, deadline, tx = prisma) {
+    return await tx.task.update({
+      where: { id: taskId },
+      data: { deadline }
+    });
+  }
+
   // 우선 순위 변경
   async upsertTaskPriority(userId, taskId, rank, tx = prisma) {
     return await tx.taskPriority.upsert({
@@ -147,36 +177,36 @@ class TaskRepository {
     });
   }
 
-  // 멤버 존재 여부 확인
-  async findMemberInTask(taskId, memberId) {
-    return await prisma.member.findFirst({
+  // 나머지 멤버 역할 리셋 (방장 한 명을 제외하고 모두 멤버로)
+  async resetOtherMembersRole(taskId, userId, tx) {
+    return await tx.member.updateMany({
       where: {
-        id: memberId,
-        taskId: taskId
-      }
+        taskId: parseInt(taskId),
+        userId: { not: parseInt(userId) }, 
+      },
+      data: {
+        role: true, 
+      },
     });
   }
 
-// 나머지 멤버 역할 리셋
-async resetOtherMembersRole(taskId, memberId, tx) {
-  return await tx.member.updateMany({
-    where: {
-      taskId: taskId,
-      id: { not: memberId }, 
-    },
-    data: {
-      role: false, 
-    },
-  });
-}
+  // 대상 멤버 역할 업데이트
+  async updateMemberRole(memberId, dbRoleValue, tx) {
+    return await tx.member.update({
+      where: { id: memberId },
+      data: { role: dbRoleValue }, 
+    });
+  }
 
-// 대상 멤버 역할 업데이트
-async updateMemberRole(memberId, isAdmin, tx) {
-  return await tx.member.update({
-    where: { id: memberId },
-    data: { role: isAdmin },
-  });
-}
+  // 멤버 존재 여부 확인 
+  async findMemberInTask(taskId, userId) {
+    return await prisma.member.findFirst({
+      where: {
+        taskId: parseInt(taskId),
+        userId: parseInt(userId) 
+      }
+    });
+  }
 
   // 세부 과제 일괄 삭제
   async deleteAllSubTasks(taskId, tx) {

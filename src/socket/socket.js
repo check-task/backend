@@ -1,7 +1,8 @@
 import { Server } from "socket.io";
-import { setupCommentHandlers } from "./handlers/comment.handler.js";
 import { setupTaskHandlers } from "./handlers/task.handler.js";
-import { setupDeadlineHandlers } from "./handlers/deadline.handler.js";
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+dotenv.config();
 
 /**
  * Socket.IO 서버 설정
@@ -28,6 +29,27 @@ const setupSocket = (httpServer) => {
     console.log(`📡 Socket.IO 경로: ${io.path()}`);
     console.log('🔌 CORS 설정:', JSON.stringify(io.engine.opts.cors, null, 2));
 
+    // ✨ 소켓 인증 미들웨어
+    io.use((socket, next) => {
+      // 1. 클라이언트가 보낸 토큰 확인
+      // socket.handshake.auth.token : 실제 프론트엔드(React/Next.js)에서 보낼 때 (권장)
+      // socket.handshake.headers.token : Postman 헤더에서 보낼 때 (테스트용)
+      const token = socket.handshake.auth.token || socket.handshake.headers.token;
+
+      if (!token) {
+        return next(new Error('Authentication error: 토큰이 없습니다.'));
+      }
+      // 2. 토큰 검증
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        socket.user = decoded; // 소켓 객체에 사용자 정보 저장
+        next(); // 통과
+      } catch (err) {
+        next(new Error('Authentication error: 유효하지 않은 토큰입니다.'));
+      }
+    });
+
     // 연결 이벤트 핸들러
     io.on("connection", (socket) => {
       if (!socket || !socket.id) {
@@ -35,27 +57,16 @@ const setupSocket = (httpServer) => {
         return socket?.disconnect(true);
       }
 
-      const clientIp = socket.handshake?.headers?.['x-forwarded-for'] || 
-                      socket.handshake?.address || 
-                      '알 수 없음';
-      const userAgent = socket.handshake?.headers?.['user-agent'] || '알 수 없음';
-
-      console.log('\n' + '='.repeat(50));
-      console.log(`✅ 새로운 클라이언트 연결됨 [${socket.id}]`);
-      console.log(`🌐 IP: ${clientIp}`);
-      console.log(`🖥️  User-Agent: ${userAgent}`);
-      console.log('='.repeat(50) + '\n');
+      console.log(`✅ 사용자 접속: userId ${socket.user.id} 접속`);
 
       try {
         // 핸들러 초기화
-        setupCommentHandlers(io, socket);
         setupTaskHandlers(io, socket);
-        setupDeadlineHandlers(io, socket);
 
         // 연결 해제 이벤트
         socket.on('disconnect', (reason) => {
           console.log(`\n${'='.repeat(50)}`);
-          console.log(`❌ 연결 종료 [${socket.id}]`);
+          console.log(`❌ 연결 종료 userId[${socket.user.id}]`);
           console.log(`📛 사유: ${reason}`);
           console.log('='.repeat(50) + '\n');
         });
@@ -63,16 +74,16 @@ const setupSocket = (httpServer) => {
         // 에러 이벤트
         socket.on('error', (error) => {
           console.error(`\n${'❌'.repeat(10)}`);
-          console.error(`소켓 에러 [${socket.id}]:`, error);
+          console.error(`소켓 에러 userId[${socket.user.id}]:`, error);
           console.error('스택 트레이스:', error.stack);
           console.error('❌'.repeat(10) + '\n');
         });
 
       } catch (error) {
-        console.error(`\n❌ 핸들러 초기화 중 오류 발생 [${socket.id}]:`, error);
-        socket.emit('error', { 
-          message: '서버 내부 오류가 발생했습니다.', 
-          code: 'HANDLER_INIT_ERROR' 
+        console.error(`\n❌ 핸들러 초기화 중 오류 발생 userId[${socket.user.id}]:`, error);
+        socket.emit('error', {
+          message: '서버 내부 오류가 발생했습니다.',
+          code: 'HANDLER_INIT_ERROR'
         });
       }
     });

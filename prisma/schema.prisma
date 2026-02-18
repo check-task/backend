@@ -90,7 +90,7 @@ model UserAlarm {
   taskId    Int? @map("task_id") // 과제 id 과제 알람일 수도 있고 아닐 수도 있으니 nullable 고려
   subTaskId Int? @map("sub_task_id") // 세부과제 id 세부과제알람일 수도 있고 아닐 수도 있으니 nullable 고려
 
-  title        String  @db.VarChar(30) //알람 제목
+  title        String  @db.VarChar(50) //알람 제목
   alarmContent String  @map("alarm_content") @db.VarChar(50) //알람 내용
   isRead       Boolean @default(false) @map("is_read") // 0: off, 1: on
 
@@ -125,7 +125,7 @@ model Folder {
 model Task {
   id              Int        @id @default(autoincrement()) @map("task_id")
   folderId        Int?       @map("folder_id") // 처음 과제를 생성하면 폴더에 과제가 안들어가있으므로 nullable 고려
-  title           String     @db.VarChar(30)
+  title           String     @db.VarChar(100)
   deadline        DateTime   @db.Date
   type            TaskType // Team, Personal
   status          TaskStatus // PENDING, PROGRESS, COMPLETED
@@ -170,7 +170,7 @@ model SubTask {
   assigneeId Int? @map("assignee_id") // 담당자 id (개인과제일 경우 모두 자신에게 할당됨), 처음 세부과제 생성 시 담당자 없음.
   taskId     Int  @map("task_id") // 과제 id
 
-  title     String        @db.VarChar(30) // 세부과제 제목
+  title     String        @db.VarChar(100) // 세부과제 제목
   endDate   DateTime      @map("end_date") @db.Date // 세부과제 완료 일자 => 생성 시 설정되어야 함.
   status    SubTaskStatus @default(PENDING) // PENDING, PROGRESS, COMPLETED => 생성 시 PENDING으로 설정됨.
   isAlarm   Boolean       @default(true) @map("is_alarm") // true: on, false: off => 생성 시 true로 설정됨.
@@ -206,7 +206,7 @@ model Comment {
 model Reference {
   id        Int       @id @default(autoincrement()) @map("data_id")
   taskId    Int       @map("task_id") // 과제 id
-  name      String    @db.VarChar(16) // 자료 이름
+  name      String    @db.VarChar(50) // 자료 이름
   url       String?   @db.VarChar(255) // 자료 링크
   fileUrl   String?   @map("file_url") @db.VarChar(255) // 자료 파일 url
   createdAt DateTime  @default(now()) @map("created_at") @db.DateTime // 자료 생성 일자
@@ -239,7 +239,7 @@ model Log {
 model Communication {
   id        Int       @id @default(autoincrement()) @map("comu_id")
   taskId    Int       @map("task_id")
-  name      String    @db.VarChar(16)
+  name      String    @db.VarChar(50)
   url       String    @db.VarChar(255)
   createdAt DateTime  @default(now()) @map("created_at") @db.DateTime
   updatedAt DateTime? @updatedAt @map("updated_at") @db.DateTime

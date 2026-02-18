@@ -1,5 +1,7 @@
 import taskService from "../services/task.service.js";
+import { uploadToS3 } from '../middlewares/upload.middleware.js';
 import { TaskRequestDTO, TaskResponseDTO } from "../dtos/task.dto.js";
+import { BadRequestError } from "../errors/custom.error.js";
 
 class TaskController {
   // 완료 과제 조회
@@ -11,7 +13,7 @@ class TaskController {
 
       res.status(200).json({
         resultType: "SUCCESS",
-        message: "완료된 과제 조회에 성공하였습니다.",
+        message: "완료된 과제 조회 성공",
         data: TaskResponseDTO.fromCompleted(tasksRaw)
       });
     } catch (error) {
@@ -39,21 +41,46 @@ class TaskController {
 
   // 과제 수정
   async updateTask(req, res, next) {
-    try {
-      const { taskId } = req.params;
-      const taskRequest = TaskRequestDTO.toUpdate(req.body);
-
-      const result = await taskService.modifyTask(parseInt(taskId), taskRequest);
-
-      res.status(200).json({
-        resultType: "SUCCESS",
-        message: "요청이 성공적으로 처리되었습니다.",
-        data: result
-      });
-    } catch (error) {
-      next(error);
+  try {
+    const { taskId } = req.params;
+    
+    let customFileNames = [];
+    if (req.body.fileNames) {
+      const rawNames = req.body.fileNames;
+      if (typeof rawNames === 'string' && rawNames.startsWith('[')) {
+        customFileNames = JSON.parse(rawNames);
+      } else if (typeof rawNames === 'string') {
+        customFileNames = rawNames.split(',').map(name => name.trim());
+      } else {
+        customFileNames = rawNames; 
+      }
     }
+
+    let fileReferences = [];
+    if (req.files && req.files.length > 0) {
+      for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
+        const fileUrl = await uploadToS3(file);
+        
+        fileReferences.push({
+          name: (customFileNames && customFileNames[i]) ? customFileNames[i] : file.originalname, 
+          fileUrl: fileUrl
+        });
+      }
+    }
+
+    const taskRequest = TaskRequestDTO.toUpdate(req.body, fileReferences);
+    const result = await taskService.modifyTask(parseInt(taskId), taskRequest);
+
+    res.status(200).json({
+      resultType: "SUCCESS",
+      message: "과제가 성공적으로 수정되었습니다.",
+      data: result
+    });
+  } catch (error) {
+    next(error);
   }
+}
 
   // 과제 삭제
   async deleteTask(req, res, next) {
@@ -95,6 +122,7 @@ class TaskController {
         type: req.query.type,
         sort: req.query.sort,
         folderId: req.query.folderId || req.query.folder_id || req.query.folderld,
+        status: req.query.status
       };
       const userId = req.user.id;
 
@@ -104,6 +132,36 @@ class TaskController {
         resultType: "SUCCESS",
         message: "서버가 요청을 성공적으로 처리하였습니다.",
         data: TaskResponseDTO.fromList(tasks)
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  // Task 마감일 변경
+  async updateTaskDeadline(req, res, next) {
+    try {
+      const { taskId } = req.params;
+      const { deadline } = req.body;
+      const userId = req.user.id; // 유저 ID 추출
+
+      // 입력값 검증
+      if (!taskId || isNaN(parseInt(taskId))) {
+        // throw new Error("유효하지 않은 Task ID입니다.");
+        throw new BadRequestError("INVALID_PARAMETER", "유효하지 않은 Task ID입니다.");
+      }
+      if (!deadline) {
+        throw new BadRequestError("INVALID_BODY", "마감일은 필수입니다.");
+      }
+
+      const updatedTask = await taskService.updateTaskDeadline(userId, parseInt(taskId), deadline);
+
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "Task 마감일이 성공적으로 변경되었습니다.",
+        data: {
+          taskId: updatedTask.id,
+          deadline: updatedTask.deadline,
+        }
       });
     } catch (error) {
       next(error);
@@ -128,26 +186,26 @@ class TaskController {
     }
   }
 
-  // 팀원 정보 수정 (역할 변경)
   async updateTeamMember(req, res, next) {
     try {
-      const { taskId, memberId } = req.params;
-      const { role } = req.body;
+      const { taskId, userId } = req.params;
+      const { role } = req.body; // 프론트에서 0(Owner) 또는 1(Member)이 옴
 
       const result = await taskService.modifyMemberRole(
         parseInt(taskId),
-        parseInt(memberId),
+        parseInt(userId),
         role
       );
 
       res.status(200).json({
         resultType: "SUCCESS",
-        message: "요청이 성공적으로 처리되었습니다.",
+        message: "멤버 권한이 변경되었습니다.",
         data: {
           memberId: result.id,
           userId: result.userId,
           taskId: result.taskId,
-          role: result.role ? 1 : 0,
+          // 📍 DB가 false(0)면 0(Owner), true(1)면 1(Member) 반환
+          role: result.role ? 1 : 0 
         }
       });
     } catch (error) {

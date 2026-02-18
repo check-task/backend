@@ -7,6 +7,7 @@ export const alarmListResponseDto = (alarms, hasNextPage = false) => {
       alarmContent: alarm.alarmContent, // 알람 내용
       isRead: alarm.isRead, // 0: off, 1: on
       alarmDate: alarm.alarmDate, // 알람 보낼 시간
+      taskType: alarm.taskType, // 과제 타입(PERSONAL, TEAM)
       taskId: alarm.taskId, // 과제 ID
       subTaskId: alarm.subTaskId || null, // 세부과제 ID
     })),

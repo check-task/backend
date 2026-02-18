@@ -1,9 +1,10 @@
 import { prisma } from "../db.config.js";
 import jwt from "jsonwebtoken";
-import { BadRequestError, InternalServerError } from "../errors/custom.error.js"
+import { BadRequestError, InternalServerError, UnauthorizedError } from "../errors/custom.error.js"
 import axios from "axios";
 import crypto from "crypto";
-import { redis } from "../config/redis.js";
+import { redis } from "../config/redis.config.js";
+import { folderRepository } from "../repositories/folder.repository.js";
 
 export class KakaoAuthService {
   constructor(){
@@ -80,9 +81,10 @@ export class KakaoAuthService {
     const nickname = profileInfo.nickname ?? "카카오유저";
     const profileImage = profileInfo.profile_image_url ?? "";
     const email = kakaoAccount.email ?? null;
+    //카카오 비즈앱 최소 동의 정책으로 phone_number 미제공 시 데모데이용 임시 더미 전화번호 사용
     const phoneNum = kakaoAccount.phone_number
       ? kakaoAccount.phone_number.replace("+82 ", "0")
-      : "01000000000";
+      : "010-0000-0000";
 
     const providerId = profile.id.toString();
 
@@ -96,17 +98,22 @@ export class KakaoAuthService {
       });
       
       let isNewUser = false;
+      
+      // 탈퇴 사용자 차단
+      if (user && user.deletedAt) {
+        const restoreToken = crypto.randomUUID();
 
-      //탈퇴 사용자면 자동 복구
-      if(user && user.deletedAt){
-        user = await prisma.user.update({
-          where: {
-            id: user.id
-          },
-          data: {
-            deletedAt: null,
-          },
-        });
+        await redis.set(
+          `restore_token:${restoreToken}`,
+          providerId,
+          "EX",
+          60 * 5 //5분
+        );
+
+        return {
+          withdrawnUser: true,
+          restoreToken,
+        };
       }
 
       //신규 사용자 생성
@@ -123,11 +130,21 @@ export class KakaoAuthService {
             providerId,
           },
         });
+        //기본 폴더 생성
+        await folderRepository.addFolder(user.id, {
+          folderTitle: "기본",
+          color: "#081221",
+        });
+        //팀 폴더 생성
+        await folderRepository.addFolder(user.id, {
+          folderTitle: "팀",
+          color: "#FFC93F", 
+        });
       }
       //토근 생성
       const accessToken = this.generateAccessToken(user);
       const { refreshToken, tokenId } = this.generateRefreshToken(user);
-      
+
       //Refresh Token Redis에 저장
       await this.saveRefreshToken(tokenId, user.id);
 
@@ -146,7 +163,7 @@ export class KakaoAuthService {
   //카카오 회원 탈퇴
   async withdrawKakaoUser(user){
     if(!user){
-      throw new BadRequestError("INVALID_USER","유효하지 않은 사용자입니다.");
+      throw new UnauthorizedError("UNAUTHORIZED","인증 정보가 없습니다.");
     }
     if (user.deletedAt) {
       throw new BadRequestError("ALREADY_WITHDRAWN","이미 탈퇴 처리된 사용자입니다.");
@@ -176,4 +193,50 @@ export class KakaoAuthService {
       // 이미 만료된 경우도 로그아웃은 성공 처리
     }
   }
+
+  async restoreKakaoUser(restoreToken) {
+    if (!restoreToken) {
+      throw new BadRequestError("TOKEN_REQUIRED", "복구 토큰이 필요합니다.");
+    }
+
+    const providerId = await redis.get(`restore_token:${restoreToken}`);
+
+    if (!providerId) {
+      throw new BadRequestError("INVALID_TOKEN", "유효하지 않거나 만료된 토큰입니다.");
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        provider: "KAKAO",
+        providerId,
+        deletedAt: { not: null },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestError("USER_NOT_FOUND", "복구할 사용자가 없습니다.");
+    }
+
+    // 계정 복구
+    const restoredUser = await prisma.user.update({
+      where: { id: user.id },
+      data: { deletedAt: null },
+    });
+
+    // 1회성 토큰 삭제 
+    await redis.del(`restore_token:${restoreToken}`);
+
+    // 로그인 토큰 발급
+    const accessToken = this.generateAccessToken(restoredUser);
+    const { refreshToken, tokenId } = this.generateRefreshToken(restoredUser);
+
+    await this.saveRefreshToken(tokenId, restoredUser.id);
+
+    return {
+      user: restoredUser,
+      accessToken,
+      refreshToken,
+    };
+  }
 }
+
