@@ -204,6 +204,12 @@ class TaskRepository {
       where: {
         taskId: parseInt(taskId),
         userId: parseInt(userId) 
+      },
+      select: {
+        id: true,
+        userId: true,
+        taskId: true,
+        role: true,
       }
     });
   }

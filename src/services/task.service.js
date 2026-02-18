@@ -1,5 +1,5 @@
 import taskRepository from "../repositories/task.repository.js";
-import { BadRequestError, NotFoundError, ForbiddenError } from "../errors/custom.error.js";
+import { BadRequestError, NotFoundError, ForbiddenError, UnauthorizedError } from "../errors/custom.error.js";
 import { userRepository } from "../repositories/user.repository.js";
 import { TaskResponseDTO } from "../dtos/task.dto.js";
 import { prisma } from "../db.config.js";
@@ -778,20 +778,23 @@ class TaskService {
 
   // 팀원 추방
   async outMember(taskId, memberId, userId) {
+    console.log("서비스 로직 : ", taskId, memberId, userId);
+
     const requestingUser = await taskRepository.findMemberInTask(taskId, userId);
+    console.log("팀장확인:", requestingUser);
     if (!requestingUser) throw new NotFoundError("요청한 유저가 팀에 없습니다.");
+    if (requestingUser.role !== 0) throw new UnauthorizedError("권한이 없습니다. 팀장만 추방할 수 있습니다.");
     
     const member = await taskRepository.findMemberInTask(taskId, memberId);
     if (!member) throw new NotFoundError("멤버를 찾을 수 없음");
 
-    const deleted = await taskRepository.deleteMember(taskId, memberId);
-    if (!deleted) throw new Error("멤버 삭제 실패");
+    await taskRepository.deleteMember(taskId, memberId);
 
     return {
       id: member.id,
       userId: member.userId,
+      memberId: member.memberId,
       taskId: member.taskId,
-      role: member.role,
     };
   }
 
