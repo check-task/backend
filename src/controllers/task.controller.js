@@ -213,6 +213,28 @@ class TaskController {
     }
   }
 
+  // 팀원 추방
+  async deleteTeamMember(req, res, next) {
+    try {
+      const { taskId, memberId } = req.params;
+      const userId = req.user.id;
+
+      const result = await taskService.outMember(
+        parseInt(taskId),
+        parseInt(memberId),
+        parseInt(userId)
+      );
+
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: `memberId: ${memberId}가 추방되었습니다.`,
+        data : result
+      }); 
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // 세부 TASK 상태 업데이트
   async updateSubTaskStatus(req, res, next) {
     try {

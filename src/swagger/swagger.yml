@@ -1795,26 +1795,77 @@ paths:
                       role:
                         type: integer
                         example: 1
+  # 팀원 추방
+  /api/v1/task/{taskId}/member/{memberId}:
+    delete:
+      summary: "팀원 추방"
+      description: "팀장만 팀원의 참여를 제거할 수 있습니다."
+      tags:
+        - Task
+      parameters:
+        - name: taskId
+          in: path
+          description: "추방할 팀원이 속한 작업 ID"
+          required: true
+          schema:
+            type: integer
+        - name: memberId
+          in: path
+          description: "추방할 팀원의 ID"
+          required: true
+          schema:
+            type: integer
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: "팀원 추방 성공"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "memberId: 3가 추방되었습니다."
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 5
+                      userId:
+                        type: integer
+                        example: 3
+                      taskId:
+                        type: integer
+                        example: 10
+                      role:
+                        type: integer
+                        example: 0
         '403':
-          description: 권한 없음 (Owner만 수정 가능)
+          description: "권한 없음 - 팀장만 추방 가능"
           content:
             application/json:
-              example:
-                resultType: "FAIL"
-                code: 403
-                errorCode: "FORBIDDEN"
-                reason: "해당 과제의 관리자만 팀원 역할을 수정할 수 있습니다."
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "권한이 없습니다. 팀장만 추방할 수 있습니다."
         '404':
-          description: 멤버를 찾을 수 없음
+          description: "멤버 또는 요청자 없음"
           content:
             application/json:
-              example:
-                resultType: "FAIL"
-                code: 404
-                errorCode: "멤버를 찾을 수 없음"
-                reason: "리소스를 찾을 수 없습니다."
-                data: null
-
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "멤버를 찾을 수 없음"
 
   # 팀원 초대 링크 생성
   /api/v1/task/{taskId}/invitation:

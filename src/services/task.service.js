@@ -772,14 +772,33 @@ class TaskService {
         await taskRepository.resetOtherMembersRole(taskId, userId, tx);
       }
 
-      const dbRoleValue = isTargetBecomingOwner ? false : true;
-
-      return await taskRepository.updateMemberRole(member.id, dbRoleValue, tx);
+      return await taskRepository.updateMemberRole(memberId, isAdmin, tx);
     });
+  }
+
+  // 팀원 추방
+  async outMember(taskId, memberId, userId) {
+    const requestingUser = await taskRepository.findMemberInTask(taskId, userId);
+    if (!requestingUser) throw new NotFoundError("요청한 유저가 팀에 없습니다.");
+    if (requestingUser.role !== 1) throw new Error("권한이 없습니다. 팀장만 추방할 수 있습니다.");
+    
+    const member = await taskRepository.findMemberInTask(taskId, memberId);
+    if (!member) throw new NotFoundError("멤버를 찾을 수 없음");
+
+    const deleted = await taskRepository.deleteMember(taskId, memberId);
+    if (!deleted) throw new Error("멤버 삭제 실패");
+
+    return {
+      id: member.id,
+      userId: member.userId,
+      taskId: member.taskId,
+      role: member.role,
+    };
   }
 
   // 단일 세부 과제 생성 서비스
   async createSingleSubTask(userId, taskId, data) {
+    console.log("📍 서비스로 넘어온 taskId:", taskId);
     const { title, deadline, isAlarm } = data;
 
     // 부모 과제 존재 여부 확인
@@ -800,7 +819,7 @@ class TaskService {
           isAlarm: isAlarm || false,
           assigneeId: assigneeId
         },
-        include: { assignee: true }
+        include: { assignee: true } 
       });
 
       // 알림 생성 로직
