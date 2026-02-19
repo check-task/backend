@@ -15,7 +15,12 @@ const setupSocket = (httpServer) => {
     const io = new Server(httpServer, {
       path: "/socket.io/",
       cors: {
-        origin: "*",
+        origin: [
+          "http://localhost:8000",
+          "http://localhost:3000",
+          "https://checktask.kro.kr",
+          "https://checktask.p-e.kr",
+        ],
         methods: ["GET", "POST", "PATCH", "DELETE"],
         credentials: true
       },
