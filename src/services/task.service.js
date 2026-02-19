@@ -207,16 +207,18 @@ class TaskService {
       taskData.deadline = new Date(taskData.deadline);
     }
 
+    const finalType = taskData.type || currentTask.type;
+
     // 폴더 변경 시 유효성 검사 (추가된 부분)
     if (folderId) {
       const folder = await taskRepository.findFolderById(folderId);
       if (!folder) throw new NotFoundError("변경하려는 폴더가 존재하지 않습니다.");
       
       // [보호 로직] 수정 시에도 팀/개인 폴더 규칙 적용
-      if (currentTask.type === 'TEAM' && folder.folderTitle !== '팀') {
+      if (finalType === 'TEAM' && folder.folderTitle !== '팀') {
          throw new BadRequestError("INVALID_FOLDER", "팀 과제는 '팀' 폴더로만 이동할 수 있습니다.");
       }
-      if (currentTask.type === 'PERSONAL' && folder.folderTitle === '팀') {
+      if (finalType === 'PERSONAL' && folder.folderTitle === '팀') {
          throw new BadRequestError("INVALID_FOLDER", "개인 과제는 '팀' 폴더로 이동할 수 없습니다.");
       }
     }
