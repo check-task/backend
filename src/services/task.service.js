@@ -376,7 +376,7 @@ class TaskService {
   async updateSubTaskStatus(subTaskId, status) {
     try {
       // 서브태스크 존재 여부 확인
-      const existingTask = await prisma.SubTask.findUnique({
+      const existingTask = await prisma.subTask.findUnique({
         where: { id: parseInt(subTaskId) },
       });
 
@@ -387,7 +387,7 @@ class TaskService {
       }
 
       // 상태 업데이트(프리지마 모델명은 대소문자 구분!)
-      const updatedTask = await prisma.SubTask.update({
+      const updatedTask = await prisma.subTask.update({
         where: { id: parseInt(subTaskId) },
         data: {
           status: status === 'COMPLETED' ? 'COMPLETED' : 'PENDING',
@@ -406,7 +406,7 @@ class TaskService {
   async updateSubTaskDeadline(subTaskId, deadline) {
     try {
       // 서브태스크와 상위 태스크 정보 조회
-      const existingTask = await prisma.SubTask.findUnique({
+      const existingTask = await prisma.subTask.findUnique({
         where: { id: parseInt(subTaskId) },
         include: {
           task: {
@@ -435,7 +435,7 @@ class TaskService {
       }
 
       // 마감일 업데이트
-      const updatedTask = await prisma.SubTask.update({
+      const updatedTask = await prisma.subTask.update({
         where: { id: parseInt(subTaskId) },
         data: {
           endDate: newDeadline,
