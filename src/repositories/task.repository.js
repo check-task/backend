@@ -204,6 +204,12 @@ class TaskRepository {
       where: {
         taskId: parseInt(taskId),
         userId: parseInt(userId) 
+      },
+      select: {
+        id: true,
+        userId: true,
+        taskId: true,
+        role: true,
       }
     });
   }
@@ -260,13 +266,10 @@ class TaskRepository {
     });
   }
 
-  async deleteMember(taskId, memberId) {
-    const deleted = await db.member.delete({
+  async deleteMember(memberId) {
+    const deleted = await prisma.member.delete({
       where: {
-        taskId_memberId: {
-          taskId,
-          memberId,
-        },
+        id: memberId
       },
     });
     return deleted ? true : false;

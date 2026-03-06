@@ -1,5 +1,5 @@
 import taskRepository from "../repositories/task.repository.js";
-import { BadRequestError, NotFoundError, ForbiddenError } from "../errors/custom.error.js";
+import { BadRequestError, NotFoundError, ForbiddenError, UnauthorizedError } from "../errors/custom.error.js";
 import { userRepository } from "../repositories/user.repository.js";
 import { TaskResponseDTO } from "../dtos/task.dto.js";
 import { prisma } from "../db.config.js";
@@ -376,7 +376,7 @@ class TaskService {
   async updateSubTaskStatus(subTaskId, status) {
     try {
       // 서브태스크 존재 여부 확인
-      const existingTask = await prisma.SubTask.findUnique({
+      const existingTask = await prisma.subTask.findUnique({
         where: { id: parseInt(subTaskId) },
       });
 
@@ -387,7 +387,7 @@ class TaskService {
       }
 
       // 상태 업데이트(프리지마 모델명은 대소문자 구분!)
-      const updatedTask = await prisma.SubTask.update({
+      const updatedTask = await prisma.subTask.update({
         where: { id: parseInt(subTaskId) },
         data: {
           status: status === 'COMPLETED' ? 'COMPLETED' : 'PENDING',
@@ -402,44 +402,11 @@ class TaskService {
     }
   }
 
-  // 세부 TASK 완료 처리 API 
-  async updateSubTaskStatus(subTaskId, status) {
-    try {
-      // 서브태스크 존재 여부 확인
-      const existingTask = await prisma.SubTask.findUnique({
-        where: { id: parseInt(subTaskId) },
-      });
-
-      if (!existingTask) {
-        const error = new Error('해당하는 세부 태스크를 찾을 수 없습니다.');
-        error.statusCode = 404;
-        error.errorCode = 'SUBTASK_NOT_FOUND';
-        throw error;
-      }
-
-      // 상태 업데이트(프리지마 모델명은 대소문자 구분!)
-      const updatedTask = await prisma.SubTask.update({
-        where: { id: parseInt(subTaskId) },
-        data: {
-          status: status === 'COMPLETE' ? 'COMPLETED' : 'PENDING',
-          updatedAt: new Date()
-        },
-      });
-
-      return updatedTask;
-    } catch (error) {
-      console.error('Error updating subtask status:', error);
-      throw error;
-    }
-  }
-
-
-
   // 세부task 날짜 변경 API
   async updateSubTaskDeadline(subTaskId, deadline) {
     try {
       // 서브태스크와 상위 태스크 정보 조회
-      const existingTask = await prisma.SubTask.findUnique({
+      const existingTask = await prisma.subTask.findUnique({
         where: { id: parseInt(subTaskId) },
         include: {
           task: {
@@ -468,7 +435,7 @@ class TaskService {
       }
 
       // 마감일 업데이트
-      const updatedTask = await prisma.SubTask.update({
+      const updatedTask = await prisma.subTask.update({
         where: { id: parseInt(subTaskId) },
         data: {
           endDate: newDeadline,
@@ -780,21 +747,23 @@ class TaskService {
 
   // 팀원 추방
   async outMember(taskId, memberId, userId) {
+    console.log("서비스 로직 : ", taskId, memberId, userId);
+
     const requestingUser = await taskRepository.findMemberInTask(taskId, userId);
+    console.log("팀장확인:", requestingUser);
     if (!requestingUser) throw new NotFoundError("요청한 유저가 팀에 없습니다.");
-    if (requestingUser.role !== 1) throw new Error("권한이 없습니다. 팀장만 추방할 수 있습니다.");
+    if (requestingUser.role !== false) throw new UnauthorizedError("권한이 없습니다. 팀장만 추방할 수 있습니다.");
     
     const member = await taskRepository.findMemberInTask(taskId, memberId);
     if (!member) throw new NotFoundError("멤버를 찾을 수 없음");
 
-    const deleted = await taskRepository.deleteMember(taskId, memberId);
-    if (!deleted) throw new Error("멤버 삭제 실패");
+    await taskRepository.deleteMember(member.id);
 
     return {
       id: member.id,
       userId: member.userId,
+      memberId: member.memberId,
       taskId: member.taskId,
-      role: member.role,
     };
   }
 
