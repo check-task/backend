@@ -114,7 +114,7 @@ export class TaskResponseDTO extends TaskUtils {
         subTaskId: st.id,
         title: st.title,
         deadline: this.formatDate(st.endDate, '-'),
-        status: st.status === 'COMPLETED' ? 'COMPLETED' : 'PROGRESS',
+        status: st.status === 'COMPLETED' ? 'COMPLETED' : 'PENDING',
         isAlarm: st.isAlarm || false,
         commentCount: st._count?.comments || 0,
         comments: st.comments?.map(comment => ({
