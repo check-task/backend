@@ -390,7 +390,7 @@ class TaskService {
       const updatedTask = await prisma.SubTask.update({
         where: { id: parseInt(subTaskId) },
         data: {
-          status: status === 'COMPLETE' ? 'COMPLETED' : 'PENDING',
+          status: status === 'COMPLETED' ? 'COMPLETED' : 'PENDING',
           updatedAt: new Date()
         },
       });
