@@ -1,22 +1,29 @@
 import dotenv from "dotenv";
 import prismaPkg from "@prisma/client";
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+// import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 // .env를 가장 먼저 로드해야 환경 변수가 정상적으로 적용됩니다.
 dotenv.config();
 
 const { PrismaClient } = prismaPkg;
 
-const adapter = new PrismaMariaDb({
-  host: process.env.DATABASE_HOST,
-  port: Number(process.env.DATABASE_PORT),
-  user: process.env.DATABASE_USER,
-  password: decodeURIComponent(process.env.DATABASE_PASSWORD),
-  database: process.env.DATABASE_NAME,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
+// PostgreSQL Adapter
+const connectionString = process.env.DATABASE_URL;
+const adapter = new PrismaPg({ connectionString });
+
+// MySQL Adapter
+// const adapter = new PrismaMariaDb({
+//   host: process.env.DATABASE_HOST,
+//   port: Number(process.env.DATABASE_PORT),
+//   user: process.env.DATABASE_USER,
+//   password: decodeURIComponent(process.env.DATABASE_PASSWORD),
+//   database: process.env.DATABASE_NAME,
+//   waitForConnections: true,
+//   connectionLimit: 10,
+//   queueLimit: 0
+// });
+
 
 // Prisma Client 인스턴스 생성
 // Prisma 7에서는 런타임에 연결 정보를 생성자에 전달해야 합니다.
