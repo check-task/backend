@@ -57,7 +57,8 @@
     "socket.io-client": "^4.8.3",
     "swagger-autogen": "^2.23.7",
     "swagger-ui-express": "^5.0.1",
-    "yamljs": "^0.3.0"
+    "yamljs": "^0.3.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.972.0",

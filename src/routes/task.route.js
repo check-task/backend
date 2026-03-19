@@ -3,9 +3,13 @@ import multer from "multer";
 
 import taskController from "../controllers/task.controller.js";
 import authenticate from "../middlewares/authenticate.middleware.js";
+import { validate } from "../middlewares/validate.middleware.js";
+import {
+  createTaskSchema,
+  updateTaskDeadlineSchema,
+} from "../validators/task.schema.js";
 
 const upload = multer({ storage: multer.memoryStorage() });
-
 
 const router = express.Router();
 
@@ -19,7 +23,12 @@ router.post("/", authenticate, taskController.createTask);
 router.patch("/priority", authenticate, taskController.updateTaskPriorities);
 
 // PATCH /api/v1/task/:taskId -- 과제 수정
-router.patch("/:taskId", authenticate, upload.array('files'), taskController.updateTask);
+router.patch(
+  "/:taskId",
+  authenticate,
+  upload.array("files"),
+  taskController.updateTask,
+);
 
 // DELETE /api/v1/task/:taskId -- 과제 삭제
 router.delete("/:taskId", authenticate, taskController.deleteTask);
@@ -31,48 +40,57 @@ router.get("/:taskId", authenticate, taskController.getTaskDetail);
 router.get("/", authenticate, taskController.getTasks);
 
 // PATCH /api/v1/task/:taskId/member/:userId -- 팀원 정보 수정
-router.patch("/:taskId/member/:userId", authenticate, taskController.updateTeamMember);
+router.patch(
+  "/:taskId/member/:userId",
+  authenticate,
+  taskController.updateTeamMember,
+);
 
 // 팀원 관계 삭제
-router.delete('/:taskId/member/:memberId', authenticate, taskController.deleteTeamMember);
+router.delete(
+  "/:taskId/member/:memberId",
+  authenticate,
+  taskController.deleteTeamMember,
+);
 
 // POST /api/v1/task/:taskId/subTask -- 단일 세부 과제 추가
-router.post("/:taskId/subTask", authenticate, taskController.addSubTask)
+router.post("/:taskId/subTask", authenticate, taskController.addSubTask);
 
-// 세부 TASK 상태 업데이트 API 
+// 세부 TASK 상태 업데이트 API
 router.patch(
-  '/subtask/:subTaskId/status',
+  "/subtask/:subTaskId/status",
   authenticate,
-  taskController.updateSubTaskStatus
+  taskController.updateSubTaskStatus,
 );
 
 // Task 마감일 변경 API
-router.patch('/:taskId/deadline', authenticate, taskController.updateTaskDeadline);
+router.patch(
+  "/:taskId/deadline",
+  authenticate,
+  validate(updateTaskDeadlineSchema),
+  taskController.updateTaskDeadline,
+);
 // 세부task 날짜 변경 API
 router.patch(
-  '/subtask/:subTaskId/deadline',
+  "/subtask/:subTaskId/deadline",
   authenticate,
-  taskController.updateSubTaskDeadline
+  taskController.updateSubTaskDeadline,
 );
 
 // 세부 TASK 담당자 설정 API
 router.patch(
-  '/subtask/:subTaskId/assignee',
+  "/subtask/:subTaskId/assignee",
   authenticate,
-  taskController.setSubTaskAssignee
+  taskController.setSubTaskAssignee,
 );
 
 // 초대 링크 생성 API
 router.post(
-  '/:taskId/invitation',
+  "/:taskId/invitation",
   authenticate,
-  taskController.generateInviteCode
+  taskController.generateInviteCode,
 );
 // 초대 코드로 팀 참여 API
-router.post(
-  '/join',
-  authenticate,
-  taskController.joinTaskByInviteCode
-);
+router.post("/join", authenticate, taskController.joinTaskByInviteCode);
 
 export default router;
