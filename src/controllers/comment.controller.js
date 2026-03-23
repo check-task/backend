@@ -33,7 +33,11 @@ export const updateCommentController = async (req, res, next) => {
     const { content } = req.body;
     const userId = req.user.id;
 
-    const result = await CommentService.updateComment(commentId, userId, content);
+    const result = await CommentService.updateComment(
+      commentId,
+      userId,
+      content,
+    );
 
     res.status(200).json({
       resultType: "SUCCESS",
