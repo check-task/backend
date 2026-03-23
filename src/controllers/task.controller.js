@@ -1,7 +1,6 @@
 import taskService from "../services/task.service.js";
 import { uploadToS3 } from "../middlewares/upload.middleware.js";
 import { TaskRequestDTO, TaskResponseDTO } from "../dtos/task.dto.js";
-import { BadRequestError } from "../errors/custom.error.js";
 
 class TaskController {
   // 완료 과제 조회
@@ -73,10 +72,7 @@ class TaskController {
       }
 
       const taskRequest = TaskRequestDTO.toUpdate(req.body, fileReferences);
-      const result = await taskService.modifyTask(
-        parseInt(taskId),
-        taskRequest,
-      );
+      const result = await taskService.modifyTask(taskId, taskRequest);
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -92,7 +88,7 @@ class TaskController {
   async deleteTask(req, res, next) {
     try {
       const { taskId } = req.params;
-      await taskService.removeTask(parseInt(taskId));
+      await taskService.removeTask(taskId);
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -108,7 +104,7 @@ class TaskController {
   async getTaskDetail(req, res, next) {
     try {
       const { taskId } = req.params;
-      const task = await taskService.getTaskDetail(parseInt(taskId));
+      const task = await taskService.getTaskDetail(taskId);
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -153,7 +149,7 @@ class TaskController {
 
       const updatedTask = await taskService.updateTaskDeadline(
         userId,
-        parseInt(taskId),
+        taskId,
         deadline,
       );
 
@@ -193,11 +189,7 @@ class TaskController {
       const { taskId, userId } = req.params;
       const { role } = req.body; // 프론트에서 0(Owner) 또는 1(Member)이 옴
 
-      const result = await taskService.modifyMemberRole(
-        parseInt(taskId),
-        parseInt(userId),
-        role,
-      );
+      const result = await taskService.modifyMemberRole(taskId, userId, role);
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -221,11 +213,7 @@ class TaskController {
       const { taskId, memberId } = req.params;
       const userId = req.user.id;
 
-      const result = await taskService.outMember(
-        parseInt(taskId),
-        parseInt(memberId),
-        parseInt(userId),
-      );
+      const result = await taskService.outMember(taskId, memberId, userId);
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -292,7 +280,7 @@ class TaskController {
       const { assigneeId } = req.body;
 
       const result = await taskService.setSubTaskAssignee(
-        parseInt(subTaskId),
+        subTaskId,
         assigneeId,
       );
 
@@ -315,10 +303,7 @@ class TaskController {
       const { taskId } = req.params;
       const userId = req.user.id;
 
-      const result = await taskService.generateInviteCode(
-        parseInt(taskId),
-        userId,
-      );
+      const result = await taskService.generateInviteCode(taskId, userId);
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -363,7 +348,7 @@ class TaskController {
 
       const result = await taskService.createSingleSubTask(
         userId,
-        parseInt(taskId),
+        taskId,
         req.body,
       );
 
