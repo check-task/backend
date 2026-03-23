@@ -4,7 +4,7 @@ import { buildApp } from "../helpers/app.js";
 import { generateToken } from "../helpers/token.js";
 
 vi.mock("../../src/services/comment.service.js", () => ({
-  CommentService: {
+  commentService: {
     createComment: vi.fn(),
     updateComment: vi.fn(),
     deleteComment: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock("../../src/db.config.js", () => ({
   default: { $connect: vi.fn(), $disconnect: vi.fn() },
 }));
 
-import { CommentService } from "../../src/services/comment.service.js";
+import { commentService } from "../../src/services/comment.service.js";
 
 const app = buildApp();
 const AUTH = `Bearer ${generateToken(1)}`;
@@ -24,7 +24,7 @@ beforeEach(() => vi.clearAllMocks());
 // ─── 댓글 생성 ────────────────────────────────────────────────────
 describe("POST /api/v1/task/subtask/:subTaskId/comments — 댓글 생성", () => {
   it("201: 정상 생성 후 응답 data 검증", async () => {
-    CommentService.createComment.mockResolvedValue({
+    commentService.createComment.mockResolvedValue({
       comment_id: 1,
       sub_task_id: 3,
       content: "좋아요",
@@ -87,7 +87,7 @@ describe("POST /api/v1/task/subtask/:subTaskId/comments — 댓글 생성", () =
 // ─── 댓글 수정 ────────────────────────────────────────────────────
 describe("PATCH /api/v1/task/comment/:commentId — 댓글 수정", () => {
   it("200: 정상 수정 후 응답 data 검증", async () => {
-    CommentService.updateComment.mockResolvedValue({
+    commentService.updateComment.mockResolvedValue({
       comment_id: 5,
       content: "수정된 댓글",
     });
@@ -99,7 +99,10 @@ describe("PATCH /api/v1/task/comment/:commentId — 댓글 수정", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.resultType).toBe("SUCCESS");
-    expect(res.body.data).toMatchObject({ comment_id: 5, content: "수정된 댓글" });
+    expect(res.body.data).toMatchObject({
+      comment_id: 5,
+      content: "수정된 댓글",
+    });
   });
 
   it("400: content 없음", async () => {
@@ -125,7 +128,7 @@ describe("PATCH /api/v1/task/comment/:commentId — 댓글 수정", () => {
 // ─── 댓글 삭제 ────────────────────────────────────────────────────
 describe("DELETE /api/v1/task/comment/:commentId — 댓글 삭제", () => {
   it("200: 정상 삭제", async () => {
-    CommentService.deleteComment.mockResolvedValue(undefined);
+    commentService.deleteComment.mockResolvedValue(undefined);
 
     const res = await supertest(app)
       .delete("/api/v1/task/comment/5")

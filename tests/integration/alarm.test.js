@@ -229,3 +229,77 @@ describe("DELETE /api/v1/alarm/:alarmId — 개별 알림 삭제", () => {
     expect(res.status).toBe(400);
   });
 });
+
+// ─── 전체 알림 삭제 ────────────────────────────────────────────────
+describe("DELETE /api/v1/alarm — 전체 알림 삭제", () => {
+  it("200: 정상 전체 삭제", async () => {
+    alarmService.deleteAllAlarms.mockResolvedValue(undefined);
+
+    const res = await supertest(app)
+      .delete("/api/v1/alarm")
+      .set("Authorization", AUTH);
+
+    expect(res.status).toBe(200);
+    expect(res.body.resultType).toBe("SUCCESS");
+    expect(res.body.data).toBeNull();
+    expect(alarmService.deleteAllAlarms).toHaveBeenCalledWith(1);
+  });
+
+  it("401: 토큰 없음", async () => {
+    const res = await supertest(app).delete("/api/v1/alarm");
+    expect(res.status).toBe(401);
+  });
+});
+
+// ─── 모든 알림 읽음 처리 ───────────────────────────────────────────
+describe("PATCH /api/v1/alarm — 모든 알림 읽음 처리", () => {
+  it("200: 정상 일괄 읽음 처리", async () => {
+    alarmService.updateAllAlarmReadStatus.mockResolvedValue({ count: 5 });
+
+    const res = await supertest(app)
+      .patch("/api/v1/alarm")
+      .set("Authorization", AUTH);
+
+    expect(res.status).toBe(200);
+    expect(res.body.resultType).toBe("SUCCESS");
+    expect(res.body.data).toMatchObject({ count: 5 });
+    expect(alarmService.updateAllAlarmReadStatus).toHaveBeenCalledWith(1);
+  });
+
+  it("401: 토큰 없음", async () => {
+    const res = await supertest(app).patch("/api/v1/alarm");
+    expect(res.status).toBe(401);
+  });
+});
+
+// ─── 안읽은 알림 개수 조회 ─────────────────────────────────────────
+describe("GET /api/v1/alarm/unread-count — 안읽은 알림 개수 조회", () => {
+  it("200: 정상 조회 후 count 검증", async () => {
+    alarmService.getUnreadAlarmCount.mockResolvedValue({ count: 3 });
+
+    const res = await supertest(app)
+      .get("/api/v1/alarm/unread-count")
+      .set("Authorization", AUTH);
+
+    expect(res.status).toBe(200);
+    expect(res.body.resultType).toBe("SUCCESS");
+    expect(res.body.data).toMatchObject({ count: 3 });
+    expect(alarmService.getUnreadAlarmCount).toHaveBeenCalledWith(1);
+  });
+
+  it("200: 안읽은 알림이 없으면 count 0", async () => {
+    alarmService.getUnreadAlarmCount.mockResolvedValue({ count: 0 });
+
+    const res = await supertest(app)
+      .get("/api/v1/alarm/unread-count")
+      .set("Authorization", AUTH);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({ count: 0 });
+  });
+
+  it("401: 토큰 없음", async () => {
+    const res = await supertest(app).get("/api/v1/alarm/unread-count");
+    expect(res.status).toBe(401);
+  });
+});

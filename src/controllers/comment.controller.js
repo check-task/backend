@@ -1,4 +1,4 @@
-import { CommentService } from "../services/comment.service.js";
+import { commentService } from "../services/comment.service.js";
 
 // 댓글 생성 컨트롤러
 export const createCommentController = async (req, res, next) => {
@@ -6,7 +6,7 @@ export const createCommentController = async (req, res, next) => {
     const { subTaskId } = req.params;
     const { content } = req.body;
 
-    const result = await CommentService.createComment(subTaskId, {
+    const result = await commentService.createComment(subTaskId, {
       userId: req.user.id,
       content,
     });
@@ -33,7 +33,7 @@ export const updateCommentController = async (req, res, next) => {
     const { content } = req.body;
     const userId = req.user.id;
 
-    const result = await CommentService.updateComment(
+    const result = await commentService.updateComment(
       commentId,
       userId,
       content,
@@ -58,7 +58,7 @@ export const deleteCommentController = async (req, res, next) => {
     const { commentId } = req.params;
     const userId = req.user.id;
 
-    await CommentService.deleteComment(commentId, userId);
+    await commentService.deleteComment(commentId, userId);
 
     res.status(200).json({
       resultType: "SUCCESS",
