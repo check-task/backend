@@ -1,7 +1,11 @@
-import { userService } from "../services/user.service.js";
+import userService from "../services/user.service.js";
 import { uploadToS3 } from "../middlewares/upload.middleware.js";
 
 class UserController {
+  constructor() {
+    this.userService = userService;
+  }
+
   // 1. 내 정보 조회
   getMyInfo = async (req, res, next) => {
     try {
@@ -31,7 +35,9 @@ class UserController {
       // 서비스에 전달할 데이터 객체 생성 (이미지가 있으면 덮어씌움)
       const updateData = {
         ...body,
-        deadlineAlarm: body.deadlineAlarm ? parseInt(body.deadlineAlarm, 10) : undefined,
+        deadlineAlarm: body.deadlineAlarm
+          ? parseInt(body.deadlineAlarm, 10)
+          : undefined,
         taskAlarm: body.taskAlarm ? parseInt(body.taskAlarm, 10) : undefined,
         ...(imageUrl && { profileImage: imageUrl }), // imageUrl이 있을 때만 추가
       };
@@ -45,4 +51,4 @@ class UserController {
   };
 }
 
-export const userController = new UserController();
+export default new UserController();

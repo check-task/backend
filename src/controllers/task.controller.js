@@ -1,5 +1,5 @@
 import taskService from "../services/task.service.js";
-import { uploadToS3 } from '../middlewares/upload.middleware.js';
+import { uploadToS3 } from "../middlewares/upload.middleware.js";
 import { TaskRequestDTO, TaskResponseDTO } from "../dtos/task.dto.js";
 import { BadRequestError } from "../errors/custom.error.js";
 
@@ -14,7 +14,7 @@ class TaskController {
       res.status(200).json({
         resultType: "SUCCESS",
         message: "완료된 과제 조회 성공",
-        data: TaskResponseDTO.fromCompleted(tasksRaw)
+        data: TaskResponseDTO.fromCompleted(tasksRaw),
       });
     } catch (error) {
       next(error);
@@ -32,7 +32,7 @@ class TaskController {
       res.status(201).json({
         resultType: "SUCCESS",
         message: "요청이 처리되어서 새로운 과제가 생성되었습니다.",
-        data: result
+        data: result,
       });
     } catch (error) {
       next(error);
@@ -41,46 +41,52 @@ class TaskController {
 
   // 과제 수정
   async updateTask(req, res, next) {
-  try {
-    const { taskId } = req.params;
-    
-    let customFileNames = [];
-    if (req.body.fileNames) {
-      const rawNames = req.body.fileNames;
-      if (typeof rawNames === 'string' && rawNames.startsWith('[')) {
-        customFileNames = JSON.parse(rawNames);
-      } else if (typeof rawNames === 'string') {
-        customFileNames = rawNames.split(',').map(name => name.trim());
-      } else {
-        customFileNames = rawNames; 
+    try {
+      const { taskId } = req.params;
+
+      let customFileNames = [];
+      if (req.body.fileNames) {
+        const rawNames = req.body.fileNames;
+        if (typeof rawNames === "string" && rawNames.startsWith("[")) {
+          customFileNames = JSON.parse(rawNames);
+        } else if (typeof rawNames === "string") {
+          customFileNames = rawNames.split(",").map((name) => name.trim());
+        } else {
+          customFileNames = rawNames;
+        }
       }
-    }
 
-    let fileReferences = [];
-    if (req.files && req.files.length > 0) {
-      for (let i = 0; i < req.files.length; i++) {
-        const file = req.files[i];
-        const fileUrl = await uploadToS3(file);
-        
-        fileReferences.push({
-          name: (customFileNames && customFileNames[i]) ? customFileNames[i] : file.originalname, 
-          fileUrl: fileUrl
-        });
+      let fileReferences = [];
+      if (req.files && req.files.length > 0) {
+        for (let i = 0; i < req.files.length; i++) {
+          const file = req.files[i];
+          const fileUrl = await uploadToS3(file);
+
+          fileReferences.push({
+            name:
+              customFileNames && customFileNames[i]
+                ? customFileNames[i]
+                : file.originalname,
+            fileUrl: fileUrl,
+          });
+        }
       }
+
+      const taskRequest = TaskRequestDTO.toUpdate(req.body, fileReferences);
+      const result = await taskService.modifyTask(
+        parseInt(taskId),
+        taskRequest,
+      );
+
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "과제가 성공적으로 수정되었습니다.",
+        data: result,
+      });
+    } catch (error) {
+      next(error);
     }
-
-    const taskRequest = TaskRequestDTO.toUpdate(req.body, fileReferences);
-    const result = await taskService.modifyTask(parseInt(taskId), taskRequest);
-
-    res.status(200).json({
-      resultType: "SUCCESS",
-      message: "과제가 성공적으로 수정되었습니다.",
-      data: result
-    });
-  } catch (error) {
-    next(error);
   }
-}
 
   // 과제 삭제
   async deleteTask(req, res, next) {
@@ -91,7 +97,7 @@ class TaskController {
       res.status(200).json({
         resultType: "SUCCESS",
         message: "과제가 성공적으로 삭제되었습니다.",
-        data: null
+        data: null,
       });
     } catch (error) {
       next(error);
@@ -108,7 +114,7 @@ class TaskController {
         resultType: "SUCCESS",
         message: "서버가 요청을 성공적으로 처리하였습니다.",
         // static 메서드 fromDetail 사용
-        data: TaskResponseDTO.fromDetail(task)
+        data: TaskResponseDTO.fromDetail(task),
       });
     } catch (error) {
       next(error);
@@ -121,8 +127,9 @@ class TaskController {
       const queryParams = {
         type: req.query.type,
         sort: req.query.sort,
-        folderId: req.query.folderId || req.query.folder_id || req.query.folderld,
-        status: req.query.status
+        folderId:
+          req.query.folderId || req.query.folder_id || req.query.folderld,
+        status: req.query.status,
       };
       const userId = req.user.id;
 
@@ -131,7 +138,7 @@ class TaskController {
       res.status(200).json({
         resultType: "SUCCESS",
         message: "서버가 요청을 성공적으로 처리하였습니다.",
-        data: TaskResponseDTO.fromList(tasks)
+        data: TaskResponseDTO.fromList(tasks),
       });
     } catch (error) {
       next(error);
@@ -144,16 +151,11 @@ class TaskController {
       const { deadline } = req.body;
       const userId = req.user.id; // 유저 ID 추출
 
-      // 입력값 검증
-      if (!taskId || isNaN(parseInt(taskId))) {
-        // throw new Error("유효하지 않은 Task ID입니다.");
-        throw new BadRequestError("INVALID_PARAMETER", "유효하지 않은 Task ID입니다.");
-      }
-      if (!deadline) {
-        throw new BadRequestError("INVALID_BODY", "마감일은 필수입니다.");
-      }
-
-      const updatedTask = await taskService.updateTaskDeadline(userId, parseInt(taskId), deadline);
+      const updatedTask = await taskService.updateTaskDeadline(
+        userId,
+        parseInt(taskId),
+        deadline,
+      );
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -161,7 +163,7 @@ class TaskController {
         data: {
           taskId: updatedTask.id,
           deadline: updatedTask.deadline,
-        }
+        },
       });
     } catch (error) {
       next(error);
@@ -179,7 +181,7 @@ class TaskController {
       res.status(200).json({
         resultType: "SUCCESS",
         message: "과제 우선순위가 일괄 변경되었습니다.",
-        data: null
+        data: null,
       });
     } catch (error) {
       next(error);
@@ -194,7 +196,7 @@ class TaskController {
       const result = await taskService.modifyMemberRole(
         parseInt(taskId),
         parseInt(userId),
-        role
+        role,
       );
 
       res.status(200).json({
@@ -205,8 +207,8 @@ class TaskController {
           userId: result.userId,
           taskId: result.taskId,
           // 📍 DB가 false(0)면 0(Owner), true(1)면 1(Member) 반환
-          role: result.role ? 1 : 0 
-        }
+          role: result.role ? 1 : 0,
+        },
       });
     } catch (error) {
       next(error);
@@ -222,14 +224,14 @@ class TaskController {
       const result = await taskService.outMember(
         parseInt(taskId),
         parseInt(memberId),
-        parseInt(userId)
+        parseInt(userId),
       );
 
       res.status(200).json({
         resultType: "SUCCESS",
         message: `memberId: ${memberId}가 추방되었습니다.`,
-        data : result
-      }); 
+        data: result,
+      });
     } catch (error) {
       next(error);
     }
@@ -241,15 +243,18 @@ class TaskController {
       const { subTaskId } = req.params;
       const { status } = req.body;
 
-      const updatedTask = await taskService.updateSubTaskStatus(subTaskId, status);
+      const updatedTask = await taskService.updateSubTaskStatus(
+        subTaskId,
+        status,
+      );
 
       res.status(200).json({
-        resultType: 'SUCCESS',
-        message: '태스크 상태가 업데이트되었습니다.',
+        resultType: "SUCCESS",
+        message: "태스크 상태가 업데이트되었습니다.",
         data: {
           sub_task_id: updatedTask.id,
-          status: status === 'COMPLETED' ? '완료' : '미완료'
-        }
+          status: status === "COMPLETED" ? "완료" : "미완료",
+        },
       });
     } catch (error) {
       next(error);
@@ -258,23 +263,26 @@ class TaskController {
 
   // 세부 TASK 날짜 변경
   async updateSubTaskDeadline(req, res) {
-    // try {
-    const { subTaskId } = req.params;
-    const { endDate } = req.body;
+    try {
+      const { subTaskId } = req.params;
+      const { endDate } = req.body;
 
-    const updatedTask = await taskService.updateSubTaskDeadline(subTaskId, endDate);
+      const updatedTask = await taskService.updateSubTaskDeadline(
+        subTaskId,
+        endDate,
+      );
 
-    res.status(200).json({
-      resultType: 'SUCCESS',
-      message: '마감 기한이 변경되었습니다.',
-      data: {
-        sub_task_id: updatedTask.id,
-        end_date: updatedTask.endDate.toISOString().split('T')[0]
-      }
-    });
-    // } catch (error) {
-    //   next(error);
-    // }
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "마감 기한이 변경되었습니다.",
+        data: {
+          sub_task_id: updatedTask.id,
+          end_date: updatedTask.endDate.toISOString().split("T")[0],
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 
   // 세부 TASK 담당자 설정
@@ -283,15 +291,18 @@ class TaskController {
       const { subTaskId } = req.params;
       const { assigneeId } = req.body;
 
-      const result = await taskService.setSubTaskAssignee(parseInt(subTaskId), assigneeId);
+      const result = await taskService.setSubTaskAssignee(
+        parseInt(subTaskId),
+        assigneeId,
+      );
 
       res.status(200).json({
-        resultType: 'SUCCESS',
-        message: '담당자가 지정되었습니다.',
+        resultType: "SUCCESS",
+        message: "담당자가 지정되었습니다.",
         data: {
           sub_task_id: result.subTaskId,
-          assignee_id: result.assigneeId
-        }
+          assignee_id: result.assigneeId,
+        },
       });
     } catch (error) {
       next(error);
@@ -304,15 +315,18 @@ class TaskController {
       const { taskId } = req.params;
       const userId = req.user.id;
 
-      const result = await taskService.generateInviteCode(parseInt(taskId), userId);
+      const result = await taskService.generateInviteCode(
+        parseInt(taskId),
+        userId,
+      );
 
       res.status(200).json({
         resultType: "SUCCESS",
         message: "초대 링크가 생성되었습니다.",
         data: {
           invite_code: result.invite_code,
-          invite_expired: result.invite_expired
-        }
+          invite_expired: result.invite_expired,
+        },
       });
     } catch (error) {
       next(error);
@@ -333,8 +347,8 @@ class TaskController {
         data: {
           task_id: result.taskId,
           task_title: result.taskTitle,
-          member_id: result.memberId
-        }
+          member_id: result.memberId,
+        },
       });
     } catch (error) {
       next(error);
@@ -347,7 +361,11 @@ class TaskController {
       const { taskId } = req.params;
       const userId = req.user.id;
 
-      const result = await taskService.createSingleSubTask(userId, parseInt(taskId), req.body);
+      const result = await taskService.createSingleSubTask(
+        userId,
+        parseInt(taskId),
+        req.body,
+      );
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -356,14 +374,12 @@ class TaskController {
           subTaskId: result.id,
           title: result.title,
           deadline: result.endDate,
-        }
+        },
       });
     } catch (error) {
       next(error);
     }
   }
 }
-
-
 
 export default new TaskController();
