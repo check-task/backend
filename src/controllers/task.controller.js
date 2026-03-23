@@ -263,26 +263,26 @@ class TaskController {
 
   // 세부 TASK 날짜 변경
   async updateSubTaskDeadline(req, res) {
-    // try {
-    const { subTaskId } = req.params;
-    const { endDate } = req.body;
+    try {
+      const { subTaskId } = req.params;
+      const { endDate } = req.body;
 
-    const updatedTask = await taskService.updateSubTaskDeadline(
-      subTaskId,
-      endDate,
-    );
+      const updatedTask = await taskService.updateSubTaskDeadline(
+        subTaskId,
+        endDate,
+      );
 
-    res.status(200).json({
-      resultType: "SUCCESS",
-      message: "마감 기한이 변경되었습니다.",
-      data: {
-        sub_task_id: updatedTask.id,
-        end_date: updatedTask.endDate.toISOString().split("T")[0],
-      },
-    });
-    // } catch (error) {
-    //   next(error);
-    // }
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "마감 기한이 변경되었습니다.",
+        data: {
+          sub_task_id: updatedTask.id,
+          end_date: updatedTask.endDate.toISOString().split("T")[0],
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 
   // 세부 TASK 담당자 설정

@@ -2,7 +2,7 @@ import { NotFoundError, BadRequestError } from "../errors/custom.error.js";
 import { UserDto } from "../dtos/user.dto.js";
 import { userRepository } from "../repositories/user.repository.js";
 
-class userService {
+class UserService {
   // 1. 내 정보 조회
   async getMyInfo(userId) {
     const user = await userRepository.getUserData(userId);
@@ -55,4 +55,4 @@ class userService {
   }
 }
 
-export default new userService();
+export default new UserService();
