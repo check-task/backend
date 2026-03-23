@@ -151,18 +151,6 @@ class TaskController {
       const { deadline } = req.body;
       const userId = req.user.id; // 유저 ID 추출
 
-      // // 입력값 검증
-      // if (!taskId || isNaN(parseInt(taskId))) {
-      //   // throw new Error("유효하지 않은 Task ID입니다.");
-      //   throw new BadRequestError(
-      //     "INVALID_PARAMETER",
-      //     "유효하지 않은 Task ID입니다.",
-      //   );
-      // }
-      // if (!deadline) {
-      //   throw new BadRequestError("INVALID_BODY", "마감일은 필수입니다.");
-      // }
-
       const updatedTask = await taskService.updateTaskDeadline(
         userId,
         parseInt(taskId),

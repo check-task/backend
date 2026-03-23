@@ -29,8 +29,14 @@ export const validate = (schema) => (req, res, next) => {
   if (result.data.params) {
     req.params = result.data.params;
   }
+  // Express 5에서 req.query는 getter-only이므로 Object.defineProperty로 재정의
   if (result.data.query) {
-    req.query = result.data.query;
+    Object.defineProperty(req, "query", {
+      value: result.data.query,
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
   }
 
   next();

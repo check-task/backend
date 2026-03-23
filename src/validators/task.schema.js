@@ -1,14 +1,7 @@
 import { z } from "zod";
 import { idParam } from "./common.schema.js";
 
-// ─── 공통 body 조각 ──────────────────────────────────────────────
-const subTaskSchema = z.object({
-  title: z.string().trim().min(1, "세부 과제 제목은 필수입니다."),
-  endDate: z.string().optional(),
-  status: z.enum(["PENDING", "COMPLETED"]).optional(),
-});
-
-// multipart/form-data 로 올 때 JSON 문자열 → 배열 자동 변환
+// multipart/form-data 에서 JSON 문자열 → 배열 자동 변환
 const jsonArray = (inner) =>
   z.preprocess((v) => {
     if (typeof v === "string") {
@@ -21,6 +14,12 @@ const jsonArray = (inner) =>
     return v;
   }, inner);
 
+const subTaskSchema = z.object({
+  title: z.string().trim().min(1, "세부 과제 제목은 필수입니다."),
+  endDate: z.string().optional(),
+  status: z.enum(["PENDING", "COMPLETED"]).optional(),
+});
+
 // ─── 과제 생성 ────────────────────────────────────────────────────
 export const createTaskSchema = z.object({
   body: z.object({
@@ -32,34 +31,20 @@ export const createTaskSchema = z.object({
   }),
 });
 
-// ─── 마감일 변경 ──────────────────────────────────────────────────
-export const updateTaskDeadlineSchema = z.object({
+// ─── 과제 목록 조회 ───────────────────────────────────────────────
+export const getTasksSchema = z.object({
+  query: z.object({
+    type: z.enum(["TEAM", "PERSONAL"]).optional(),
+    sort: z.string().optional(),
+    folderId: z.coerce.number().int().positive().optional(),
+    status: z.string().optional(),
+  }),
+});
+
+// ─── 과제 단건 조회 / 삭제 ────────────────────────────────────────
+export const taskIdParamSchema = z.object({
   params: z.object({
     taskId: idParam,
-  }),
-  body: z.object({
-    deadline: z.string({ required_error: "마감일은 필수입니다." }).min(1),
-  }),
-});
-
-// ─── 세부 Task 상태 변경 ──────────────────────────────────────────
-export const updateSubTaskStatusSchema = z.object({
-  params: z.object({
-    subTaskId: idParam,
-  }),
-  body: z.object({
-    status: z.enum(["PENDING", "COMPLETED"], {
-      errorMap: () => ({
-        message: "status는 PENDING 또는 COMPLETED여야 합니다.",
-      }),
-    }),
-  }),
-});
-
-// ─── 팀 참여 (초대코드) ───────────────────────────────────────────
-export const joinTaskSchema = z.object({
-  body: z.object({
-    inviteCode: z.string().trim().min(1, "초대 코드는 필수입니다."),
   }),
 });
 
@@ -77,4 +62,110 @@ export const updateTaskSchema = z.object({
       subTasks: jsonArray(z.array(subTaskSchema)).optional(),
     })
     .optional(),
+});
+
+// ─── 마감일 변경 ──────────────────────────────────────────────────
+export const updateTaskDeadlineSchema = z.object({
+  params: z.object({
+    taskId: idParam,
+  }),
+  body: z.object({
+    deadline: z
+      .string({ required_error: "마감일은 필수입니다." })
+      .min(1, "마감일은 빈 값일 수 없습니다."),
+  }),
+});
+
+// ─── 우선순위 변경 ────────────────────────────────────────────────
+export const updateTaskPrioritiesSchema = z.object({
+  body: z.object({
+    orderedTasks: z
+      .array(
+        z.object({
+          taskId: z.coerce.number().int().positive(),
+          rank: z.number().int().min(1),
+        })
+      )
+      .min(1, "orderedTasks는 최소 1개 이상이어야 합니다."),
+  }),
+});
+
+// ─── 팀원 역할 변경 ───────────────────────────────────────────────
+export const updateTeamMemberSchema = z.object({
+  params: z.object({
+    taskId: idParam,
+    userId: idParam,
+  }),
+  body: z.object({
+    role: z.union([z.literal(0), z.literal(1)], {
+      error: () => "role은 0(Owner) 또는 1(Member)이어야 합니다.",
+    }),
+  }),
+});
+
+// ─── 팀원 삭제 ───────────────────────────────────────────────────
+export const deleteTeamMemberSchema = z.object({
+  params: z.object({
+    taskId: idParam,
+    memberId: idParam,
+  }),
+});
+
+// ─── 세부 과제 추가 ───────────────────────────────────────────────
+export const addSubTaskSchema = z.object({
+  params: z.object({
+    taskId: idParam,
+  }),
+  body: z.object({
+    title: z.string().trim().min(1, "세부 과제 제목은 필수입니다."),
+    endDate: z.string().optional(),
+  }),
+});
+
+// ─── 세부 Task 상태 변경 ──────────────────────────────────────────
+export const updateSubTaskStatusSchema = z.object({
+  params: z.object({
+    subTaskId: idParam,
+  }),
+  body: z.object({
+    status: z.enum(["PENDING", "COMPLETED"], {
+      error: () => "status는 PENDING 또는 COMPLETED여야 합니다.",
+    }),
+  }),
+});
+
+// ─── 세부 Task 마감일 변경 ────────────────────────────────────────
+export const updateSubTaskDeadlineSchema = z.object({
+  params: z.object({
+    subTaskId: idParam,
+  }),
+  body: z.object({
+    endDate: z
+      .string({ required_error: "마감일은 필수입니다." })
+      .min(1, "마감일은 빈 값일 수 없습니다."),
+  }),
+});
+
+// ─── 세부 Task 담당자 설정 ────────────────────────────────────────
+export const setSubTaskAssigneeSchema = z.object({
+  params: z.object({
+    subTaskId: idParam,
+  }),
+  body: z.object({
+    assigneeId: z.coerce.number().int().positive("assigneeId는 양수여야 합니다."),
+  }),
+});
+
+// ─── 초대 링크 생성 ───────────────────────────────────────────────
+export const generateInviteCodeSchema = z.object({
+  params: z.object({
+    taskId: idParam,
+  }),
+});
+
+// ─── 초대 코드로 팀 참여 ──────────────────────────────────────────
+export const joinTaskSchema = z.object({
+  body: z.object({
+    inviteCode: z.string().trim().min(1, "초대 코드는 필수입니다."),
+  }),
 });
