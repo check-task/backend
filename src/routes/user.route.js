@@ -1,6 +1,5 @@
 import express from "express";
-
-import { userController } from "../controllers/user.controller.js";
+import userController from "../controllers/user.controller.js";
 import authenticate from "../middlewares/authenticate.middleware.js";
 import upload from "../middlewares/upload.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
@@ -15,7 +14,7 @@ userRouter.patch(
   authenticate,
   upload.single("image"),
   validate(updateProfileSchema),
-  userController.updateProfile
+  userController.updateProfile,
 );
 
 export default userRouter;
