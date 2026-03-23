@@ -4,7 +4,7 @@ import { buildApp } from "../helpers/app.js";
 import { generateToken } from "../helpers/token.js";
 
 vi.mock("../../src/services/comment.service.js", () => ({
-  commentService: {
+  default: {
     createComment: vi.fn(),
     updateComment: vi.fn(),
     deleteComment: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock("../../src/db.config.js", () => ({
   default: { $connect: vi.fn(), $disconnect: vi.fn() },
 }));
 
-import { commentService } from "../../src/services/comment.service.js";
+import commentService from "../../src/services/comment.service.js";
 
 const app = buildApp();
 const AUTH = `Bearer ${generateToken(1)}`;

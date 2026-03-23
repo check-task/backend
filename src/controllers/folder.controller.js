@@ -1,4 +1,4 @@
-import { folderService } from "../services/folder.service.js";
+import folderService from "../services/folder.service.js";
 
 class FolderController {
   constructor() {

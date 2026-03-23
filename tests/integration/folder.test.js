@@ -4,7 +4,7 @@ import { buildApp } from "../helpers/app.js";
 import { generateToken } from "../helpers/token.js";
 
 vi.mock("../../src/services/folder.service.js", () => ({
-  folderService: {
+  default: {
     createFolder: vi.fn(),
     updateFolder: vi.fn(),
     deleteFolder: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock("../../src/db.config.js", () => ({
   default: { $connect: vi.fn(), $disconnect: vi.fn() },
 }));
 
-import { folderService } from "../../src/services/folder.service.js";
+import folderService from "../../src/services/folder.service.js";
 
 const app = buildApp();
 const AUTH = `Bearer ${generateToken(1)}`;

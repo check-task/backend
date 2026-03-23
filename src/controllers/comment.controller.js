@@ -1,4 +1,4 @@
-import { commentService } from "../services/comment.service.js";
+import commentService from "../services/comment.service.js";
 
 // 댓글 생성 컨트롤러
 export const createCommentController = async (req, res, next) => {

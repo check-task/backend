@@ -1,4 +1,4 @@
-import { userService } from "../services/user.service.js";
+import userService from "../services/user.service.js";
 import { uploadToS3 } from "../middlewares/upload.middleware.js";
 
 class UserController {

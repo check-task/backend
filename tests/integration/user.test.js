@@ -4,7 +4,7 @@ import { buildApp } from "../helpers/app.js";
 import { generateToken } from "../helpers/token.js";
 
 vi.mock("../../src/services/user.service.js", () => ({
-  userService: {
+  default: {
     getMyInfo: vi.fn(),
     updateProfile: vi.fn(),
   },
@@ -22,7 +22,7 @@ vi.mock("../../src/config/s3.config.js", () => ({
   default: { send: vi.fn() },
 }));
 
-import { userService } from "../../src/services/user.service.js";
+import userService from "../../src/services/user.service.js";
 
 const app = buildApp();
 const AUTH = `Bearer ${generateToken(1)}`;
@@ -40,9 +40,7 @@ describe("GET /api/v1/user/me — 내 정보 조회", () => {
       profileImage: "https://example.com/profile.png",
       deadlineAlarm: 30,
       taskAlarm: 60,
-      folders: [
-        { folderId: 1, folderTitle: "내 폴더", color: "#FF5733" },
-      ],
+      folders: [{ folderId: 1, folderTitle: "내 폴더", color: "#FF5733" }],
     });
 
     const res = await supertest(app)
@@ -224,9 +222,13 @@ describe("PATCH /api/v1/user/profile — 프로필 수정", () => {
   });
 
   it("400: 닉네임 100자 초과 — 서비스 에러", async () => {
-    const { BadRequestError } = await import("../../src/errors/custom.error.js");
+    const { BadRequestError } =
+      await import("../../src/errors/custom.error.js");
     userService.updateProfile.mockRejectedValue(
-      new BadRequestError("INVALID_NICKNAME", "닉네임은 최대 100자까지만 가능합니다."),
+      new BadRequestError(
+        "INVALID_NICKNAME",
+        "닉네임은 최대 100자까지만 가능합니다.",
+      ),
     );
 
     const res = await supertest(app)
