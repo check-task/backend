@@ -18,7 +18,9 @@
     "seed": "node prisma/seed.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "start": "node src/index.js",
     "dev": "nodemon -e js,json,prisma --exec \"prisma generate && node src/index.js\"",
     "db:test": "node --input-type=module -e 'import { prisma } from \"./src/db.config.js\"; await prisma.$connect(); const r = await prisma.$queryRawUnsafe(\"SELECT 1 as ok\"); console.log(\"DB CONNECT OK\", r); await prisma.$disconnect();'",
@@ -33,7 +35,7 @@
     "seed": "node prisma/seed.js"
   },
   "dependencies": {
-    "@prisma/adapter-mariadb": "^7.2.0",
+    "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.2.0",
     "axios": "^1.13.2",
     "cookie-parser": "^1.4.7",
@@ -52,11 +54,13 @@
     "passport-jwt": "^4.0.1",
     "passport-kakao": "^1.0.1",
     "path": "^0.12.7",
+    "pg": "^8.20.0",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "swagger-autogen": "^2.23.7",
     "swagger-ui-express": "^5.0.1",
-    "yamljs": "^0.3.0"
+    "yamljs": "^0.3.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.972.0",
@@ -66,7 +70,10 @@
     "@types/passport": "^1.0.17",
     "@types/swagger-ui-express": "^4.1.8",
     "@types/yamljs": "^0.2.34",
+    "@vitest/coverage-v8": "^4.1.0",
     "nodemon": "^3.1.11",
-    "prisma": "^7.2.0"
+    "prisma": "^7.2.0",
+    "supertest": "^7.2.2",
+    "vitest": "^4.1.0"
   }
 }
