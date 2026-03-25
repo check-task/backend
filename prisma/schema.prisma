@@ -53,26 +53,24 @@ model TaskPriority {
 // 사용자 (User)
 model User {
   id           Int     @id @default(autoincrement()) @map("user_id")
-  nickname     String  @db.VarChar(100)
-  phoneNum     String  @map("phone_num") @db.VarChar(15)
+  nickname     String  @db.VarChar(30)
+  phoneNum     String  @map("phone_num") @db.VarChar(20)
   email        String  @unique @db.VarChar(50)
   profileImage String? @map("profile_image") @db.VarChar(200)
   password     String? @db.VarChar(50)
 
   // 소셜 로그인 관련
   provider   Provider?
-  providerId String?   @map("provider_id") @db.VarChar(10)
+  providerId String?   @map("provider_id") @db.VarChar(100)
 
   // 시간 관련 (Image: date 타입)
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp
   updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp
   deletedAt DateTime? @map("deleted_at") @db.Timestamp
 
-  //알람 관련
-  deadlineAlarm Int @default(24) @map("deadline_alarm") // 마감 알람 설정 시간(기본값: 24시간)
-  taskAlarm     Int @default(24) @map("task_alarm") // 과제 알람 설정 시간(기본값: 24시간)
-
   // 관계 설정 (Relations)
+  agreements     UserAgreement[]
+  alarmSetting   UserAlarmSetting?
   alarms         UserAlarm[]    @relation("UserAlarms")
   folders        Folder[]       @relation("UserFolders") // 유저가 가진 폴더들 
   memberships    Member[]       @relation("UserMembers") // 유저가 참여한 팀(멤버) 기록 (팀과제일 경우)
@@ -83,6 +81,35 @@ model User {
   @@unique([provider, providerId])
   @@index([deletedAt])
   @@map("User") // 실제 DB 테이블 이름
+}
+
+// 유저 이용약관 (UserAgreement)
+model UserAgreement{
+  id           Int     @id @default(autoincrement()) @map("agreement_id")
+  userId       Int     @unique @map("user_id") //유저별 약간 동의 (1:1관계)
+
+  termsAgreedAt      DateTime @map("terms_agreed_at") @db.Date // 필수 약관 동의
+  pushEnabledAt      DateTime? @map("push_enabled_at") @db.Date // 푸시 알림 동의(선택)
+  thirdPartyAgreedAt DateTime? @map("third_party_agreed_at") @db.Date // 제3자 정보 제공 동의(선택)
+  marketingAgreedAt  DateTime? @map("marketing_agreed_at") @db.Date // 마케팅 수신 동의(선택)
+  
+  // 관계 설정 (Relations)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade) // 유저 삭제 시 약간 동의 정보도 함께 삭제됨
+  @@map("UserAgreement")
+}
+
+// 유저 알림 설정 (UserAlarmSetting )
+model UserAlarmSetting{
+  id           Int     @id @default(autoincrement()) @map("user_alarm_id")
+  userId       Int     @unique @map("user_id") //유저별 알림 설정 (1:1관계)
+
+  deadlineAlarm Int @default(24) @map("deadline_alarm")
+  taskAlarm     Int @default(24) @map("task_alarm")
+
+  // 관계 설정 (Relations)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade) //유저 삭제 시 알림 설정도 함께 삭제됨
+
+  @@map("UserAlarmSetting")
 }
 
 // 유저 알림 (UserAlarm)
