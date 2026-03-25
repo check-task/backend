@@ -34,6 +34,11 @@ enum TaskType {
   TEAM
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model TaskPriority {
   id        Int       @id @default(autoincrement()) @map("priority_id")
   userId    Int       @map("user_id")
@@ -58,7 +63,8 @@ model User {
   email        String  @unique @db.VarChar(50)
   profileImage String? @map("profile_image") @db.VarChar(200)
   password     String? @db.VarChar(50)
-
+  role Role @default(USER)
+  
   // 소셜 로그인 관련
   provider   Provider?
   providerId String?   @map("provider_id") @db.VarChar(100)
