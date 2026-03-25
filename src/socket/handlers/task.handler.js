@@ -5,7 +5,7 @@ import {
   CreateCommunicationDto, UpdateCommunicationDto,
   CreateLogDto, UpdateLogDto
 } from '../../dtos/modal.dto.js';
-import { CommentService } from '../../services/comment.service.js';
+import CommentService from '../../services/comment.service.js';
 import taskService from "../../services/task.service.js";
 
 //과제 API 관련 SOCKET
