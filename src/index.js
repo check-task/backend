@@ -19,7 +19,6 @@ import cookieParser from "cookie-parser";
 
 console.log(" INDEX.JS LOADED");
 const app = express();
-const port = process.env.PORT;
 
 //HTTPS 프록시 환경에서 secure 쿠키 정상 동작을 위해 설정(PC + 모바일)
 app.set("trust proxy", 1)
@@ -95,7 +94,7 @@ const startServer = async () => {
     console.log("✅ Database connected successfully");
 
     // 서버 시작
-    const PORT = process.env.PORT || 8000;
+    const PORT = process.env.PORT;
     const HOST = '0.0.0.0';
 
     httpServer.listen(PORT, HOST, () => {
