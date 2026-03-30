@@ -106,11 +106,6 @@ const startServer = async () => {
       console.log(`   - 플랫폼: ${process.platform} ${process.arch}`);
       console.log(`   - 메모리 사용량: ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`);
       console.log('==========================\n');
-
-      /*
-    // 서버 리스닝
-    app.listen(port, () => {
-      console.log(`Example app listening on port ${port}`);*/
     });
   } catch (err) {
     console.error("❌ Failed to connect to the database:", err);
