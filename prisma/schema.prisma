@@ -81,7 +81,6 @@ model User {
   folders        Folder[]       @relation("UserFolders") // 유저가 가진 폴더들 
   memberships    Member[]       @relation("UserMembers") // 유저가 참여한 팀(멤버) 기록 (팀과제일 경우)
   comments       Comment[]      @relation("UserComments") // 유저가 쓴 댓글들
-  SubTasks       SubTask[]      @relation("Assignee") // 유저에게 할당된 세부과제 (개인과제일 경우 모두 자신에게 할당됨)
   taskPriorities TaskPriority[] @relation("UserTaskPriorities") // 유저의 과제 우선순위들
 
   @@unique([provider, providerId])
@@ -152,8 +151,9 @@ model Folder {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
 
   // 관계 설정 (Relations)
+  members Member[]
   user  User   @relation("UserFolders", fields: [userId], references: [id], onDelete: Restrict) // 유저와 연결 (삭제 시 폴더는 그대로 남아있음)
-  tasks Task[] // 폴더에 속한 과제들
+
 
   @@map("Folder")
 }
@@ -161,7 +161,6 @@ model Folder {
 // 과제 (Task)
 model Task {
   id              Int        @id @default(autoincrement()) @map("task_id")
-  folderId        Int?       @map("folder_id") // 처음 과제를 생성하면 폴더에 과제가 안들어가있으므로 nullable 고려
   title           String     @db.VarChar(100)
   deadline        DateTime   @db.Date
   type            TaskType // Team, Personal
@@ -173,7 +172,6 @@ model Task {
   inviteExpiredAt DateTime?  @map("invite_expired") @db.Timestamp // 팀과제 초대 코드 만료 시간
 
   // 관계 설정 (Relations)
-  folder         Folder?         @relation(fields: [folderId], references: [id], onDelete: Cascade) // 폴더와 연결 (삭제 시 과제도 삭제됨)
   members        Member[]
   subTasks       SubTask[]
   references     Reference[]
@@ -190,13 +188,16 @@ model Member {
   id        Int      @id @default(autoincrement()) @map("member_id")
   userId    Int      @map("user_id") // 유저 id (팀과제일 경우 멤버에 속한 유저 id), 개인과제일 경우 자기 자신의 id, 멤버에서 삭제 시 null
   taskId    Int      @map("task_id") // 과제 id
+  folderId  Int?     @map("folder_id") // 폴더 id
   role      Boolean // 0: owner(false), 1: member(true) (이미지 기준)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
 
   // 관계 설정 (Relations)
   user User @relation("UserMembers", fields: [userId], references: [id], onDelete: Restrict) // 유저와 연결 (삭제 시 멤버는 그대로 남아있음)
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade) // 과제와 연결 (삭제 시 멤버도 삭제됨)
-
+  folder Folder? @relation(fields: [folderId], references: [id], onDelete: Restrict) // 폴더와 연결 (삭제 시 멤버도 삭제됨)
+  subTasks SubTask[] @relation("assignee") // 유저에게 할당된 세부과제 (개인과제일 경우 모두 자신에게 할당됨)
+  
   @@unique([userId, taskId])
   @@map("Member")
 }
@@ -216,7 +217,7 @@ model SubTask {
 
   // 관계 설정 (Relations)
   task       Task        @relation(fields: [taskId], references: [id], onDelete: Cascade) // 과제와 연결 (삭제 시 세부과제도 삭제됨)
-  assignee   User?       @relation("Assignee", fields: [assigneeId], references: [id], onDelete: Restrict) // 담당자와 연결 (삭제 시 담당자는 그대로 남아있음)
+  assignee   Member?       @relation("assignee", fields: [assigneeId], references: [id], onDelete: Restrict) // 담당자와 연결 (삭제 시 담당자는 그대로 남아있음)
   comments   Comment[]
   userAlarms UserAlarm[]
 
