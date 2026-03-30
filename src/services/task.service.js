@@ -619,25 +619,36 @@ class TaskService {
     }
   }
 
-  // 초대 코드 생성
-  async generateInviteCode(taskId, userId) {
-    // 과제 존재 여부 확인
-    const task = await taskRepository.findTaskById(taskId);
-    if (!task) {
-      throw new NotFoundError("TASK_NOT_FOUND", "과제를 찾을 수 없습니다.");
+  // 초대 코드 조회
+  async checkInviteCode(task) {
+    // 초대 코드 / 만료시간 없는 경우
+    if (!task.inviteCode || !task.inviteExpiredAt) {
+      return { isValid: false };
     }
 
+    const now = new Date();
+
+    // 만료 여부 체크
+    if (now > task.inviteExpiredAt) {
+      return { isValid: false };
+    }
+
+    return {
+      isValid: true,
+      invite_code: task.inviteCode,
+      invite_expired: task.inviteExpiredAt
+    };
+  }
+
+  // 초대 코드 생성
+  async generateInviteCode(task, userId) {
     if (task.type === 'PERSONAL') {
       throw new ForbiddenError("PERSONAL_TASK", "개인 과제는 초대 코드 생성이 불가능합니다.");
     }
 
-    // 사용자가 해당 과제의 멤버인지 확인
+    // 사용자가 해당 과제의 멤버인지 확인 - 모든 멤버가 초대할 수 있음
     const isMember = await prisma.member.findFirst({
-      where: {
-        taskId,
-        userId,
-        role: false // owner만 초대 링크를 생성할 수 있음 (role: false가 owner)
-      }
+      where: { taskId: task.id, userId }
     });
 
     if (!isMember) {
@@ -647,13 +658,9 @@ class TaskService {
     // 랜덤한 8자리 초대 코드 생성 (대문자 + 숫자)
     const inviteCode = Array(8)
       .fill(0)
-      .map(() => {
-        const random = Math.random() * 36 | 0;
-        return random.toString(36).toUpperCase();
-      })
+      .map(() => (Math.random() * 36 | 0).toString(36).toUpperCase())
       .join('');
 
-    // 트랜잭션으로 초대 코드 업데이트
     const result = await prisma.$transaction(async (tx) => {
       return await taskRepository.updateTaskInviteCode(taskId, inviteCode, tx);
     });
@@ -679,7 +686,7 @@ class TaskService {
     }
 
     // 초대 코드 만료일 확인
-    if (task.inviteExpiredAt && new Date(Date.now() + 9 * 60 * 60 * 1000) > new Date(task.inviteExpiredAt)) {
+    if (task.inviteExpiredAt && new Date() > task.inviteExpiredAt) {
       throw new ForbiddenError("EXPIRED_INVITE_CODE", "만료된 초대 코드입니다.");
     }
 

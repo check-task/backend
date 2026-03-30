@@ -249,15 +249,13 @@ class TaskRepository {
   async updateTaskInviteCode(taskId, inviteCode, tx = prisma) {
     // 1일 후 만료일로 설정
     // 1일 후 만료일로 설정 (한국 시간 기준)
-    const oneDayLater = dayjs().add(9, "hour").add(1, "day").toDate(); // 9시간 차이 보정 UTC +9시간
-    console.log("oneDayLater (KST):", oneDayLater);
-
+    const expiredAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     return await tx.task.update({
-      where: { id: taskId }, //팀과제만 가능 (개인과제는 초대 코드로 참여 불가)
+      where: { id: taskId },
       data: {
         inviteCode,
-        inviteExpiredAt: oneDayLater
+        inviteExpiredAt: expiredAt
       },
       select: {
         inviteCode: true,
