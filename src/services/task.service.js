@@ -662,7 +662,7 @@ class TaskService {
       .join('');
 
     const result = await prisma.$transaction(async (tx) => {
-      return await taskRepository.updateTaskInviteCode(taskId, inviteCode, tx);
+      return await taskRepository.updateTaskInviteCode(task.id, inviteCode, tx);
     });
 
     return {
