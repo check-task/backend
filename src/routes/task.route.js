@@ -126,7 +126,7 @@ router.patch(
   taskController.updateTaskDeadline
 );
 
-// 초대 링크 생성 API
+// 초대 코드 생성 API
 router.post(
   "/:taskId/invitation",
   authenticate,

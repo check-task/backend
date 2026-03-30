@@ -19,7 +19,6 @@ import cookieParser from "cookie-parser";
 
 console.log(" INDEX.JS LOADED");
 const app = express();
-const port = process.env.PORT;
 
 //HTTPS 프록시 환경에서 secure 쿠키 정상 동작을 위해 설정(PC + 모바일)
 app.set("trust proxy", 1)
@@ -95,7 +94,7 @@ const startServer = async () => {
     console.log("✅ Database connected successfully");
 
     // 서버 시작
-    const PORT = process.env.PORT || 8000;
+    const PORT = process.env.PORT;
     const HOST = '0.0.0.0';
 
     httpServer.listen(PORT, HOST, () => {
@@ -107,11 +106,6 @@ const startServer = async () => {
       console.log(`   - 플랫폼: ${process.platform} ${process.arch}`);
       console.log(`   - 메모리 사용량: ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`);
       console.log('==========================\n');
-
-      /*
-    // 서버 리스닝
-    app.listen(port, () => {
-      console.log(`Example app listening on port ${port}`);*/
     });
   } catch (err) {
     console.error("❌ Failed to connect to the database:", err);
