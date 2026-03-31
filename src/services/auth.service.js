@@ -90,10 +90,12 @@ export class KakaoAuthService {
 
     try {
       //기존 사용자 조회
-      let user = await prisma.user.findFirst({
+      let user = await prisma.user.findUnique({
         where:{
-          provider: "KAKAO",
-          providerId,
+          provider_providerId: {
+            provider: "KAKAO",
+            providerId,
+          },
         },
       });
       
@@ -128,6 +130,7 @@ export class KakaoAuthService {
             password: "",
             provider: "KAKAO",
             providerId,
+            role: "USER",
           },
         });
         //기본 폴더 생성
