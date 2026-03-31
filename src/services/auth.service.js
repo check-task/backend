@@ -221,7 +221,6 @@ export class KakaoAuthService {
           await tx.user.delete({where: { id: user.id }});
         });
       }
-      console.log("탈퇴 유저 정리 완료");
 
     } catch (error) {
       console.error("USER CLEANUP ERROR:", error);
