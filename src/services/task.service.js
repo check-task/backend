@@ -57,7 +57,7 @@ class TaskService {
     console.log("생성 시도 유저 ID:", userId);
 
     // 1. 유저 존재 확인
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
       where: { id: userId }
     });
 
@@ -103,10 +103,10 @@ class TaskService {
     // 트랜잭션 시작
     return await prisma.$transaction(async (tx) => {
       // 과제 생성 (검증된 folderId 사용)
-      const newTask = await taskRepository.createTask({ ...taskData, folderId }, tx);
+      const newTask = await taskRepository.createTask({ ...taskData }, tx);
 
       // 과제 생성자를 owner로 멤버에 자동 추가
-      const member = await taskRepository.createMember(userId, newTask.id, false, tx); 
+      const memberData = await taskRepository.createMember(userId, newTask.id, false, folderId || null, tx); 
 
       // 우선 순위 지정
       const maxRank = await taskRepository.findMaxRank(userId, tx);
@@ -137,13 +137,14 @@ class TaskService {
             await Promise.all(alarmPromises);
           }
         } else {
-          const creator = await tx.user.findUnique({
+          const creator = await tx.user.findFirst({
             where: { id: userId },
-            select: { deadlineAlarm: true },
+            include: { alarmSetting: true },
           });
 
           if (creator) {
-            const alarmHours = creator.deadlineAlarm || 24;
+            const alarmHours = creator?.alarmSetting?.deadlineAlarm ?? 24;
+            console.log(alarmHours);
             const alarmDate = calculateAlarmDate(newTask.deadline, alarmHours);
 
             await alarmRepository.createTaskAlarm(
@@ -622,13 +623,12 @@ class TaskService {
   // 초대 코드 조회
   async checkInviteCode(task) {
     // 초대 코드 / 만료시간 없는 경우
-    if (!task.inviteCode || !task.inviteExpiredAt) {
+    if (task.inviteCode == null || !task.inviteExpiredAt == null) {
       return { isValid: false };
     }
 
-    const now = new Date();
-
     // 만료 여부 체크
+    const now = new Date();
     if (now > task.inviteExpiredAt) {
       return { isValid: false };
     }
