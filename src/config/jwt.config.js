@@ -16,10 +16,12 @@ export const jwtStrategy = new JwtStrategy(
   jwtOptions,
   async (payload, done) => {
     try {
-      const user = await prisma.user.findFirst({
+      const user = await prisma.user.findUnique({
         where: {
-          provider: payload.provider,       // "kakao"
-          providerId: payload.providerId, // 카카오 profile.id  
+          provider_providerId:{
+            provider: payload.provider,
+            providerId: payload.providerId,
+          },
         },
       });
 
