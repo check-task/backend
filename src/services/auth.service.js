@@ -184,6 +184,50 @@ export class KakaoAuthService {
       throw new InternalServerError("USER_WITHDRAW_FAILED","회원 탈퇴 처리 중 오류가 발생했습니다.");
     }
   }
+  async deleteExpiredUsers() {
+    try {
+      const DELETE_AFTER_DAYS = Number(process.env.DELETE_AFTER_DAYS || 7); //DB 삭제 기준 = 일주일
+      
+      const deleteThresholdDate = new Date(Date.now() - DELETE_AFTER_DAYS * 24 * 60 * 60 * 1000);
+
+      const users = await prisma.user.findMany({
+        where: {
+          deletedAt: {
+            not: null,
+            lt: deleteThresholdDate,
+          },
+        },
+      });
+      console.log(`삭제 대상 유저 수: ${users.length}`);
+      for (const user of users) {
+        const userId = user.id
+        
+        //Redis refresh token 정리
+        const keys = await redis.keys("refresh_token:*");
+
+        for (const key of keys){
+          const storedUserId = await redis.get(key);
+          if (storedUserId === String(userId)){
+            await redis.del(key);
+          }
+        }
+
+        await prisma.$transaction(async (tx) => {
+          await tx.comment.deleteMany({ where: { userId } });
+          await tx.userAlarm.deleteMany({ where: { userId } });
+          await tx.member.deleteMany({ where: { userId } });
+          await tx.folder.deleteMany({ where: { userId } });
+          // 나머지는 cascade 자동 처리
+          await tx.user.delete({where: { id: user.id }});
+        });
+      }
+      console.log("탈퇴 유저 정리 완료");
+
+    } catch (error) {
+      console.error("USER CLEANUP ERROR:", error);
+      throw new InternalServerError("USER_CLEANUP_FAILED","유저 정리 중 오류 발생");
+    }
+  }
 
   //로그아웃 시 Refresh Token 폐기
   async revokeRefreshToken(refreshToken) {
