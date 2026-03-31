@@ -1,6 +1,6 @@
 import { Router } from "express";
 import passport from "passport";
-import { kakaoMiddleware } from "../middlewares/kakao.middleware.js";
+import { kakaoMiddleware } from "../middlewares/auth.middleware.js";
 import { AuthController } from "../controllers/auth.controller.js";
 import { BadRequestError } from "../errors/custom.error.js";
 import { redis } from "../config/redis.config.js";
