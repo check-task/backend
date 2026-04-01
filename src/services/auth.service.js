@@ -1,7 +1,6 @@
 import { prisma } from "../db.config.js";
 import jwt from "jsonwebtoken";
 import { BadRequestError, InternalServerError, UnauthorizedError } from "../errors/custom.error.js"
-import axios from "axios";
 import crypto from "crypto";
 import { redis } from "../config/redis.config.js";
 import { folderRepository } from "../repositories/folder.repository.js";
@@ -202,15 +201,20 @@ export class KakaoAuthService {
       for (const user of users) {
         const userId = user.id
         
-        //Redis refresh token 정리
-        const keys = await redis.keys("refresh_token:*");
+        //Redis SCAN으로 Refresh Token 정리
+        let cursor = "0";
+        do {
+          const result = await redis.scan(cursor, "MATCH", "refresh_token:*", "COUNT", 100);
+          cursor = result[0];
+          const keys = result[1];
 
-        for (const key of keys){
-          const storedUserId = await redis.get(key);
-          if (storedUserId === String(userId)){
-            await redis.del(key);
+          for (const key of keys) {
+            const storedUserId = await redis.get(key);
+            if (storedUserId === String(userId)) {
+              await redis.del(key);
+            }
           }
-        }
+        } while (cursor !== "0");
 
         await prisma.$transaction(async (tx) => {
           await tx.comment.deleteMany({ where: { userId } });
