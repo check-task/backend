@@ -90,15 +90,13 @@ export class KakaoAuthService {
 
     try {
       //기존 사용자 조회
-      let user = await prisma.user.findUnique({
+      let user = await prisma.user.findFirst({
         where:{
-          provider_providerId: {
-            provider: "KAKAO",
-            providerId,
-          },
+          provider: "KAKAO",
+          providerId: providerId,
         },
       });
-      
+
       let isNewUser = false;
       
       // 탈퇴 사용자 차단
@@ -144,7 +142,7 @@ export class KakaoAuthService {
           color: "#FFC93F", 
         });
       }
-      //토근 생성
+      //토큰 생성
       const accessToken = this.generateAccessToken(user);
       const { refreshToken, tokenId } = this.generateRefreshToken(user);
 

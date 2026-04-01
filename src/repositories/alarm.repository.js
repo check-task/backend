@@ -62,9 +62,9 @@ class AlarmRepository {
   //과제 알림 생성
   async createTaskAlarm(userId, taskId, taskTitle, alarmDate, tx = prisma) {
 
-    const user = await tx.user.findUnique({
+    const user = await tx.user.findFirst({
       where: { id: userId },
-      select: { deadlineAlarm: true },
+      include: { alarmSetting: true },
     });
 
     const task = await tx.task.findUnique({
@@ -84,8 +84,7 @@ class AlarmRepository {
         title: `'${taskTitle}'의 마감까지 ${deadlineAlarm}시간 남았어요!`,
         alarmContent: `'현재 ${progressRate}%완성 중이에요. 빨리 끝내고 쉬어요!`,
         alarmDate,
-        isRead: false,
-        createdAt: new Date(Date.now() * 60 * 60 * 1000),
+        isRead: false
       },
     });
   }

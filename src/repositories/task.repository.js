@@ -26,7 +26,7 @@ class TaskRepository {
 
   // 폴더 찾기
   async findFolderById(id) {
-    return await prisma.folder.findUnique({ where: { id } });
+    return await prisma.folder.findFirst({ where: { id } });
   }
 
   // 과제 찾기
@@ -167,12 +167,13 @@ class TaskRepository {
   }
 
   // 멤버 생성
-  async createMember(userId, taskId, role, tx = prisma) {
+  async createMember(userId, taskId, role, folderId = null, tx = prisma) {
     return await tx.member.create({
       data: {
         userId,
         taskId,
         role: role ? true : false, // true: member, false: owner
+        folderId: folderId || null
       },
     });
   }

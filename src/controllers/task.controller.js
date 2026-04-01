@@ -311,7 +311,9 @@ class TaskController {
 
       let result;
 
-      const check = taskService.checkInviteCode(task);
+      const check = await taskService.checkInviteCode(task);
+
+      console.log(check.isValid);
 
       if (check.isValid) {
         result = {
