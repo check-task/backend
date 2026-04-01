@@ -1,7 +1,6 @@
 import { prisma } from "../db.config.js";
 import jwt from "jsonwebtoken";
 import { BadRequestError, InternalServerError, UnauthorizedError } from "../errors/custom.error.js"
-import axios from "axios";
 import crypto from "crypto";
 import { redis } from "../config/redis.config.js";
 import { folderRepository } from "../repositories/folder.repository.js";
@@ -180,6 +179,54 @@ export class KakaoAuthService {
       });
     }catch (error){
       throw new InternalServerError("USER_WITHDRAW_FAILED","회원 탈퇴 처리 중 오류가 발생했습니다.");
+    }
+  }
+  async deleteExpiredUsers() {
+    try {
+      const DELETE_AFTER_DAYS = Number(process.env.DELETE_AFTER_DAYS || 7); //DB 삭제 기준 = 일주일
+      
+      const deleteThresholdDate = new Date(Date.now() - DELETE_AFTER_DAYS * 24 * 60 * 60 * 1000);
+
+      const users = await prisma.user.findMany({
+        where: {
+          deletedAt: {
+            not: null,
+            lt: deleteThresholdDate,
+          },
+        },
+      });
+      console.log(`삭제 대상 유저 수: ${users.length}`);
+      for (const user of users) {
+        const userId = user.id
+        
+        //Redis SCAN으로 Refresh Token 정리
+        let cursor = "0";
+        do {
+          const result = await redis.scan(cursor, "MATCH", "refresh_token:*", "COUNT", 100);
+          cursor = result[0];
+          const keys = result[1];
+
+          for (const key of keys) {
+            const storedUserId = await redis.get(key);
+            if (storedUserId === String(userId)) {
+              await redis.del(key);
+            }
+          }
+        } while (cursor !== "0");
+
+        await prisma.$transaction(async (tx) => {
+          await tx.comment.deleteMany({ where: { userId } });
+          await tx.userAlarm.deleteMany({ where: { userId } });
+          await tx.member.deleteMany({ where: { userId } });
+          await tx.folder.deleteMany({ where: { userId } });
+          // 나머지는 cascade 자동 처리
+          await tx.user.delete({where: { id: user.id }});
+        });
+      }
+
+    } catch (error) {
+      console.error("USER CLEANUP ERROR:", error);
+      throw new InternalServerError("USER_CLEANUP_FAILED","유저 정리 중 오류 발생");
     }
   }
 
