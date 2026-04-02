@@ -343,7 +343,7 @@ class TaskController {
   async joinTaskByInviteCode(req, res, next) {
     try {
       const userId = req.user.id;
-      const { folderId, inviteCode } = req.body;
+      const { folderId = null, inviteCode } = req.body;
 
       const result = await taskService.joinTaskByInviteCode(userId, folderId, inviteCode);
 
