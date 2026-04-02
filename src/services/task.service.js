@@ -672,7 +672,7 @@ class TaskService {
   }
 
   // 초대 코드로 팀 참여
-  async joinTaskByInviteCode(userId, inviteCode) {
+  async joinTaskByInviteCode(userId, folderId, inviteCode) {
     // 초대 코드로 과제 찾기
     const task = await prisma.task.findFirst({
       where: {
@@ -705,7 +705,7 @@ class TaskService {
     // 트랜잭션으로 멤버 추가 및 알림 생성
     return await prisma.$transaction(async (tx) => {
       // 멤버 추가 (role: true = member)
-      const newMember = await taskRepository.createMember(userId, task.id, true, tx);
+      const newMember = await taskRepository.createMember(userId, task.id, true, tx, folderId);
 
       // 과제 알림이 켜져있으면 알림 생성
       if (task.isAlarm) {
@@ -732,6 +732,7 @@ class TaskService {
         taskId: task.id,
         taskTitle: task.title,
         memberId: newMember.id,
+        folderId: task.folderId
       };
     });
   }

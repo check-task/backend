@@ -141,6 +141,7 @@ class TaskController {
       next(error);
     }
   }
+
   // Task 마감일 변경
   async updateTaskDeadline(req, res, next) {
     try {
@@ -342,9 +343,9 @@ class TaskController {
   async joinTaskByInviteCode(req, res, next) {
     try {
       const userId = req.user.id;
-      const { inviteCode } = req.body;
+      const { folderId, inviteCode } = req.body;
 
-      const result = await taskService.joinTaskByInviteCode(userId, inviteCode);
+      const result = await taskService.joinTaskByInviteCode(userId, folderId, inviteCode);
 
       res.status(200).json({
         resultType: "SUCCESS",
