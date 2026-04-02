@@ -26,7 +26,7 @@ class TaskRepository {
 
   // 폴더 찾기
   async findFolderById(id) {
-    return await prisma.folder.findFirst({ where: { id } });
+    return await prisma.folder.findUnique({ where: { id } });
   }
 
   // 과제 찾기
@@ -199,7 +199,7 @@ class TaskRepository {
     });
   }
 
-  // 멤버 존재 여부 확인 
+  // 멤버 존재 여부 확인
   async findMemberInTask(taskId, userId) {
     return await prisma.member.findFirst({
       where: {
@@ -287,15 +287,14 @@ class TaskRepository {
     return result._max.rank || 0;
   }
 
-  async folderCheck(userId, folderId) {
-    const result = await prisma.folder.findFirst({
+  // 코드로 과제 찾기
+  async findTaskByCode(inviteCode) {
+    return task = await prisma.task.findFirst({
       where: {
-        id: folderId,
-        userId: userId
-      }
-    })
-
-    return !!result
+        inviteCode: inviteCode,
+        type: 'TEAM',
+      },
+    });
   }
 }
 

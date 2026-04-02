@@ -354,6 +354,7 @@ class TaskController {
           task_id: result.taskId,
           task_title: result.taskTitle,
           member_id: result.memberId,
+          folderId: result.folderId
         },
       });
     } catch (error) {
