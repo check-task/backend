@@ -673,6 +673,11 @@ class TaskService {
 
   // 초대 코드로 팀 참여
   async joinTaskByInviteCode(userId, folderId, inviteCode) {
+    // 폴더id가 본인 것인지 확인
+    const folderCheck = await taskRepository.folderCheck(userId, folderId);
+    if (!folderCheck) { throw new NotFoundError("FOLDER_NOT_FOUND", "폴더가 존재하지 않습니다.")}
+    if (folderCheck.userId !== userId) { throw new ForbiddenError("NOT_USER_FOLDER_CODE", "해당 유저의 폴더가 아닙니다.")}
+
     // 초대 코드로 과제 찾기
     const task = await prisma.task.findFirst({
       where: {

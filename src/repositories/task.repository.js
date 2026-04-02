@@ -286,6 +286,17 @@ class TaskRepository {
 
     return result._max.rank || 0;
   }
+
+  async folderCheck(userId, folderId) {
+    const result = await prisma.folder.findFirst({
+      where: {
+        id: folderId,
+        userId: userId
+      }
+    })
+
+    return !!result
+  }
 }
 
 export default new TaskRepository();
