@@ -57,7 +57,7 @@ class TaskService {
     console.log("생성 시도 유저 ID:", userId);
 
     // 1. 유저 존재 확인
-    const user = await prisma.user.findFirst({
+    const user = await prisma.user.findUnique({
       where: { id: userId }
     });
 
