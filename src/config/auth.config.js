@@ -12,6 +12,7 @@ export const kakaoStrategy = new KakaoStrategy(
     clientID: process.env.PASSPORT_KAKAO_CLIENT_ID,
     clientSecret: process.env.PASSPORT_KAKAO_CLIENT_SECRET,
     callbackURL: process.env.KAKAO_CALLBACK_URL,
+    scope: ["profile_nickname", "profile_image", "account_email", "phone_number"],
   },
   //로그인 성공 후 실행되는 함수
   async (accessToken, refreshToken, profile, done) => {
