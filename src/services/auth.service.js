@@ -106,9 +106,9 @@ export class KakaoAuthService {
       return term ? new Date(term.agreed_at) : null;
     };
     const termsAgreedAt = getAgreedAt("termsAgreedAt");
-    const pushEnabledAt = getAgreedAt("pushEnabledAt");
-    const thirdPartyAgreedAt = getAgreedAt("thirdPartyAgreedAt");
-    const marketingAgreedAt = getAgreedAt("marketingAgreedAt");
+    const pushUpdatedAt = getAgreedAt("pushUpdatedAt");
+    const thirdPartyUpdatedAt = getAgreedAt("thirdPartyUpdatedAt");
+    const marketingUpdatedAt = getAgreedAt("marketingUpdatedAt");
 
     try {
       //기존 사용자 조회
@@ -172,9 +172,12 @@ export class KakaoAuthService {
           create: {
             userId: user.id,
             termsAgreedAt: termsAgreedAt ?? new Date(),
-            pushEnabledAt,
-            thirdPartyAgreedAt,
-            marketingAgreedAt,
+            pushUpdatedAt,
+            isPush: !!pushUpdatedAt,
+            thirdPartyUpdatedAt,
+            isThirdParty: !!thirdPartyUpdatedAt,
+            marketingUpdatedAt,
+            isMarketing: !!marketingUpdatedAt,
           },
           update: {}, // 재로그인 시 덮어쓰지 않게 설정
         });
