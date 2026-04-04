@@ -2965,7 +2965,9 @@ paths:
                     nullable: true
                     example: null
         '400':
-          description: 잘못된 요청 (보호된 폴더 삭제 시도)
+          description: |
+            - PROTECTED_FOLDER: 보호된 폴더('팀' 폴더) 삭제 시도.
+            - FOLDER_NOT_EMPTY: 폴더 내부에 과제가 존재할 때 삭제 시도.
           content:
             application/json:
               schema:
@@ -2973,8 +2975,8 @@ paths:
                 example:
                   resultType: "FAIL"
                   code: 400
-                  errorCode: "PROTECTED_FOLDER"
-                  reason: "'팀' 폴더는 삭제할 수 없습니다."
+                  errorCode: "PROTECTED_FOLDER | FOLDER_NOT_EMPTY"
+                  reason: "'팀' 폴더는 삭제할 수 없습니다. | 폴더 내부에 과제(완료된 과제 포함)가 존재하여 삭제할 수 없습니다."
                   data: null
         '401':
           description: |

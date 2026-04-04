@@ -130,6 +130,14 @@ class FolderService {
       );
     }
 
+    const assignedTaskCount = await folderRepository.countAssignedTasksByFolderId(folderId);
+    if (assignedTaskCount > 0) {
+      throw new BadRequestError(
+        "FOLDER_NOT_EMPTY",
+        "폴더 내부에 과제(완료된 과제 포함)가 존재하여 삭제할 수 없습니다."
+      );
+    }
+
     await folderRepository.removeFolder(userId, folderId);
   }
 }
