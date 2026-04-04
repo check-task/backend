@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "SubTask" ALTER COLUMN "end_date" SET DATA TYPE TIMESTAMP;
+
+-- AlterTable
+ALTER TABLE "Task" ALTER COLUMN "deadline" SET DATA TYPE TIMESTAMP;
