@@ -85,20 +85,20 @@ class TaskService {
 
     
     // CASE A: 팀 과제 ('TEAM')
-    if (taskData.type === 'TEAM') {
-      // 규칙: "팀" 폴더가 아니면 무조건 에러! (선택 안 해도 에러, 다른 폴더여도 에러)
-      // ⚠️ 주의: DB 폴더명이 "팀 과제"라면 여기도 "팀 과제"로 수정하세요.
-      if (!folder || folder.folderTitle !== "팀") {
-        throw new BadRequestError("INVALID_FOLDER", "팀 과제는 '팀' 폴더에만 생성할 수 있습니다.");
-      }
-    } 
-    // CASE B: 개인 과제 ('PERSONAL')
-    else {
-      // 규칙: "팀" 폴더를 선택했다면 에러! (팀 폴더 침범 불가)
-      if (folder && folder.folderTitle === "팀") {
-        throw new BadRequestError("INVALID_FOLDER", "개인 과제는 '팀' 폴더에 생성할 수 없습니다.");
-      }
-    }
+    // if (taskData.type === 'TEAM') {
+    //   // 규칙: "팀" 폴더가 아니면 무조건 에러! (선택 안 해도 에러, 다른 폴더여도 에러)
+    //   // ⚠️ 주의: DB 폴더명이 "팀 과제"라면 여기도 "팀 과제"로 수정하세요.
+    //   if (!folder || folder.folderTitle !== "팀") {
+    //     throw new BadRequestError("INVALID_FOLDER", "팀 과제는 '팀' 폴더에만 생성할 수 있습니다.");
+    //   }
+    // } 
+    // // CASE B: 개인 과제 ('PERSONAL')
+    // else {
+    //   // 규칙: "팀" 폴더를 선택했다면 에러! (팀 폴더 침범 불가)
+    //   if (folder && folder.folderTitle === "팀") {
+    //     throw new BadRequestError("INVALID_FOLDER", "개인 과제는 '팀' 폴더에 생성할 수 없습니다.");
+    //   }
+    // }
 
     // 트랜잭션 시작
     return await prisma.$transaction(async (tx) => {
@@ -197,7 +197,7 @@ class TaskService {
   }
 
   // 과제 수정
-  async modifyTask(taskId, data = {}) {
+  async modifyTask(taskId, userId, data = {}) {
     const { subTasks, references, folderId, ...taskData } = data;
 
     // 과제 존재 여부 확인
@@ -216,19 +216,29 @@ class TaskService {
       if (!folder) throw new NotFoundError("변경하려는 폴더가 존재하지 않습니다.");
       
       // [보호 로직] 수정 시에도 팀/개인 폴더 규칙 적용
-      if (finalType === 'TEAM' && folder.folderTitle !== '팀') {
-         throw new BadRequestError("INVALID_FOLDER", "팀 과제는 '팀' 폴더로만 이동할 수 있습니다.");
-      }
-      if (finalType === 'PERSONAL' && folder.folderTitle === '팀') {
-         throw new BadRequestError("INVALID_FOLDER", "개인 과제는 '팀' 폴더로 이동할 수 없습니다.");
-      }
+      // if (finalType === 'TEAM' && folder.folderTitle !== '팀') {
+      //    throw new BadRequestError("INVALID_FOLDER", "팀 과제는 '팀' 폴더로만 이동할 수 있습니다.");
+      // }
+      // if (finalType === 'PERSONAL' && folder.folderTitle === '팀') {
+      //    throw new BadRequestError("INVALID_FOLDER", "개인 과제는 '팀' 폴더로 이동할 수 없습니다.");
+      // }
     }
 
     // 트랜잭션
     return await prisma.$transaction(async (tx) => {
       // 과제 기본 정보 업데이트
-      const updatedTask = await taskRepository.updateTask(taskId, { ...taskData, folderId }, tx);
+      const updatedTask = await taskRepository.updateTask(Number(taskId), { ...taskData }, tx);
 
+      if (folderId !== undefined) {
+        await tx.member.updateMany({
+          where: {
+            taskId: Number(taskId),
+            userId: Number(userId),
+          },
+          data: { folderId: folderId }
+        });
+      }
+      
       if (taskData.deadline) {
         await alarmRepository.updateAlarmsForTaskDeadline(taskId, taskData.deadline, tx);
       }

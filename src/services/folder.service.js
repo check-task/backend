@@ -123,12 +123,12 @@ class FolderService {
     if (folder.userId !== userId)
       throw new ForbiddenError("FORBIDDEN", "삭제 권한이 없습니다.");
 
-    if (folder.folderTitle === "팀") {
-      throw new BadRequestError(
-        "PROTECTED_FOLDER",
-        "'팀' 폴더는 삭제할 수 없습니다.",
-      );
-    }
+    // if (folder.folderTitle === "팀") {
+    //   throw new BadRequestError(
+    //     "PROTECTED_FOLDER",
+    //     "'팀' 폴더는 삭제할 수 없습니다.",
+    //   );
+    // }
 
     const assignedTaskCount = await folderRepository.countAssignedTasksByFolderId(folderId);
     if (assignedTaskCount > 0) {

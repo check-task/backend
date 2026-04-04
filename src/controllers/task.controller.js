@@ -73,7 +73,7 @@ class TaskController {
       }
 
       const taskRequest = TaskRequestDTO.toUpdate(req.body, fileReferences);
-      const result = await taskService.modifyTask(taskId, taskRequest);
+      const result = await taskService.modifyTask(taskId, req.user.id, taskRequest);
 
       res.status(200).json({
         resultType: "SUCCESS",
