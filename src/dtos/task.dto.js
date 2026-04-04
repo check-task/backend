@@ -95,6 +95,9 @@ export class TaskRequestDTO {
 export class TaskResponseDTO extends TaskUtils {
   // 상세 조회 응답
   static fromDetail(task) {
+    const myMember = task.members?.[0];
+    const folder = myMember?.folder;
+
     const totalSubTasks = task.subTasks?.length || 0;
     const completedSubTasks = task.subTasks?.filter(st => st.status === 'COMPLETED').length || 0;
     const progressRate = totalSubTasks > 0 ? Math.round((completedSubTasks / totalSubTasks) * 100) : 0;
@@ -102,9 +105,9 @@ export class TaskResponseDTO extends TaskUtils {
     return {
       taskId: task.id,
       title: task.title,
-      folderId: task.folderId,
-      foldercolor: task.folder?.color || "값 없음",
-      folderTitle: task.folder?.folderTitle || "미지정",
+      folderId: folder?.id || null, 
+      foldercolor: folder?.color || "값 없음", 
+      folderTitle: folder?.folderTitle || "미지정", 
       status: task.status || "PENDING",
       type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
       deadline: this.formatDate(task.deadline, '-'),
@@ -124,9 +127,9 @@ export class TaskResponseDTO extends TaskUtils {
           profileImage: comment.user?.profileImage || null,
           createdAt: comment.createdAt
         })) || [],
-        assigneeId: st.assignee?.id || null,
-        assigneeName: st.assignee?.nickname || "PENDING",
-        assigneeProfileImage: st.assignee?.profileImage || null
+        assigneeId: st.assignee?.user?.id || null,
+        assigneeName: st.assignee?.user?.nickname || "미지정",
+        assigneeProfileImage: st.assignee?.user?.profileImage || null
       })) || [],
       communications: task.communications?.map(c => ({ ...c })) || [],
       meetingLogs: task.logs?.map(log => ({ ...log })) || [],
@@ -158,14 +161,15 @@ export class TaskResponseDTO extends TaskUtils {
       // 2. SubTask 정보 추출 및 평탄화 (Flatten)
       if (task.subTasks && task.subTasks.length > 0) {
         task.subTasks.forEach(st => {
-          subTaskList.push({
-            subTaskId: st.id,
-            taskId: task.id, // 어떤 과제의 세부과제인지 식별할 수 있도록 taskId 포함
-            title: st.title,
-            status: st.status || "PENDING",
-            // 필요한 경우 마감일 등 추가
-            deadline: this.formatDate(st.endDate)
-          });
+          if (st.status !== 'COMPLETED') {
+            subTaskList.push({
+              subTaskId: st.id,
+              taskId: task.id,
+              title: st.title,
+              status: st.status || "PENDING",
+              deadline: this.formatDate(st.endDate)
+            });
+          }
         });
       }
     });
