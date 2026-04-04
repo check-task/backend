@@ -154,16 +154,10 @@ export class KakaoAuthService {
           },
         });
 
-        // 기본 폴더 생성
+        // 지정안함 폴더 생성
         await folderRepository.addFolder(user.id, {
-          folderTitle: "기본",
-          color: "#081221",
-        });
-
-        // 팀 폴더 생성
-        await folderRepository.addFolder(user.id, {
-          folderTitle: "팀",
-          color: "#FFC93F", 
+          folderTitle: "지정안함",
+          color: "#818892", 
         });
 
         // 동의 항목 저장
