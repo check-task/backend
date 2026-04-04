@@ -106,9 +106,9 @@ export class KakaoAuthService {
       return term ? new Date(term.agreed_at) : null;
     };
     const termsAgreedAt = getAgreedAt("termsAgreedAt");
-    const pushEnabledAt = getAgreedAt("pushEnabledAt");
-    const thirdPartyAgreedAt = getAgreedAt("thirdPartyAgreedAt");
-    const marketingAgreedAt = getAgreedAt("marketingAgreedAt");
+    const pushUpdatedAt = getAgreedAt("pushUpdatedAt");
+    const thirdPartyUpdatedAt = getAgreedAt("thirdPartyUpdatedAt");
+    const marketingUpdatedAt = getAgreedAt("marketingUpdatedAt");
 
     try {
       //기존 사용자 조회
@@ -154,16 +154,10 @@ export class KakaoAuthService {
           },
         });
 
-        // 기본 폴더 생성
+        // 지정안함 폴더 생성
         await folderRepository.addFolder(user.id, {
-          folderTitle: "기본",
-          color: "#081221",
-        });
-
-        // 팀 폴더 생성
-        await folderRepository.addFolder(user.id, {
-          folderTitle: "팀",
-          color: "#FFC93F", 
+          folderTitle: "지정안함",
+          color: "#818892", 
         });
 
         // 동의 항목 저장
@@ -172,9 +166,12 @@ export class KakaoAuthService {
           create: {
             userId: user.id,
             termsAgreedAt: termsAgreedAt ?? new Date(),
-            pushEnabledAt,
-            thirdPartyAgreedAt,
-            marketingAgreedAt,
+            pushUpdatedAt,
+            isPush: !!pushUpdatedAt,
+            thirdPartyUpdatedAt,
+            isThirdParty: !!thirdPartyUpdatedAt,
+            marketingUpdatedAt,
+            isMarketing: !!marketingUpdatedAt,
           },
           update: {}, // 재로그인 시 덮어쓰지 않게 설정
         });

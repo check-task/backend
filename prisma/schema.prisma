@@ -39,6 +39,14 @@ enum Role {
   ADMIN
 }
 
+enum DeviceType {
+  WEB_CHROME
+  WEB_SAFARI
+  WEB_FIREFOX
+  APP_IOS
+  APP_ANDROID
+}
+
 model TaskPriority {
   id        Int       @id @default(autoincrement()) @map("priority_id")
   userId    Int       @map("user_id")
@@ -75,13 +83,14 @@ model User {
   deletedAt DateTime? @map("deleted_at") @db.Timestamp
 
   // 관계 설정 (Relations)
-  agreements     UserAgreement[]
+  agreements     UserAgreement[] @relation("UserAgreements")
   alarmSetting   UserAlarmSetting?
   alarms         UserAlarm[]    @relation("UserAlarms")
   folders        Folder[]       @relation("UserFolders") // 유저가 가진 폴더들 
   memberships    Member[]       @relation("UserMembers") // 유저가 참여한 팀(멤버) 기록 (팀과제일 경우)
   comments       Comment[]      @relation("UserComments") // 유저가 쓴 댓글들
   taskPriorities TaskPriority[] @relation("UserTaskPriorities") // 유저의 과제 우선순위들
+  devices        UserDevice[]   @relation("UserDevices") // 유저 기기 목록
 
   @@unique([provider, providerId])
   @@index([deletedAt])
@@ -93,14 +102,33 @@ model UserAgreement{
   id           Int     @id @default(autoincrement()) @map("agreement_id")
   userId       Int     @unique @map("user_id") //유저별 약간 동의 (1:1관계)
 
-  termsAgreedAt      DateTime @map("terms_agreed_at") @db.Date // 필수 약관 동의
-  pushEnabledAt      DateTime? @map("push_enabled_at") @db.Date // 푸시 알림 동의(선택)
-  thirdPartyAgreedAt DateTime? @map("third_party_agreed_at") @db.Date // 제3자 정보 제공 동의(선택)
-  marketingAgreedAt  DateTime? @map("marketing_agreed_at") @db.Date // 마케팅 수신 동의(선택)
+  termsAgreedAt        DateTime @map("terms_agreed_at") @db.Date // 필수 약관 동의
+  pushUpdatedAt        DateTime? @map("push_updated_at") @db.Date // 푸시 알림 동의(선택)
+  isPush               Boolean   @default(false) @map("is_push")
+  thirdPartyUpdatedAt  DateTime? @map("third_party_updated_at") @db.Date // 제3자 정보 제공 동의(선택)
+  isThirdParty         Boolean   @default(false) @map("is_third_party")
+  marketingUpdatedAt   DateTime? @map("marketing_updated_at") @db.Date // 마케팅 수신 동의(선택)
+  isMarketing          Boolean   @default(false) @map("is_marketing")
   
   // 관계 설정 (Relations)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade) // 유저 삭제 시 약간 동의 정보도 함께 삭제됨
+  user User @relation("UserAgreements", fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("UserAgreement")
+}
+
+model UserDevice {
+  id         Int        @id @default(autoincrement()) @map("device_id")
+  userId     Int        @map("user_id")
+  fcmToken   String     @map("fcm_token") @db.VarChar(255)
+  deviceType DeviceType @map("device_type")
+  isActive   Boolean    @map("is_active")
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamp
+  updatedAt  DateTime?  @updatedAt @map("updated_at") @db.Timestamp
+
+  // 관계 설정 (Relations)
+  user User @relation("UserDevices", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("UserDevice")
 }
 
 // 유저 알림 설정 (UserAlarmSetting )
