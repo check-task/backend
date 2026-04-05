@@ -34,6 +34,19 @@ enum TaskType {
   TEAM
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
+enum DeviceType {
+  WEB_CHROME
+  WEB_SAFARI
+  WEB_FIREFOX
+  APP_IOS
+  APP_ANDROID
+}
+
 model TaskPriority {
   id        Int       @id @default(autoincrement()) @map("priority_id")
   userId    Int       @map("user_id")
@@ -53,36 +66,83 @@ model TaskPriority {
 // 사용자 (User)
 model User {
   id           Int     @id @default(autoincrement()) @map("user_id")
-  nickname     String  @db.VarChar(100)
-  phoneNum     String  @map("phone_num") @db.VarChar(15)
+  nickname     String  @db.VarChar(30)
+  phoneNum     String  @map("phone_num") @db.VarChar(20)
   email        String  @unique @db.VarChar(50)
   profileImage String? @map("profile_image") @db.VarChar(200)
   password     String? @db.VarChar(50)
-
+  role Role @default(USER)
+  
   // 소셜 로그인 관련
   provider   Provider?
-  providerId String?   @map("provider_id") @db.VarChar(10)
+  providerId String?   @map("provider_id") @db.VarChar(100)
 
   // 시간 관련 (Image: date 타입)
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp
   updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamp
   deletedAt DateTime? @map("deleted_at") @db.Timestamp
 
-  //알람 관련
-  deadlineAlarm Int @default(24) @map("deadline_alarm") // 마감 알람 설정 시간(기본값: 24시간)
-  taskAlarm     Int @default(24) @map("task_alarm") // 과제 알람 설정 시간(기본값: 24시간)
-
   // 관계 설정 (Relations)
+  agreements     UserAgreement[] @relation("UserAgreements")
+  alarmSetting   UserAlarmSetting?
   alarms         UserAlarm[]    @relation("UserAlarms")
   folders        Folder[]       @relation("UserFolders") // 유저가 가진 폴더들 
   memberships    Member[]       @relation("UserMembers") // 유저가 참여한 팀(멤버) 기록 (팀과제일 경우)
   comments       Comment[]      @relation("UserComments") // 유저가 쓴 댓글들
-  SubTasks       SubTask[]      @relation("Assignee") // 유저에게 할당된 세부과제 (개인과제일 경우 모두 자신에게 할당됨)
   taskPriorities TaskPriority[] @relation("UserTaskPriorities") // 유저의 과제 우선순위들
+  devices        UserDevice[]   @relation("UserDevices") // 유저 기기 목록
 
   @@unique([provider, providerId])
   @@index([deletedAt])
   @@map("User") // 실제 DB 테이블 이름
+}
+
+// 유저 이용약관 (UserAgreement)
+model UserAgreement{
+  id           Int     @id @default(autoincrement()) @map("agreement_id")
+  userId       Int     @unique @map("user_id") //유저별 약간 동의 (1:1관계)
+
+  termsAgreedAt        DateTime @map("terms_agreed_at") @db.Date // 필수 약관 동의
+  pushUpdatedAt        DateTime? @map("push_updated_at") @db.Date // 푸시 알림 동의(선택)
+  isPush               Boolean   @default(false) @map("is_push")
+  thirdPartyUpdatedAt  DateTime? @map("third_party_updated_at") @db.Date // 제3자 정보 제공 동의(선택)
+  isThirdParty         Boolean   @default(false) @map("is_third_party")
+  marketingUpdatedAt   DateTime? @map("marketing_updated_at") @db.Date // 마케팅 수신 동의(선택)
+  isMarketing          Boolean   @default(false) @map("is_marketing")
+  
+  // 관계 설정 (Relations)
+  user User @relation("UserAgreements", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("UserAgreement")
+}
+
+model UserDevice {
+  id         Int        @id @default(autoincrement()) @map("device_id")
+  userId     Int        @map("user_id")
+  fcmToken   String     @map("fcm_token") @db.VarChar(255)
+  deviceType DeviceType @map("device_type")
+  isActive   Boolean    @map("is_active")
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamp
+  updatedAt  DateTime?  @updatedAt @map("updated_at") @db.Timestamp
+
+  // 관계 설정 (Relations)
+  user User @relation("UserDevices", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("UserDevice")
+}
+
+// 유저 알림 설정 (UserAlarmSetting )
+model UserAlarmSetting{
+  id           Int     @id @default(autoincrement()) @map("user_alarm_id")
+  userId       Int     @unique @map("user_id") //유저별 알림 설정 (1:1관계)
+
+  deadlineAlarm Int @default(24) @map("deadline_alarm")
+  taskAlarm     Int @default(24) @map("task_alarm")
+
+  // 관계 설정 (Relations)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade) //유저 삭제 시 알림 설정도 함께 삭제됨
+
+  @@map("UserAlarmSetting")
 }
 
 // 유저 알림 (UserAlarm)
@@ -119,8 +179,9 @@ model Folder {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
 
   // 관계 설정 (Relations)
+  members Member[]
   user  User   @relation("UserFolders", fields: [userId], references: [id], onDelete: Restrict) // 유저와 연결 (삭제 시 폴더는 그대로 남아있음)
-  tasks Task[] // 폴더에 속한 과제들
+
 
   @@map("Folder")
 }
@@ -128,9 +189,8 @@ model Folder {
 // 과제 (Task)
 model Task {
   id              Int        @id @default(autoincrement()) @map("task_id")
-  folderId        Int?       @map("folder_id") // 처음 과제를 생성하면 폴더에 과제가 안들어가있으므로 nullable 고려
   title           String     @db.VarChar(100)
-  deadline        DateTime   @db.Date
+  deadline        DateTime   @db.Timestamp
   type            TaskType // Team, Personal
   status          TaskStatus // PENDING, PROGRESS, COMPLETED
   isAlarm         Boolean    @default(true) @map("is_alarm") // true: on, false: off => 생성 시 true로 설정됨.
@@ -140,7 +200,6 @@ model Task {
   inviteExpiredAt DateTime?  @map("invite_expired") @db.Timestamp // 팀과제 초대 코드 만료 시간
 
   // 관계 설정 (Relations)
-  folder         Folder?         @relation(fields: [folderId], references: [id], onDelete: Cascade) // 폴더와 연결 (삭제 시 과제도 삭제됨)
   members        Member[]
   subTasks       SubTask[]
   references     Reference[]
@@ -157,13 +216,16 @@ model Member {
   id        Int      @id @default(autoincrement()) @map("member_id")
   userId    Int      @map("user_id") // 유저 id (팀과제일 경우 멤버에 속한 유저 id), 개인과제일 경우 자기 자신의 id, 멤버에서 삭제 시 null
   taskId    Int      @map("task_id") // 과제 id
+  folderId  Int?     @map("folder_id") // 폴더 id
   role      Boolean // 0: owner(false), 1: member(true) (이미지 기준)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
 
   // 관계 설정 (Relations)
   user User @relation("UserMembers", fields: [userId], references: [id], onDelete: Restrict) // 유저와 연결 (삭제 시 멤버는 그대로 남아있음)
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade) // 과제와 연결 (삭제 시 멤버도 삭제됨)
-
+  folder Folder? @relation(fields: [folderId], references: [id], onDelete: Restrict) // 폴더와 연결 (삭제 시 멤버도 삭제됨)
+  subTasks SubTask[] @relation("assignee") // 유저에게 할당된 세부과제 (개인과제일 경우 모두 자신에게 할당됨)
+  
   @@unique([userId, taskId])
   @@map("Member")
 }
@@ -175,7 +237,7 @@ model SubTask {
   taskId     Int  @map("task_id") // 과제 id
 
   title     String        @db.VarChar(100) // 세부과제 제목
-  endDate   DateTime      @map("end_date") @db.Date // 세부과제 완료 일자 => 생성 시 설정되어야 함.
+  endDate   DateTime      @map("end_date") @db.Timestamp // 세부과제 완료 일자 => 생성 시 설정되어야 함.
   status    SubTaskStatus @default(PENDING) // PENDING, PROGRESS, COMPLETED => 생성 시 PENDING으로 설정됨.
   isAlarm   Boolean       @default(true) @map("is_alarm") // true: on, false: off => 생성 시 true로 설정됨.
   createdAt DateTime      @default(now()) @map("created_at") @db.Timestamp // 세부과제 생성 일자
@@ -183,7 +245,7 @@ model SubTask {
 
   // 관계 설정 (Relations)
   task       Task        @relation(fields: [taskId], references: [id], onDelete: Cascade) // 과제와 연결 (삭제 시 세부과제도 삭제됨)
-  assignee   User?       @relation("Assignee", fields: [assigneeId], references: [id], onDelete: Restrict) // 담당자와 연결 (삭제 시 담당자는 그대로 남아있음)
+  assignee   Member?       @relation("assignee", fields: [assigneeId], references: [id], onDelete: Restrict) // 담당자와 연결 (삭제 시 담당자는 그대로 남아있음)
   comments   Comment[]
   userAlarms UserAlarm[]
 

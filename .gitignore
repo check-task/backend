@@ -4,6 +4,10 @@
 # Prisma
 # prisma/migrations
 
+# Vitest / Testing
+coverage/
+*.lcov
+
 # Logs
 logs
 *.log

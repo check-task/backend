@@ -12,8 +12,8 @@ class AlarmRepository {
       order = "desc",
     } = options;
 
-    // 환경 타지 않도록 순수 Date 객체 사용 (현재 시간 + 9시간)
-    const kstDate = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    // 환경 타지 않도록 순수 Date 객체 사용 (현재 시간)
+    const kstDate = new Date(Date.now() * 60 * 60 * 1000);
 
     const where = {
       userId,
@@ -62,9 +62,9 @@ class AlarmRepository {
   //과제 알림 생성
   async createTaskAlarm(userId, taskId, taskTitle, alarmDate, tx = prisma) {
 
-    const user = await tx.user.findUnique({
+    const user = await tx.user.findFirst({
       where: { id: userId },
-      select: { deadlineAlarm: true },
+      include: { alarmSetting: true },
     });
 
     const task = await tx.task.findUnique({
@@ -84,8 +84,7 @@ class AlarmRepository {
         title: `'${taskTitle}'의 마감까지 ${deadlineAlarm}시간 남았어요!`,
         alarmContent: `'현재 ${progressRate}%완성 중이에요. 빨리 끝내고 쉬어요!`,
         alarmDate,
-        isRead: false,
-        createdAt: new Date(Date.now() + 9 * 60 * 60 * 1000),
+        isRead: false
       },
     });
   }
@@ -113,7 +112,7 @@ class AlarmRepository {
         alarmContent: `'현재 ${subTask.status === 'COMPLETED' ? '완료' : '진행 중'} 상태에요. 빨리 끝내고 쉬어요!`,
         alarmDate,
         isRead: false,
-        createdAt: new Date(Date.now() + 9 * 60 * 60 * 1000),
+        createdAt: new Date(Date.now() * 60 * 60 * 1000),
       },
     });
   }

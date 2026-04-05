@@ -35,6 +35,12 @@ class FolderRepository {
     });
   }
 
+  async countAssignedTasksByFolderId(folderId) {
+    return await prisma.member.count({
+      where: { folderId: parseInt(folderId) },
+    });
+  }
+
   // 1. 폴더 생성
   async addFolder(userId, data) {
     const newFolder = await prisma.folder.create({

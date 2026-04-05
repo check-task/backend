@@ -26,7 +26,7 @@ class TaskRepository {
 
   // 폴더 찾기
   async findFolderById(id) {
-    return await prisma.folder.findUnique({ where: { id } });
+    return await prisma.folder.findFirst({ where: { id } });
   }
 
   // 과제 찾기
@@ -40,15 +40,37 @@ class TaskRepository {
   }
 
   // 과제 수정
-  async updateTask(id, data, tx) {
-    return await tx.task.update({ where: { id }, data });
+  async updateTask(id, data, tx = prisma) {
+    return await tx.task.update({
+      where: { id: parseInt(id) },
+      data: data, // 여기에 folderId가 들어있으면 안 됩니다.
+    });
+  }
+
+  // 멤버 폴더 수정
+  async updateMemberFolder(userId, taskId, folderId, tx = prisma) {
+    return await tx.member.update({
+      where: {
+        userId_taskId: { // 스키마의 @@unique([userId, taskId])를 사용
+          userId: parseInt(userId),
+          taskId: parseInt(taskId),
+        },
+      },
+      data: {
+        folderId: folderId ? parseInt(folderId) : null,
+      },
+    });
   }
 
   // 과제 세부 사항 조회
-  async findTaskDetail(id) {
+  async findTaskDetail(taskId, userId) {
     return await prisma.task.findUnique({
-      where: { id },
+      where: { id: parseInt(taskId) },
       include: {
+        members: {
+          where: { userId: parseInt(userId) },
+          include: { folder: true }
+        },
         subTasks: {
           include: {
             comments: {
@@ -58,10 +80,8 @@ class TaskRepository {
               orderBy: { createdAt: 'asc' } // 오래된 순으로 정렬
             },
             assignee: {
-              select: {
-                id: true,
-                nickname: true,
-                profileImage: true
+              include: {
+                user: { select: { id: true, nickname: true, profileImage: true } }
               }
             },
             _count: {
@@ -71,7 +91,6 @@ class TaskRepository {
             }
           }
         },
-        folder: true,
         references: true,
         logs: true,
         communications: true
@@ -87,12 +106,17 @@ class TaskRepository {
       where: {
         members: {
           some: {
-            userId: userId
+            userId: userId,
+            ...(folderId ? { folderId: parseInt(folderId) } : {}) // 폴더 필터링을 여기서 수행
           }
         },
+        ...(type ? { type: type === "TEAM" ? "TEAM" : "PERSONAL" } : {}),
       },
       include: {
-        folder: true,
+        members: {
+          where: { userId: userId },
+          include: { folder: true }
+        },
         subTasks: true,
         priorities: {
           where: { userId: userId }
@@ -106,12 +130,12 @@ class TaskRepository {
       };
     }
 
-    if (type) {
-      query.where.type = (type === "TEAM") ? "TEAM" : "PERSONAL";
-    }
-    if (folderId) {
-      query.where.folderId = parseInt(folderId);
-    }
+    // if (type) {
+    //   query.where.type = (type === "TEAM") ? "TEAM" : "PERSONAL";
+    // }
+    // if (folderId) {
+    //   query.where.folderId = parseInt(folderId);
+    // }
 
     if (sort === 'DEADLINE') {
       query.orderBy = { deadline: 'asc' };
@@ -120,6 +144,9 @@ class TaskRepository {
     const tasks = await prisma.task.findMany(query);
 
     const processedTasks = tasks.map(task => {
+      const myMemberInfo = task.members[0]; // 내 멤버 정보
+      const folder = myMemberInfo?.folder || null;
+
       // 진행률 계산
       const total = task.subTasks.length;
       const completed = task.subTasks.filter(st => st.status === 'COMPLETED').length;
@@ -127,7 +154,13 @@ class TaskRepository {
 
       const myRank = task.priorities[0]?.rank ?? 999;
 
-      return { ...task, progress, myRank };
+      return { 
+        ...task, 
+        folder, 
+        folderId: folder?.id || null, // folderId를 명시적으로 추가
+        progress, 
+        myRank 
+      };
     });
 
     if (!sort || sort === 'PRIORITY') {
@@ -167,12 +200,13 @@ class TaskRepository {
   }
 
   // 멤버 생성
-  async createMember(userId, taskId, role, tx = prisma) {
+  async createMember(userId, taskId, role, folderId = null, tx = prisma) {
     return await tx.member.create({
       data: {
         userId,
         taskId,
         role: role ? true : false, // true: member, false: owner
+        folderId: folderId || null
       },
     });
   }
@@ -249,15 +283,13 @@ class TaskRepository {
   async updateTaskInviteCode(taskId, inviteCode, tx = prisma) {
     // 1일 후 만료일로 설정
     // 1일 후 만료일로 설정 (한국 시간 기준)
-    const oneDayLater = dayjs().add(9, "hour").add(1, "day").toDate(); // 9시간 차이 보정 UTC +9시간
-    console.log("oneDayLater (KST):", oneDayLater);
-
+    const expiredAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     return await tx.task.update({
-      where: { id: taskId }, //팀과제만 가능 (개인과제는 초대 코드로 참여 불가)
+      where: { id: taskId },
       data: {
         inviteCode,
-        inviteExpiredAt: oneDayLater
+        inviteExpiredAt: expiredAt
       },
       select: {
         inviteCode: true,

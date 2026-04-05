@@ -17,6 +17,7 @@ class TaskService {
     return await taskRepository.getCompletedTasks(userId);
   }
 
+  // 과제 목록 조회
   async getTaskList(userId, queryParams = {}) {
     let { type, folderId, sort, status } = queryParams;
 
@@ -51,13 +52,14 @@ class TaskService {
     });
   }
 
+  // 과제 생성
   async registerTask(userId, data) {
     const { subTasks, references, folderId, ...taskData } = data;
 
     console.log("생성 시도 유저 ID:", userId);
 
     // 1. 유저 존재 확인
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
       where: { id: userId }
     });
 
@@ -84,29 +86,29 @@ class TaskService {
     }
 
     
-    // CASE A: 팀 과제 ('TEAM')
-    if (taskData.type === 'TEAM') {
-      // 규칙: "팀" 폴더가 아니면 무조건 에러! (선택 안 해도 에러, 다른 폴더여도 에러)
-      // ⚠️ 주의: DB 폴더명이 "팀 과제"라면 여기도 "팀 과제"로 수정하세요.
-      if (!folder || folder.folderTitle !== "팀") {
-        throw new BadRequestError("INVALID_FOLDER", "팀 과제는 '팀' 폴더에만 생성할 수 있습니다.");
-      }
-    } 
-    // CASE B: 개인 과제 ('PERSONAL')
-    else {
-      // 규칙: "팀" 폴더를 선택했다면 에러! (팀 폴더 침범 불가)
-      if (folder && folder.folderTitle === "팀") {
-        throw new BadRequestError("INVALID_FOLDER", "개인 과제는 '팀' 폴더에 생성할 수 없습니다.");
-      }
-    }
+      // // CASE A: 팀 과제 ('TEAM')
+      // if (taskData.type === 'TEAM') {
+      //   // 규칙: "팀" 폴더가 아니면 무조건 에러! (선택 안 해도 에러, 다른 폴더여도 에러)
+      //   // ⚠️ 주의: DB 폴더명이 "팀 과제"라면 여기도 "팀 과제"로 수정하세요.
+      //   if (!folder || folder.folderTitle !== "팀") {
+      //     throw new BadRequestError("INVALID_FOLDER", "팀 과제는 '팀' 폴더에만 생성할 수 있습니다.");
+      //   }
+      // } 
+      // // CASE B: 개인 과제 ('PERSONAL')
+      // else {
+      //   // 규칙: "팀" 폴더를 선택했다면 에러! (팀 폴더 침범 불가)
+      //   if (folder && folder.folderTitle === "팀") {
+      //     throw new BadRequestError("INVALID_FOLDER", "개인 과제는 '팀' 폴더에 생성할 수 없습니다.");
+      //   }
+      // }
 
     // 트랜잭션 시작
     return await prisma.$transaction(async (tx) => {
       // 과제 생성 (검증된 folderId 사용)
-      const newTask = await taskRepository.createTask({ ...taskData, folderId }, tx);
+      const newTask = await taskRepository.createTask({ ...taskData }, tx);
 
       // 과제 생성자를 owner로 멤버에 자동 추가
-      const member = await taskRepository.createMember(userId, newTask.id, false, tx); 
+      const memberData = await taskRepository.createMember(userId, newTask.id, false, folderId || null, tx); 
 
       // 우선 순위 지정
       const maxRank = await taskRepository.findMaxRank(userId, tx);
@@ -137,13 +139,14 @@ class TaskService {
             await Promise.all(alarmPromises);
           }
         } else {
-          const creator = await tx.user.findUnique({
+          const creator = await tx.user.findFirst({
             where: { id: userId },
-            select: { deadlineAlarm: true },
+            include: { alarmSetting: true },
           });
 
           if (creator) {
-            const alarmHours = creator.deadlineAlarm || 24;
+            const alarmHours = creator?.alarmSetting?.deadlineAlarm ?? 24;
+            console.log(alarmHours);
             const alarmDate = calculateAlarmDate(newTask.deadline, alarmHours);
 
             await alarmRepository.createTaskAlarm(
@@ -196,7 +199,7 @@ class TaskService {
   }
 
   // 과제 수정
-  async modifyTask(taskId, data = {}) {
+  async modifyTask(taskId, data = {}, userId) {
     const { subTasks, references, folderId, ...taskData } = data;
 
     // 과제 존재 여부 확인
@@ -209,24 +212,28 @@ class TaskService {
 
     const finalType = taskData.type || currentTask.type;
 
-    // 폴더 변경 시 유효성 검사 (추가된 부분)
-    if (folderId) {
-      const folder = await taskRepository.findFolderById(folderId);
-      if (!folder) throw new NotFoundError("변경하려는 폴더가 존재하지 않습니다.");
+    // // 폴더 변경 시 유효성 검사 (추가된 부분)
+    // if (folderId) {
+    //   const folder = await taskRepository.findFolderById(folderId);
+    //   if (!folder) throw new NotFoundError("변경하려는 폴더가 존재하지 않습니다.");
       
-      // [보호 로직] 수정 시에도 팀/개인 폴더 규칙 적용
-      if (finalType === 'TEAM' && folder.folderTitle !== '팀') {
-         throw new BadRequestError("INVALID_FOLDER", "팀 과제는 '팀' 폴더로만 이동할 수 있습니다.");
-      }
-      if (finalType === 'PERSONAL' && folder.folderTitle === '팀') {
-         throw new BadRequestError("INVALID_FOLDER", "개인 과제는 '팀' 폴더로 이동할 수 없습니다.");
-      }
-    }
+    //   // [보호 로직] 수정 시에도 팀/개인 폴더 규칙 적용
+    //   if (finalType === 'TEAM' && folder.folderTitle !== '팀') {
+    //      throw new BadRequestError("INVALID_FOLDER", "팀 과제는 '팀' 폴더로만 이동할 수 있습니다.");
+    //   }
+    //   if (finalType === 'PERSONAL' && folder.folderTitle === '팀') {
+    //      throw new BadRequestError("INVALID_FOLDER", "개인 과제는 '팀' 폴더로 이동할 수 없습니다.");
+    //   }
+    // }
 
     // 트랜잭션
     return await prisma.$transaction(async (tx) => {
       // 과제 기본 정보 업데이트
-      const updatedTask = await taskRepository.updateTask(taskId, { ...taskData, folderId }, tx);
+      const updatedTask = await taskRepository.updateTask(taskId, taskData, tx);
+
+      if (folderId !== undefined) {
+        await taskRepository.updateMemberFolder(userId, taskId, folderId, tx);
+      }
 
       if (taskData.deadline) {
         await alarmRepository.updateAlarmsForTaskDeadline(taskId, taskData.deadline, tx);
@@ -352,8 +359,8 @@ class TaskService {
   }
 
   // 과제 세부 사항 조회
-  async getTaskDetail(taskId) {
-    const task = await taskRepository.findTaskDetail(taskId);
+  async getTaskDetail(taskId, userId) {
+    const task = await taskRepository.findTaskDetail(taskId, userId);
 
     if (!task) {
       throw new NotFoundError("과제를 찾을 수 없음");
@@ -619,25 +626,35 @@ class TaskService {
     }
   }
 
-  // 초대 코드 생성
-  async generateInviteCode(taskId, userId) {
-    // 과제 존재 여부 확인
-    const task = await taskRepository.findTaskById(taskId);
-    if (!task) {
-      throw new NotFoundError("TASK_NOT_FOUND", "과제를 찾을 수 없습니다.");
+  // 초대 코드 조회
+  async checkInviteCode(task) {
+    // 초대 코드 / 만료시간 없는 경우
+    if (task.inviteCode == null || !task.inviteExpiredAt == null) {
+      return { isValid: false };
     }
 
+    // 만료 여부 체크
+    const now = new Date();
+    if (now > task.inviteExpiredAt) {
+      return { isValid: false };
+    }
+
+    return {
+      isValid: true,
+      invite_code: task.inviteCode,
+      invite_expired: task.inviteExpiredAt
+    };
+  }
+
+  // 초대 코드 생성
+  async generateInviteCode(task, userId) {
     if (task.type === 'PERSONAL') {
       throw new ForbiddenError("PERSONAL_TASK", "개인 과제는 초대 코드 생성이 불가능합니다.");
     }
 
-    // 사용자가 해당 과제의 멤버인지 확인
+    // 사용자가 해당 과제의 멤버인지 확인 - 모든 멤버가 초대할 수 있음
     const isMember = await prisma.member.findFirst({
-      where: {
-        taskId,
-        userId,
-        role: false // owner만 초대 링크를 생성할 수 있음 (role: false가 owner)
-      }
+      where: { taskId: task.id, userId }
     });
 
     if (!isMember) {
@@ -647,15 +664,11 @@ class TaskService {
     // 랜덤한 8자리 초대 코드 생성 (대문자 + 숫자)
     const inviteCode = Array(8)
       .fill(0)
-      .map(() => {
-        const random = Math.random() * 36 | 0;
-        return random.toString(36).toUpperCase();
-      })
+      .map(() => (Math.random() * 36 | 0).toString(36).toUpperCase())
       .join('');
 
-    // 트랜잭션으로 초대 코드 업데이트
     const result = await prisma.$transaction(async (tx) => {
-      return await taskRepository.updateTaskInviteCode(taskId, inviteCode, tx);
+      return await taskRepository.updateTaskInviteCode(task.id, inviteCode, tx);
     });
 
     return {
@@ -679,7 +692,7 @@ class TaskService {
     }
 
     // 초대 코드 만료일 확인
-    if (task.inviteExpiredAt && new Date(Date.now() + 9 * 60 * 60 * 1000) > new Date(task.inviteExpiredAt)) {
+    if (task.inviteExpiredAt && new Date() > task.inviteExpiredAt) {
       throw new ForbiddenError("EXPIRED_INVITE_CODE", "만료된 초대 코드입니다.");
     }
 
