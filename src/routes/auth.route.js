@@ -66,7 +66,7 @@ router.get(
       maxAge: 1000 * 60 * 60 * 24 * 14, // 14일
     });
 
-    return res.redirect(`${redirectBaseUrl}/api/v1/auth/kakao/callback`);
+    return res.redirect(`${redirectBaseUrl}/auth/kakao/callback`);
   }
 );
 
