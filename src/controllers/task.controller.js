@@ -43,6 +43,7 @@ class TaskController {
   async updateTask(req, res, next) {
     try {
       const { taskId } = req.params;
+      const userId = req.user.id;
 
       let customFileNames = [];
       if (req.body.fileNames) {
@@ -73,7 +74,7 @@ class TaskController {
       }
 
       const taskRequest = TaskRequestDTO.toUpdate(req.body, fileReferences);
-      const result = await taskService.modifyTask(taskId, taskRequest);
+      const result = await taskService.modifyTask(taskId, taskRequest, userId);
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -105,7 +106,9 @@ class TaskController {
   async getTaskDetail(req, res, next) {
     try {
       const { taskId } = req.params;
-      const task = await taskService.getTaskDetail(taskId);
+      const userId = req.user.id;
+      
+      const task = await taskService.getTaskDetail(taskId, userId);
 
       res.status(200).json({
         resultType: "SUCCESS",
