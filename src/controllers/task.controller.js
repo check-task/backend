@@ -366,7 +366,7 @@ class TaskController {
     try {
       const userId = req.user.id;
       const { taskId, subTaskId } = req.params;
-      const dto = TaskRequestDTO.toUpdateSubTask(req.body);
+      const dto = TaskRequestDTO.toSubUpdate(req.body);
 
       const result = await taskService.updateSingleSubTask(userId, taskId, subTaskId, dto);
 
@@ -378,6 +378,51 @@ class TaskController {
           title: result.title,
           deadline: result.endDate,
         },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async deleteSubTask(req, res, next) {
+    try {
+      const { taskId } = req.params;
+      const userId = req.user.id;
+      const { subTaskIds } = req.body;
+      if (!Array.isArray(subTaskIds)) { throw new Error("subTaskIds는 배열이어야 합니다."); }
+  
+      const result = await taskService.deleteSelectedSubTasks(
+        userId,
+        Number(taskId),
+        subTaskIds.map(Number)
+      );
+  
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "선택한 세부 과제들이 삭제되었습니다.",
+        data: result
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async allDeleteSubTask(req, res, next) {
+    try {
+      const { taskId } = req.params;
+      const userId = req.user.id;
+      const { subTaskIds } = req.body;
+  
+      const result = await taskService.deleteSelectedSubTasks(
+        userId,
+        Number(taskId),
+        subTaskIds
+      );
+  
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "선택한 세부 과제가 삭제되었습니다.",
+        data: result
       });
     } catch (error) {
       next(error);

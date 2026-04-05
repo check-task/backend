@@ -120,12 +120,12 @@ router.patch(
   taskController.patchSubTask
 );
 
-// PATCH /api/v1/task/:taskId/subTask/:subTaskId -- 단일 세부 과제 삭제
+// PATCH /api/v1/task/:taskId/subTask/:subTaskId -- 목록 세부 과제 삭제
 router.delete(
   "/:taskId/subTask/:subTaskId",
   authenticate,
   validate(addSubTaskSchema),
-  taskController.addSubTask
+  taskController.deleteSubTask
 );
 
 // PATCH /api/v1/task/:taskId/subTask/all -- 전체 세부 과제 삭제
@@ -133,7 +133,7 @@ router.delete(
   "/:taskId/subTask/all",
   authenticate,
   validate(addSubTaskSchema),
-  taskController.addSubTask
+  taskController.allDeleteSubTask
 );
 
 // Task 마감일 변경 API

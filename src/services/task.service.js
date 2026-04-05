@@ -806,7 +806,59 @@ class TaskService {
     });
   }
 
+  // 단일 세부 과제 삭제
+  async deleteSelectedSubTasks(userId, taskId, subTaskIds) {
 
+    const parentTask = await taskRepository.findTaskById(taskId);
+    if (!parentTask) throw new NotFoundError("존재하지 않는 과제입니다.");
+  
+    const userCheck = await taskRepository.findMemberInTask(taskId, userId);
+    if (!userCheck) throw new ForbiddenError("권한이 없습니다.");
+  
+    if (!subTaskIds || subTaskIds.length === 0) {
+      throw new Error("삭제할 세부 과제가 없습니다.");
+    }
+  
+    return await prisma.$transaction(async (tx) => {
+  
+      // 알림 삭제
+      await alarmRepository.deleteAlarmsBySubTaskIds(subTaskIds, tx);
+  
+      // 세부 과제 삭제
+      const result = await taskRepository.deleteSubTasksByIds(subTaskIds, tx);
+  
+      return { deletedCount: result.count };
+    });
+  }
+
+  // 전체 세부 과제 삭제
+  async deleteAllSubTasks(userId, taskId) {
+
+    const parentTask = await taskRepository.findTaskById(taskId);
+    if (!parentTask) throw new NotFoundError("존재하지 않는 과제입니다.");
+  
+    const userCheck = await taskRepository.findMemberInTask(taskId, userId);
+    if (!userCheck) throw new ForbiddenError("권한이 없습니다.");
+  
+    return await prisma.$transaction(async (tx) => {
+  
+      // subTask id 전부 조회
+      const subTasks = await taskRepository.findSubTaskIdsByTaskId(taskId, tx);
+      const subTaskIds = subTasks.map(st => st.id);
+  
+      if (subTaskIds.length === 0) {
+        return { deletedCount: 0 };
+      }
+  
+      // 알림 삭제
+      await alarmRepository.deleteAlarmsBySubTaskIds(subTaskIds, tx);
+  
+      // 세부 과제 삭제
+      const result = await taskRepository.deleteAllSubTasksByTaskId(taskId, tx);
+  
+      return { deletedCount: result.count };
+    });
+  }
 }
 
 export default new TaskService();

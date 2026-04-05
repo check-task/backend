@@ -294,6 +294,30 @@ class TaskRepository {
     });
   }
 
+  // 세부 과제 삭제
+  async deleteSubTasksByIds(subTaskIds, tx = prisma) {
+    return await tx.subTask.deleteMany({
+      where: {
+        id: { in: subTaskIds }
+      }
+    });
+  }
+
+  // 세부 과제 전체 삭제
+  async deleteAllSubTasksByTaskId(taskId, tx = prisma) {
+    return await tx.subTask.deleteMany({
+      where: { taskId }
+    });
+  }
+
+  // task 기준 subTask id 조회
+  async findSubTaskIdsByTaskId(taskId, tx = prisma) {
+    return await tx.subTask.findMany({
+      where: { taskId },
+      select: { id: true }
+    });
+  }
+
   // 자료 추가
   async addReferences(taskId, refs, tx) {
     return await tx.reference.createMany({

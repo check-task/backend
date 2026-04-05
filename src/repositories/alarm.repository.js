@@ -228,13 +228,22 @@ class AlarmRepository {
     });
   }
 
-  //세부과제 알림 삭제
+  //세부과제 알림 삭제 - 단건삭제
   async deleteSubTaskAlarm(userId, subTaskId) {
     return await prisma.userAlarm.deleteMany({
       where: {
         userId,
         subTaskId,
       },
+    });
+  }
+
+  // 세부과제 알림 삭제 - 다건 삭제
+  async deleteAlarmsBySubTaskIds(subTaskIds, tx = prisma) {
+    return await tx.userAlarm.deleteMany({
+      where: {
+        subTaskId: { in: subTaskIds }
+      }
     });
   }
 
