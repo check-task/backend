@@ -339,11 +339,12 @@ class TaskController {
     try {
       const { taskId } = req.params;
       const userId = req.user.id;
+      const dto = TaskRequestDTO.toCreateSubTask(req.body);
 
       const result = await taskService.createSingleSubTask(
         userId,
         taskId,
-        req.body,
+        dto,
       );
 
       res.status(200).json({

@@ -233,6 +233,24 @@ class TaskRepository {
     });
   }
 
+  // 세부 과제 생성 
+  async createSubTask(data, tx = prisma) {
+    return await tx.subTask.create({
+      data,
+      include: {
+        assignee: {
+          include: {
+            user: {
+              include: {
+                alarmSetting: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
   // 세부 과제 수정
   async updateSubTask(id, data, tx) {
     return await tx.subTask.update({

@@ -691,56 +691,51 @@ class TaskService {
   }
 
   // 단일 세부 과제 생성 서비스
-  async createSingleSubTask(userId, taskId, data) {
+  async createSingleSubTask(userId, taskId, createData) {
     console.log("📍 서비스로 넘어온 taskId:", taskId);
-    const { title, deadline, isAlarm } = data;
-
     // 부모 과제 존재 여부 확인
     const parentTask = await taskRepository.findTaskById(taskId);
     if (!parentTask) throw new NotFoundError("존재하지 않는 과제입니다.");
 
     // 팀 과제: NULL, 개인 과제: 생성자 본인
-    const assigneeId = parentTask.type === 'TEAM' ? null : userId;
+    const assigneeId = parentTask.type === "TEAM" ? null : userId;
 
     return await prisma.$transaction(async (tx) => {
       // 세부 과제 생성
-      const newSubTask = await tx.subTask.create({
-        data: {
-          taskId: taskId,
-          title: title,
-          endDate: new Date(deadline),
-          status: "PENDING",
-          isAlarm: isAlarm || false,
-          assigneeId: assigneeId
-        },
-        include: { assignee: true } 
-      });
+      const newSubTask = await taskRepository.createSubTask({
+        taskId,
+        title: createData.title,
+        endDate: createData.endDate,
+        status: "PENDING",
+        isAlarm: createData.isAlarm,
+        assigneeId
+      }, tx);
 
-      // 알림 생성 로직
+      let alarmDate = null;
+
       if (newSubTask.isAlarm && newSubTask.assigneeId) {
-        const assignee = newSubTask.assignee;
-        if (assignee) {
-          const alarmHours = assignee.taskAlarm || 24;
-          const alarmDate = new Date(newSubTask.endDate);
-          alarmDate.setHours(alarmDate.getHours() - alarmHours);
+        const alarmHours =
+          newSubTask.assignee?.user?.alarmSetting?.taskAlarm || 24;
 
-          await alarmRepository.createSubTaskAlarm(
-            newSubTask.assigneeId,
-            newSubTask.taskId,
-            newSubTask.id,
-            newSubTask.title,
-            alarmDate,
-            tx
-          );
-        }
+        alarmDate = new Date(newSubTask.endDate);
+        alarmDate.setHours(alarmDate.getHours() - alarmHours);
+
+        await alarmRepository.createSubTaskAlarm(
+          newSubTask.assigneeId,
+          newSubTask.taskId,
+          newSubTask.id,
+          newSubTask.title,
+          alarmDate,
+          tx
+        );
       }
 
       return {
         subTaskId: newSubTask.id,
         title: newSubTask.title,
-        deadline: deadline,
+        deadline: newSubTask.endDate,
         status: newSubTask.status,
-        assigneeName: newSubTask.assignee ? newSubTask.assignee.name : "none"
+        assigneeName: newSubTask.assignee?.user?.nickname || "none"
       };
     });
   }

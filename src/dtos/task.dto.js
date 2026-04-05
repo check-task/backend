@@ -76,6 +76,15 @@ export class TaskRequestDTO {
     return result;
   }
 
+  // 세부 과제 생성
+  static toCreateSubTask(data) {
+    return {
+      title: data.title,
+      endDate: data.deadline ? new Date(data.deadline) : undefined,
+      isAlarm: data.isAlarm ?? false
+    };
+  }
+  
   // 세부 과제 수정
   static toSubUpdate(data) {
     const result = {};
