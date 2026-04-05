@@ -197,92 +197,22 @@ class TaskService {
   }
 
   // 과제 수정
-  async modifyTask(taskId, data = {}) {
-    const { subTasks, references, folderId, ...taskData } = data;
-
+  async modifyTask(taskId, updateData) {
     // 과제 존재 여부 확인
     const currentTask = await taskRepository.findTaskById(taskId);
     if (!currentTask) throw new NotFoundError("수정하려는 과제가 존재하지 않습니다.");
 
-    if (taskData.deadline) {
-      taskData.deadline = new Date(taskData.deadline);
+    // 수정값 없음 방어
+    if (Object.keys(updateData).length === 0) { throw new Error("수정할 값이 없습니다."); }
+
+    // 폴더 존재 여부 확인
+    if (updateData.folderId !== undefined) {
+      const folder = await taskRepository.findFolderById(updateData.folderId);
+      if (!folder) { throw new NotFoundError("변경하려는 폴더가 존재하지 않습니다."); }
     }
 
-    const finalType = taskData.type || currentTask.type;
-
-    // 폴더 변경 시 유효성 검사 (추가된 부분)
-    if (folderId) {
-      const folder = await taskRepository.findFolderById(folderId);
-      if (!folder) throw new NotFoundError("변경하려는 폴더가 존재하지 않습니다.");
-      
-      // [보호 로직] 수정 시에도 팀/개인 폴더 규칙 적용
-      if (finalType === 'TEAM' && folder.folderTitle !== '팀') {
-         throw new BadRequestError("INVALID_FOLDER", "팀 과제는 '팀' 폴더로만 이동할 수 있습니다.");
-      }
-      if (finalType === 'PERSONAL' && folder.folderTitle === '팀') {
-         throw new BadRequestError("INVALID_FOLDER", "개인 과제는 '팀' 폴더로 이동할 수 없습니다.");
-      }
-    }
-
-    // 트랜잭션
-    return await prisma.$transaction(async (tx) => {
-      // 과제 기본 정보 업데이트
-      const updatedTask = await taskRepository.updateTask(taskId, { ...taskData, folderId }, tx);
-
-      if (taskData.deadline) {
-        await alarmRepository.updateAlarmsForTaskDeadline(taskId, taskData.deadline, tx);
-      }
-
-      // 세부 과제 갱신 
-      await taskRepository.deleteAllSubTasks(taskId, tx);
-      if (subTasks?.length > 0) {
-
-        const formattedSubTasks = subTasks.map(st => ({
-          ...st,
-          endDate: st.endDate ? new Date(st.endDate) : null, 
-          taskId: taskId // taskId도 확실히 포함
-        }));
-
-        await taskRepository.addSubTasks(taskId, formattedSubTasks, tx);
-
-        // 새로 생성된 세부과제에 대한 알림 생성
-        const createdSubTasksList = await tx.subTask.findMany({
-          where: { taskId },
-          include: { assignee: true },
-        });
-
-        for (const subTask of createdSubTasksList) {
-          // 세부과제 담당자에게 알림 생성
-          if (subTask.isAlarm && subTask.assigneeId) {
-            const assignee = subTask.assignee;
-            if (assignee) {
-              const alarmHours = assignee.taskAlarm || 24;
-              const alarmDate = calculateAlarmDate(subTask.endDate, alarmHours);
-
-              await alarmRepository.createSubTaskAlarm(
-                subTask.assigneeId,
-                subTask.taskId,
-                subTask.id,
-                subTask.title,
-                alarmDate,
-                tx
-              );
-            }
-          }
-        }
-      }
-
-      // 자료 갱신 
-      if (references) {
-        await taskRepository.deleteAllReferences(taskId, tx);
-
-        if (references.length > 0) {
-          await taskRepository.addReferences(taskId, references, tx);
-        }
-      }
-
-      return { taskId: updatedTask.id };
-    });
+    const updatedTask = await taskRepository.updateTask(taskId, updateData);
+    return { taskId: updatedTask.id };
   }
   
   // Task 마감일 변경 서비스

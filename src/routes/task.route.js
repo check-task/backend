@@ -69,14 +69,8 @@ router.patch(
 // GET /api/v1/task?sort=우선순위 -- 과제 목록 조회
 router.get("/", authenticate, validate(getTasksSchema), taskController.getTasks);
 
-// PATCH /api/v1/task/:taskId -- 과제 수정 (multer 먼저 실행 후 validate)
-router.patch(
-  "/:taskId",
-  authenticate,
-  upload.array("files"),
-  validate(updateTaskSchema),
-  taskController.updateTask
-);
+// PATCH /api/v1/task/:taskId -- 과제 수정 (validate)
+router.patch( "/:taskId", authenticate, validate(updateTaskSchema), taskController.updateTask);
 
 // DELETE /api/v1/task/:taskId -- 과제 삭제
 router.delete(

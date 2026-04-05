@@ -44,35 +44,7 @@ class TaskController {
     try {
       const { taskId } = req.params;
 
-      let customFileNames = [];
-      if (req.body.fileNames) {
-        const rawNames = req.body.fileNames;
-        if (typeof rawNames === "string" && rawNames.startsWith("[")) {
-          customFileNames = JSON.parse(rawNames);
-        } else if (typeof rawNames === "string") {
-          customFileNames = rawNames.split(",").map((name) => name.trim());
-        } else {
-          customFileNames = rawNames;
-        }
-      }
-
-      let fileReferences = [];
-      if (req.files && req.files.length > 0) {
-        for (let i = 0; i < req.files.length; i++) {
-          const file = req.files[i];
-          const fileUrl = await uploadToS3(file);
-
-          fileReferences.push({
-            name:
-              customFileNames && customFileNames[i]
-                ? customFileNames[i]
-                : file.originalname,
-            fileUrl: fileUrl,
-          });
-        }
-      }
-
-      const taskRequest = TaskRequestDTO.toUpdate(req.body, fileReferences);
+      const taskRequest = TaskRequestDTO.toUpdate(req.body);
       const result = await taskService.modifyTask(taskId, taskRequest);
 
       res.status(200).json({

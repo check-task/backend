@@ -40,7 +40,7 @@ class TaskRepository {
   }
 
   // 과제 수정
-  async updateTask(id, data, tx) {
+  async updateTask(id, data) {
     return await tx.task.update({ where: { id }, data });
   }
 
