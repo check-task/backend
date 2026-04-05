@@ -75,6 +75,17 @@ export class TaskRequestDTO {
 
     return result;
   }
+
+  // 세부 과제 수정
+  static toSubUpdate(data) {
+    const result = {};
+
+    if (data.title !== undefined) { result.title = data.title; }
+    if (data.deadline !== undefined) { result.deadline = new Date(data.deadline); }
+    if (data.isAlarm !== undefined) { result.isAlarm = Boolean(data.isAlarm); }
+
+    return result;
+  }
 }
 
 // Response DTO

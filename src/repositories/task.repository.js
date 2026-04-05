@@ -225,6 +225,50 @@ class TaskRepository {
     return await tx.reference.deleteMany({ where: { taskId } });
   }
 
+  // 세부 과제 찾기
+  async findSubTaskById(id, tx) {
+    return await tx.subTask.findUnique({
+      where: { id },
+      include: { assignee: true }
+    });
+  }
+
+  // 세부 과제 수정
+  async updateSubTask(id, data, tx) {
+    return await tx.subTask.update({
+      where: { id },
+      data,
+      include: { assignee: true }
+    });
+  }
+  
+  // 세부 과제 알림 찾기
+  async findAlarmBySubTaskId(subTaskId, tx) {
+    return await tx.userAlarm.findFirst({
+      where: { subTaskId }
+    });
+  }
+  
+  // 세부 과제 알림 추가
+  async createAlarm(data, tx) {
+    return await tx.userAlarm.create({ data });
+  }
+  
+  // 세부 과제 알림 업데이트
+  async updateAlarm(id, data, tx) {
+    return await tx.userAlarm.update({
+      where: { id },
+      data
+    });
+  }
+  
+  // 세부 과제 알림 삭제
+  async deleteAlarm(id, tx) {
+    return await tx.userAlarm.delete({
+      where: { id }
+    });
+  }
+
   // 세부 과제 추가
   async addSubTasks(taskId, subTasks, tx) {
     return await tx.subTask.createMany({
@@ -265,6 +309,8 @@ class TaskRepository {
     });
   }
 
+
+  // 멤버 삭제
   async deleteMember(memberId) {
     const deleted = await prisma.member.delete({
       where: {

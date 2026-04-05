@@ -359,6 +359,29 @@ class TaskController {
       next(error);
     }
   }
+  
+  // 세부 과제 수정
+  async patchSubTask(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const { taskId, subTaskId } = req.params;
+      const dto = TaskRequestDTO.toUpdateSubTask(req.body);
+
+      const result = await taskService.updateSingleSubTask(userId, taskId, subTaskId, dto);
+
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "세부 Task가 성공적으로 수정되었습니다.",
+        data: {
+          subTaskId: result.id,
+          title: result.title,
+          deadline: result.endDate,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new TaskController();

@@ -112,6 +112,30 @@ router.post(
   taskController.addSubTask
 );
 
+// PATCH /api/v1/task/:taskId/subTask/:subTaskId -- 단일 세부 과제 수정
+router.patch(
+  "/:taskId/subTask/:subTaskId",
+  authenticate,
+  validate(addSubTaskSchema),
+  taskController.patchSubTask
+);
+
+// PATCH /api/v1/task/:taskId/subTask/:subTaskId -- 단일 세부 과제 삭제
+router.delete(
+  "/:taskId/subTask/:subTaskId",
+  authenticate,
+  validate(addSubTaskSchema),
+  taskController.addSubTask
+);
+
+// PATCH /api/v1/task/:taskId/subTask/all -- 전체 세부 과제 삭제
+router.delete(
+  "/:taskId/subTask/all",
+  authenticate,
+  validate(addSubTaskSchema),
+  taskController.addSubTask
+);
+
 // Task 마감일 변경 API
 router.patch(
   "/:taskId/deadline",

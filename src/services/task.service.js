@@ -745,6 +745,72 @@ class TaskService {
     });
   }
 
+  // 단일 세부 과제 수정
+  async updateSingleSubTask(userId, taskId, subTaskId, updateData) {
+    // 부모 과제 존재 여부 확인
+    const parentTask = await taskRepository.findTaskById(taskId);
+    if (!parentTask) throw new NotFoundError("존재하지 않는 과제입니다.");
+
+    // 멤버 존재 여부 확인
+    const userCheck = await taskRepository.findMemberInTask(taskId, userId);
+    if (!userCheck) throw new ForbiddenError("유저가 해당 과제에 권한이 없습니다.");
+
+    if (Object.keys(updateData).length === 0) { throw new Error("수정할 값이 없습니다."); }
+
+    return await prisma.$transaction(async (tx) => {
+      const subTask = await taskRepository.findSubTaskById(subTaskId);
+      if (!subTask) { throw new NotFoundError("세부 과제가 존재하지 않습니다."); }
+
+      // 세부 과제 수정      
+      const updatedSubTask = await taskRepository.updateSubTask(
+        subTaskId,
+        updateData,
+        tx
+      );
+
+      // 기존 알람 찾기
+      const existingAlarm = await taskRepository.findAlarmBySubTaskId(
+        subTaskId,
+        tx
+      );
+
+      let alarmDate = null;
+      if (updatedSubTask.isAlarm && updatedSubTask.assigneeId) {
+        const alarmHours = updatedSubTask.assignee?.user?.alarmSetting?.taskAlarm || 24;
+  
+        alarmDate = new Date(updatedSubTask.endDate);
+        alarmDate.setHours(alarmDate.getHours() - alarmHours);
+      }
+
+      if (updatedSubTask.isAlarm && alarmDate) {
+        if (existingAlarm) {
+          await alarmRepository.updateAlarm(existingAlarm.id, {
+            title: `'${updatedSubTask.title}'의 마감 알림`,
+            alarmContent: `'${updatedSubTask.title}' 진행 중입니다.`,
+            alarmDate
+          }, tx);
+        } else {
+          await alarmRepository.createSubTaskAlarm(
+            updatedSubTask.assigneeId,
+            updatedSubTask.taskId,
+            updatedSubTask.id,
+            updatedSubTask.title,
+            alarmDate,
+            tx
+          );
+        }
+      } else if (existingAlarm) {
+        await alarmRepository.deleteAlarmById(existingAlarm.id, tx);
+      }
+
+      return {
+        subTaskId: updatedSubTask.id,
+        title: updatedSubTask.title,
+        deadline: updatedSubTask.endDate
+      };
+    });
+  }
+
 
 }
 

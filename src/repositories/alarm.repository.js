@@ -13,7 +13,7 @@ class AlarmRepository {
     } = options;
 
     // 환경 타지 않도록 순수 Date 객체 사용 (현재 시간)
-    const kstDate = new Date(Date.now() * 60 * 60 * 1000);
+    const kstDate = new Date();
 
     const where = {
       userId,
@@ -94,14 +94,14 @@ class AlarmRepository {
 
     const user = await tx.user.findUnique({
       where: { id: userId },
-      select: { taskAlarm: true },
+      select: { alarmSetting: true },
     });
 
     const subTask = await tx.subTask.findUnique({
       where: { id: subTaskId },
     });
 
-    const taskAlarm = user.taskAlarm;
+    const taskAlarm = user.alarmSetting?.taskAlarm || 24;
 
     return await tx.userAlarm.create({
       data: {
@@ -111,8 +111,7 @@ class AlarmRepository {
         title: `'${subTaskTitle}'의 마감까지 ${taskAlarm}시간 남았어요!`,
         alarmContent: `'현재 ${subTask.status === 'COMPLETED' ? '완료' : '진행 중'} 상태에요. 빨리 끝내고 쉬어요!`,
         alarmDate,
-        isRead: false,
-        createdAt: new Date(Date.now() * 60 * 60 * 1000),
+        isRead: false
       },
     });
   }
@@ -185,8 +184,8 @@ class AlarmRepository {
   }
 
   //세부과제 알림 상태 변경
-  async updateSubtaskAlarmStatus(subTaskId, isAlarm) {
-    return await prisma.subTask.update({
+  async updateSubtaskAlarmStatus(subTaskId, isAlarm, tx = prisma) {
+    return await tx.subTask.update({
       where: { id: subTaskId },
       data: { isAlarm },
       select: {
@@ -241,14 +240,14 @@ class AlarmRepository {
 
   //안읽음 알림 여부 
   async countUnreadAlarms(userId) {
-    const kstDate = dayjs().add(9, "hour").toDate();
+    const kstDate = new Date();
 
     return await prisma.userAlarm.count({
       where: {
         userId,
         isRead: false,
         alarmDate: {
-          lte: kstDate,
+          lte: kstDate
         },
       },
     });
