@@ -40,8 +40,23 @@ class TaskRepository {
   }
 
   // 과제 수정
-  async updateTask(id, data) {
+  async updateTask(id, data, tx = prisma) {
     return await tx.task.update({ where: { id }, data });
+  }
+
+  // 폴더 수정하기
+  async updateMemberFolder({ userId, taskId, folderId }) {
+    return await prisma.member.update({
+      where: {
+        userId_taskId: {
+          userId,
+          taskId,
+        },
+      },
+      data: {
+        folderId,
+      },
+    });
   }
 
   // 과제 세부 사항 조회

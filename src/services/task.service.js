@@ -197,18 +197,27 @@ class TaskService {
   }
 
   // 과제 수정
-  async modifyTask(taskId, updateData) {
+  async modifyTask(taskId, userId, updateData) {
     // 과제 존재 여부 확인
     const currentTask = await taskRepository.findTaskById(taskId);
     if (!currentTask) throw new NotFoundError("수정하려는 과제가 존재하지 않습니다.");
 
-    // 수정값 없음 방어
     if (Object.keys(updateData).length === 0) { throw new Error("수정할 값이 없습니다."); }
 
     // 폴더 존재 여부 확인
     if (updateData.folderId !== undefined) {
       const folder = await taskRepository.findFolderById(updateData.folderId);
-      if (!folder) { throw new NotFoundError("변경하려는 폴더가 존재하지 않습니다."); }
+      if (!folder) {
+        throw new NotFoundError("변경하려는 폴더가 존재하지 않습니다.");
+      }
+  
+      await taskRepository.updateMemberFolder({
+        userId,
+        taskId,
+        folderId: updateData.folderId,
+      });
+  
+      delete updateData.folderId;
     }
 
     const updatedTask = await taskRepository.updateTask(taskId, updateData);

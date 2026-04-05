@@ -42,10 +42,11 @@ class TaskController {
   // 과제 수정
   async updateTask(req, res, next) {
     try {
+      const userId = req.user.id;
       const { taskId } = req.params;
 
       const taskRequest = TaskRequestDTO.toUpdate(req.body);
-      const result = await taskService.modifyTask(taskId, taskRequest);
+      const result = await taskService.modifyTask(taskId, userId, taskRequest);
 
       res.status(200).json({
         resultType: "SUCCESS",
