@@ -762,7 +762,7 @@ class TaskService {
     if (Object.keys(updateData).length === 0) { throw new Error("수정할 값이 없습니다."); }
 
     return await prisma.$transaction(async (tx) => {
-      const subTask = await taskRepository.findSubTaskById(subTaskId);
+      const subTask = await taskRepository.findSubTaskById(subTaskId, tx);
       if (!subTask) { throw new NotFoundError("세부 과제가 존재하지 않습니다."); }
 
       // 세부 과제 수정      
@@ -780,7 +780,7 @@ class TaskService {
 
       let alarmDate = null;
       if (updatedSubTask.isAlarm && updatedSubTask.assigneeId) {
-        const alarmHours = updatedSubTask.assignee?.user?.alarmSetting?.taskAlarm || 24;
+        const alarmHours = updatedSubTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
   
         alarmDate = new Date(updatedSubTask.endDate);
         alarmDate.setHours(alarmDate.getHours() - alarmHours);

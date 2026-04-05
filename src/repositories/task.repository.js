@@ -35,7 +35,7 @@ class TaskRepository {
   }
 
   // 과제 생성
-  async createTask(data, tx) {
+  async createTask(data, tx = prisma) {
     return await tx.task.create({ data });
   }
 
@@ -271,7 +271,17 @@ class TaskRepository {
     return await tx.subTask.update({
       where: { id },
       data,
-      include: { assignee: true }
+      include: {
+        assignee: {
+          include: {
+            user: {
+              include: {
+                alarmSetting: true
+              }
+            }
+          }
+        }
+      }
     });
   }
   
