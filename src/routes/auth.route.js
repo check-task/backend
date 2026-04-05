@@ -42,7 +42,7 @@ router.get(
       prod: process.env.FRONTEND_VERCEL,
     };
 
-    const redirectBaseUrl = REDIRECT_URL_MAP[req.query.state || "prod"];
+    const redirectBaseUrl = REDIRECT_URL_MAP[state] ?? REDIRECT_URL_MAP["prod"];
     if (!redirectBaseUrl) { return res.status(500).send("리다이렉트 URL이 설정되지 않았습니다."); }
 
     if (!req.user) {
