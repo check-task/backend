@@ -707,7 +707,39 @@ class TaskService {
       // 멤버 추가 (role: true = member)
       const newMember = await taskRepository.createMember(userId, task.id, true, tx);
 
-      // 과제 알림이 켜져있으면 알림 생성
+      // 새로 참여한 유저 정보 조회
+      const newUser = await tx.user.findUnique({
+        where: { id: userId },
+        select: { nickname: true },
+      });
+
+      // 기존 팀원들에게 알림 생성
+      const existingMembers = await tx.member.findMany({
+        where: {
+          taskId: task.id,
+          userId: { not: userId }, // 새로 참여한 유저 제외
+        },
+        include: {
+          user: true,
+        },
+      });
+
+      // 기존 팀원들에게 "새로운 팀원 참여" 알림 생성
+      const alarmPromises = existingMembers.map(async (member) => {
+        return alarmRepository.createMemberJoinAlarm(
+          member.userId,
+          task.id,
+          task.title,
+          newUser.nickname,
+          tx
+        );
+      });
+
+      if (alarmPromises.length > 0) {
+        await Promise.all(alarmPromises);
+      }
+
+      // 과제 알림이 켜져있으면 새로 참여한 유저에게도 과제 알림 생성
       if (task.isAlarm) {
         const user = await tx.user.findUnique({
           where: { id: userId },

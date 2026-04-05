@@ -322,6 +322,21 @@ class AlarmRepository {
       });
     }
   }
+
+  // 팀원 참여 알림 생성
+  async createMemberJoinAlarm(userId, taskId, taskTitle, memberName, tx = prisma) {
+    return await tx.userAlarm.create({
+      data: {
+        userId,
+        taskId,
+        title: `새로운 팀원이 참여했어요!`,
+        alarmContent: `${memberName}님이 '${taskTitle}'에 참여했습니다.`,
+        alarmDate: new Date(Date.now() + 9 * 60 * 60 * 1000), // 현재 시간으로 즉시 알림
+        isRead: false,
+        createdAt: new Date(Date.now() + 9 * 60 * 60 * 1000),
+      },
+    });
+  }
 }
 
 export default new AlarmRepository();

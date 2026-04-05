@@ -4,7 +4,6 @@ info:
   description: Check-Task API 문서입니다.
   version: 1.0.0
 
-
 components:
   securitySchemes:
     bearerAuth:
@@ -12,7 +11,7 @@ components:
       scheme: bearer
       bearerFormat: JWT
 
-tags:
+  tags:
   - name: Task
     description: 과제 관련 API
   - name: Alarm
@@ -27,6 +26,29 @@ tags:
     description: 자료/커뮤니케이션/회의록 관련 API
   - name: Kakao Auth
     description: 카카오 인증 관련 API
+
+  # 소켓 이벤트 스키마
+  schemas:
+    MemberJoinedEvent:
+      type: object
+      description: 팀원 참여 알림 이벤트
+      properties:
+        taskId:
+          type: integer
+          description: 참여한 과제 ID
+          example: 1
+        taskTitle:
+          type: string
+          description: 참여한 과제 제목
+          example: "팀 프로젝트 개발"
+        memberId:
+          type: integer
+          description: 생성된 멤버 ID
+          example: 5
+        message:
+          type: string
+          description: 알림 메시지
+          example: "홍길동님이 팀에 참여했습니다."
 
 paths:
   # -- 알림 API --
@@ -2105,7 +2127,14 @@ paths:
       tags:
         - Task
       summary: 초대 코드로 팀 참여
-      description: 초대 코드를 사용하여 팀 과제에 참여합니다.
+      description: |
+        초대 코드를 사용하여 팀 과제에 참여합니다.
+        
+        **팀원 참여 알림 기능:**
+        - 새로운 팀원이 참여하면 기존 팀원들에게 실시간 알림이 전송됩니다.
+        - DB에도 알림 기록이 저장됩니다.
+        - 소켓 이벤트: `member:joined`
+        - 알림 내용: "새로운 팀원이 참여했어요!"
       security:
         - bearerAuth: []
       requestBody:
