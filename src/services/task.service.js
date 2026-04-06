@@ -205,21 +205,27 @@ class TaskService {
     if (Object.keys(updateData).length === 0) { throw new Error("수정할 값이 없습니다."); }
 
     // 폴더 존재 여부 확인
-    if (updateData.folderId !== undefined) {
-      const folder = await taskRepository.findFolderById(updateData.folderId);
-      if (!folder) {
-        throw new NotFoundError("변경하려는 폴더가 존재하지 않습니다.");
+    if ("folderId" in updateData) {
+      let targetFolderId;
+  
+      if (updateData.folderId === null) {
+        const defaultFolder = await taskRepository.findFolderByUserIdAndName(userId, "지정안함");
+        if (!defaultFolder) throw new Error("기본 폴더가 존재하지 않습니다.");
+        targetFolderId = defaultFolder.id;
+      } else {
+        targetFolderId = Number(updateData.folderId);
+        if (isNaN(targetFolderId)) throw new Error("folderId는 숫자여야 합니다.");
+  
+        // 본인 소유 폴더 확인
+        const folderCheck = await taskRepository.findFolderById(targetFolderId);
+        if (!folderCheck) throw new Error("폴더가 존재하지 않습니다.");
+        if (folderCheck.userId !== userId) throw new Error("본인 폴더가 아닙니다.");
       }
   
-      await taskRepository.updateMemberFolder({
-        userId,
-        taskId,
-        folderId: updateData.folderId,
-      });
-  
-      delete updateData.folderId;
+      await taskRepository.updateMemberFolder({ userId, taskId, folderId: targetFolderId });
+      updateData.folderId = targetFolderId;
     }
-
+  
     const updatedTask = await taskRepository.updateTask(taskId, updateData);
     return { taskId: updatedTask.id };
   }

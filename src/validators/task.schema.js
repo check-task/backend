@@ -52,6 +52,7 @@ export const taskIdParamSchema = z.object({
 export const updateTaskSchema = z.object({
   params: z.object({
     taskId: idParam,
+    folderId: idParam,
   }),
   body: z
     .object({

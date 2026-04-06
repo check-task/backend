@@ -65,10 +65,13 @@ export class TaskRequestDTO {
     if (data.title !== undefined) { result.title = data.title; }
 
     if (data.folderId !== undefined) {
-      const folderId = Number(data.folderId);
-      if (isNaN(folderId)) { throw new Error("folderId는 숫자여야 합니다."); }
-
-      result.folderId = folderId;
+      if (data.folderId === null) {
+        result.folderId = null;
+      } else {
+        const folderId = Number(data.folderId);
+        if (isNaN(folderId)) throw new Error("folderId는 숫자여야 합니다.");
+        result.folderId = folderId;
+      }
     }
 
     if (data.deadline !== undefined) { result.deadline = new Date(data.deadline); }
