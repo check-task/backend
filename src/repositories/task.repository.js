@@ -16,7 +16,10 @@ class TaskRepository {
         },
       },
       include: {
-        folder: true,
+        members: {
+          where: { userId: userId },
+          include: { folder: true }
+        }
       },
       orderBy: {
         deadline: 'desc',
