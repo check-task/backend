@@ -29,6 +29,16 @@ class TaskRepository {
     return await prisma.folder.findUnique({ where: { id } });
   }
 
+  // 폴더 찾기 (지정안함 폴더)
+  async findFolderByUserIdAndName(userId, folderName) {
+    return await prisma.folder.findFirst({
+      where: {
+        userId: userId,
+        name: folderName,
+      },
+    });
+  }
+
   // 과제 찾기
   async findTaskById(id) {
     return await prisma.task.findUnique({ where: { id } });

@@ -612,53 +612,49 @@ class TaskService {
 
   // 초대 코드로 팀 참여
   async joinTaskByInviteCode(userId, folderId, inviteCode) {
+    const targetFolderId = folderId || (await taskRepository.findFolderByUserIdAndName(userId, "지정안함")).id;
+  
     // 폴더id가 본인 것인지 확인
-    const folderCheck = await taskRepository.findFolderById(folderId);
-    if (!folderCheck) { throw new NotFoundError("FOLDER_NOT_FOUND", "폴더가 존재하지 않습니다.")}
-    if (folderCheck.userId !== userId) { throw new ForbiddenError("NOT_USER_FOLDER_CODE", "해당 유저의 폴더가 아닙니다.")}
-
+    const folderCheck = await taskRepository.findFolderById(targetFolderId);
+    if (!folderCheck) throw new NotFoundError("FOLDER_NOT_FOUND", "폴더가 존재하지 않습니다.");
+    if (folderCheck.userId !== userId) throw new ForbiddenError("NOT_USER_FOLDER_CODE", "해당 유저의 폴더가 아닙니다.");
+  
     // 초대 코드로 과제 찾기
-    const findTask = await taskRepository.findTaskByCode(inviteCode)
-    if (!findTask) { throw new NotFoundError("INVALID_INVITE_CODE", "유효하지 않은 초대 코드입니다."); }
-    if (findTask.inviteExpiredAt && new Date() > findTask.inviteExpiredAt) { throw new ForbiddenError("EXPIRED_INVITE_CODE", "만료된 초대 코드입니다.");}
-
+    const findTask = await taskRepository.findTaskByCode(inviteCode);
+    if (!findTask) throw new NotFoundError("INVALID_INVITE_CODE", "유효하지 않은 초대 코드입니다.");
+    if (findTask.inviteExpiredAt && new Date() > findTask.inviteExpiredAt) throw new ForbiddenError("EXPIRED_INVITE_CODE", "만료된 초대 코드입니다.");
+  
     // 이미 멤버인지 확인
-    const existingMember = await taskRepository.findMemberInTask(task.id, userId)
-    if (existingMember) { throw new ForbiddenError("ALREADY_MEMBER", "이미 팀 멤버입니다."); }
-
+    const existingMember = await taskRepository.findMemberInTask(findTask.id, userId);
+    if (existingMember) throw new ForbiddenError("ALREADY_MEMBER", "이미 팀 멤버입니다.");
+  
     // 트랜잭션으로 멤버 추가 및 알림 생성
     const task = await prisma.$transaction(async (tx) => {
-      // 멤버 추가 (role: true = member)
-      const newMember = await taskRepository.createMember(userId, task.id, true, tx, folderId);
-
-      // 과제 알림이 켜져있으면 알림 생성
-      if (task.isAlarm) {
+      const newMember = await taskRepository.createMember(userId, findTask.id, true, tx, targetFolderId);
+  
+      if (findTask.isAlarm) {
         const user = await tx.user.findUnique({
           where: { id: userId },
           select: { taskAlarm: true },
         });
-
+  
         if (user) {
           const alarmHours = user.taskAlarm || 24;
-          const alarmDate = calculateAlarmDate(task.deadline, alarmHours);
-
-          await alarmRepository.createTaskAlarm(
-            userId,
-            task.id,
-            task.title,
-            alarmDate,
-            tx
-          );
+          const alarmDate = calculateAlarmDate(findTask.deadline, alarmHours);
+  
+          await alarmRepository.createTaskAlarm(userId, findTask.id, findTask.title, alarmDate, tx);
         }
       }
-
+  
       return {
-        taskId: task.id,
-        taskTitle: task.title,
+        taskId: findTask.id,
+        taskTitle: findTask.title,
         memberId: newMember.id,
-        folderId: task.folderId
+        folderId: targetFolderId
       };
     });
+  
+    return task;
   }
 
   // 멤버 역할 수정 
