@@ -114,7 +114,7 @@ CREATE TABLE "Folder" (
 CREATE TABLE "Task" (
     "task_id" SERIAL NOT NULL,
     "title" VARCHAR(100) NOT NULL,
-    "deadline" DATE NOT NULL,
+    "deadline" TIMESTAMP NOT NULL,
     "type" "TaskType" NOT NULL,
     "status" "TaskStatus" NOT NULL,
     "is_alarm" BOOLEAN NOT NULL DEFAULT true,
@@ -144,7 +144,7 @@ CREATE TABLE "SubTask" (
     "assignee_id" INTEGER,
     "task_id" INTEGER NOT NULL,
     "title" VARCHAR(100) NOT NULL,
-    "end_date" DATE NOT NULL,
+    "end_date" TIMESTAMP NOT NULL,
     "status" "SubTaskStatus" NOT NULL DEFAULT 'PENDING',
     "is_alarm" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -205,6 +205,9 @@ CREATE TABLE "Communication" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "TaskPriority_user_id_task_id_key" ON "TaskPriority"("user_id", "task_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_user_id_key" ON "User"("user_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
