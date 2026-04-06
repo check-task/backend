@@ -24,29 +24,42 @@ class TaskUtils {
     return diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
   }
 
-  // KST 기준 날짜 포맷 (YYYY.MM.DD)
-  static formatDate(date, separator = '.') {
-    if (!date) return null;
+  // KST 기준 날짜 포맷 
+    static formatDate(date, separator = '.', includeTime = false) {
+      if (!date) return null;
 
-    // 입력받은 날짜(UTC)를 한국 시간으로 변환
-    const targetDate = new Date(date);
-    const kstDate = new Date(targetDate.getTime() + (9 * 60 * 60 * 1000));
+      const targetDate = new Date(date);
+      // 한국 시간(+9) 보정
+      const kstDate = new Date(targetDate.getTime() + (9 * 60 * 60 * 1000));
 
-    const year = kstDate.getUTCFullYear();
-    const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(kstDate.getUTCDate()).padStart(2, '0');
+      const year = kstDate.getUTCFullYear();
+      const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(kstDate.getUTCDate()).padStart(2, '0');
 
-    return `${year}${separator}${month}${separator}${day}`;
-  }
+      let result = `${year}${separator}${month}${separator}${day}`;
+
+      // ✅ includeTime이 true일 때만 시:분 추가
+      if (includeTime) {
+        const hours = String(kstDate.getUTCHours()).padStart(2, '0');
+        const minutes = String(kstDate.getUTCMinutes()).padStart(2, '0');
+        result += ` ${hours}:${minutes}`;
+      }
+
+      return result;
+    }
 }
 
 // Request DTO 
 export class TaskRequestDTO {
   // 과제 생성
   static toCreate(data) {
+    const parsedFolderId = (data.folderId && data.folderId !== "null" && data.folderId !== "") 
+    ? Number(data.folderId) 
+    : null;
+
     return {
       title: data.title,
-      folderId: data.folderId,
+      folderId: isNaN(parsedFolderId) ? null : parsedFolderId,
       deadline: data.deadline ? new Date(data.deadline) : new Date(),
       type: data.type === "TEAM" ? "TEAM" : "PERSONAL",
       status: "PENDING",
@@ -101,6 +114,9 @@ export class TaskRequestDTO {
 export class TaskResponseDTO extends TaskUtils {
   // 상세 조회 응답
   static fromDetail(task) {
+    const myMember = task.members?.[0];
+    const folder = myMember?.folder;
+
     const totalSubTasks = task.subTasks?.length || 0;
     const completedSubTasks = task.subTasks?.filter(st => st.status === 'COMPLETED').length || 0;
     const progressRate = totalSubTasks > 0 ? Math.round((completedSubTasks / totalSubTasks) * 100) : 0;
@@ -108,19 +124,19 @@ export class TaskResponseDTO extends TaskUtils {
     return {
       taskId: task.id,
       title: task.title,
-      folderId: task.folderId,
-      foldercolor: task.folder?.color || "값 없음",
-      folderTitle: task.folder?.folderTitle || "미지정",
+      folderId: folder?.id || null, 
+      foldercolor: folder?.color || "값 없음", 
+      folderTitle: folder?.folderTitle || "미지정", 
       status: task.status || "PENDING",
       type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
-      deadline: this.formatDate(task.deadline, '-'),
+      deadline: this.formatDate(task.deadline, '.', true),
       dDay: this.calculateDDay(task.deadline),
       progressRate: progressRate,
       subTasks: task.subTasks?.map(st => ({
         subTaskId: st.id,
         title: st.title,
         deadline: this.formatDate(st.endDate, '-'),
-        status: st.status === 'COMPLETED' ? 'COMPLETED' : 'PROGRESS',
+        status: st.status === 'COMPLETED' ? 'COMPLETED' : 'PENDING',
         isAlarm: st.isAlarm || false,
         commentCount: st._count?.comments || 0,
         comments: st.comments?.map(comment => ({
@@ -130,9 +146,9 @@ export class TaskResponseDTO extends TaskUtils {
           profileImage: comment.user?.profileImage || null,
           createdAt: comment.createdAt
         })) || [],
-        assigneeId: st.assignee?.id || null,
-        assigneeName: st.assignee?.nickname || "PENDING",
-        assigneeProfileImage: st.assignee?.profileImage || null
+        assigneeId: st.assignee?.user?.id || null,
+        assigneeName: st.assignee?.user?.nickname || "미지정",
+        assigneeProfileImage: st.assignee?.user?.profileImage || null
       })) || [],
       communications: task.communications?.map(c => ({ ...c })) || [],
       meetingLogs: task.logs?.map(log => ({ ...log })) || [],
@@ -156,7 +172,7 @@ export class TaskResponseDTO extends TaskUtils {
         status: task.status || "PENDING",
         title: task.title,
         type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
-        deadline: this.formatDate(task.deadline),
+        deadline: this.formatDate(task.deadline, '.', true),
         dDay: this.calculateDDay(task.deadline),
         progressRate: task.progress || 0
       });
@@ -164,14 +180,15 @@ export class TaskResponseDTO extends TaskUtils {
       // 2. SubTask 정보 추출 및 평탄화 (Flatten)
       if (task.subTasks && task.subTasks.length > 0) {
         task.subTasks.forEach(st => {
-          subTaskList.push({
-            subTaskId: st.id,
-            taskId: task.id, // 어떤 과제의 세부과제인지 식별할 수 있도록 taskId 포함
-            title: st.title,
-            status: st.status || "PENDING",
-            // 필요한 경우 마감일 등 추가
-            deadline: this.formatDate(st.endDate)
-          });
+          if (st.status !== 'COMPLETED') {
+            subTaskList.push({
+              subTaskId: st.id,
+              taskId: task.id,
+              title: st.title,
+              status: st.status || "PENDING",
+              deadline: this.formatDate(st.endDate, '.', true)
+            });
+          }
         });
       }
     });

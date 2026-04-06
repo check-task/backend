@@ -4,6 +4,7 @@ import { BadRequestError, InternalServerError, UnauthorizedError } from "../erro
 import crypto from "crypto";
 import { redis } from "../config/redis.config.js";
 import { folderRepository } from "../repositories/folder.repository.js";
+import axios from "axios";
 
 export class KakaoAuthService {
   constructor(){
@@ -86,6 +87,28 @@ export class KakaoAuthService {
       : "010-0000-0000";
 
     const providerId = profile.id.toString();
+    // console.log("카카오 프로필:", JSON.stringify(profile._json, null, 2));
+
+    // 카카오 동의 항목 파싱 - service_terms는 별도 API 호출 필요
+    let serviceTerm = [];
+    try {
+      const response = await axios.get("https://kapi.kakao.com/v1/user/service/terms", {
+        headers: { Authorization: `Bearer ${kakaoAccessToken}` },
+      });
+      serviceTerm = response.data?.allowed_service_terms ?? [];
+      // console.log("service_terms 응답:", JSON.stringify(response.data, null, 2));
+    } catch (error) {
+      console.error("service_terms 조회 실패:", error.message);
+    }
+
+    const getAgreedAt = (tag) => {
+      const term = serviceTerm.find(t => t.tag === tag);
+      return term ? new Date(term.agreed_at) : null;
+    };
+    const termsAgreedAt = getAgreedAt("termsAgreedAt");
+    const pushUpdatedAt = getAgreedAt("pushUpdatedAt");
+    const thirdPartyUpdatedAt = getAgreedAt("thirdPartyUpdatedAt");
+    const marketingUpdatedAt = getAgreedAt("marketingUpdatedAt");
 
     try {
       //기존 사용자 조회
@@ -130,22 +153,35 @@ export class KakaoAuthService {
             role: "USER",
           },
         });
-        //기본 폴더 생성
+
+        // 지정안함 폴더 생성
         await folderRepository.addFolder(user.id, {
-          folderTitle: "기본",
-          color: "#081221",
+          folderTitle: "지정안함",
+          color: "#818892", 
         });
-        //팀 폴더 생성
-        await folderRepository.addFolder(user.id, {
-          folderTitle: "팀",
-          color: "#FFC93F", 
+
+        // 동의 항목 저장
+        await prisma.userAgreement.upsert({
+          where: { userId: user.id },
+          create: {
+            userId: user.id,
+            termsAgreedAt: termsAgreedAt ?? new Date(),
+            pushUpdatedAt,
+            isPush: !!pushUpdatedAt,
+            thirdPartyUpdatedAt,
+            isThirdParty: !!thirdPartyUpdatedAt,
+            marketingUpdatedAt,
+            isMarketing: !!marketingUpdatedAt,
+          },
+          update: {}, // 재로그인 시 덮어쓰지 않게 설정
         });
+
       }
-      //토큰 생성
+      // 토큰 생성
       const accessToken = this.generateAccessToken(user);
       const { refreshToken, tokenId } = this.generateRefreshToken(user);
 
-      //Refresh Token Redis에 저장
+      // Refresh Token Redis에 저장
       await this.saveRefreshToken(tokenId, user.id);
 
       return{
@@ -160,7 +196,7 @@ export class KakaoAuthService {
     }
   }
 
-  //카카오 회원 탈퇴
+  // 카카오 회원 탈퇴
   async withdrawKakaoUser(user){
     if(!user){
       throw new UnauthorizedError("UNAUTHORIZED","인증 정보가 없습니다.");
@@ -199,7 +235,7 @@ export class KakaoAuthService {
       for (const user of users) {
         const userId = user.id
         
-        //Redis SCAN으로 Refresh Token 정리
+        // Redis SCAN으로 Refresh Token 정리
         let cursor = "0";
         do {
           const result = await redis.scan(cursor, "MATCH", "refresh_token:*", "COUNT", 100);
@@ -230,7 +266,7 @@ export class KakaoAuthService {
     }
   }
 
-  //로그아웃 시 Refresh Token 폐기
+  // 로그아웃 시 Refresh Token 폐기
   async revokeRefreshToken(refreshToken) {
     try {
       const payload = jwt.verify(refreshToken, this.secret);
