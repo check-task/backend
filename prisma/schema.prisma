@@ -127,7 +127,8 @@ model UserDevice {
 
   // 관계 설정 (Relations)
   user User @relation("UserDevices", fields: [userId], references: [id], onDelete: Cascade)
-
+  
+  @@unique([userId, deviceType])
   @@map("UserDevice")
 }
 
