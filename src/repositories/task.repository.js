@@ -210,7 +210,7 @@ class TaskRepository {
   }
 
   // 멤버 생성
-  async createMember(userId, taskId, role, tx = prisma, folderId) {
+  async createMember(userId, taskId, role, folderId, tx = prisma) {
     return await tx.member.create({
       data: {
         userId,
