@@ -637,20 +637,78 @@ class TaskService {
     if (existingMember) throw new ForbiddenError("ALREADY_MEMBER", "이미 팀 멤버입니다.");
   
     // 트랜잭션으로 멤버 추가 및 알림 생성
+<<<<<<< feat/issue-367
+    return await prisma.$transaction(async (tx) => {
+      // 멤버 추가 (role: true = member)
+      const newMember = await taskRepository.createMember(userId, task.id, true, null, tx);
+
+      // 새로 참여한 유저 정보 조회
+      const newUser = await tx.user.findUnique({
+        where: { id: userId },
+        select: { nickname: true },
+      });
+
+      // 기존 팀원들에게 알림 생성
+      const existingMembers = await tx.member.findMany({
+        where: {
+          taskId: task.id,
+          userId: { not: userId }, // 새로 참여한 유저 제외
+        },
+        include: {
+          user: true,
+        },
+      });
+
+      // 기존 팀원들에게 "새로운 팀원 참여" 알림 생성
+      const alarmPromises = existingMembers.map(async (member) => {
+        return alarmRepository.createMemberJoinAlarm(
+          member.userId,
+          task.id,
+          task.title,
+          newUser.nickname,
+          tx
+        );
+      });
+
+      if (alarmPromises.length > 0) {
+        await Promise.all(alarmPromises);
+      }
+
+      // 과제 알림이 켜져있으면 새로 참여한 유저에게도 과제 알림 생성
+      if (task.isAlarm) {
+=======
     const task = await prisma.$transaction(async (tx) => {
       const newMember = await taskRepository.createMember(userId, findTask.id, true, tx, targetFolderId);
   
       if (findTask.isAlarm) {
+>>>>>>> develop
         const user = await tx.user.findUnique({
           where: { id: userId },
-          select: { taskAlarm: true },
+          include: {
+            alarmSetting: true
+          }
         });
+<<<<<<< feat/issue-367
+
+        if (user && user.alarmSetting) {
+          const alarmHours = user.alarmSetting.taskAlarm || 24;
+          const alarmDate = calculateAlarmDate(task.deadline, alarmHours);
+
+          await alarmRepository.createTaskAlarm(
+            userId,
+            task.id,
+            task.title,
+            alarmDate,
+            tx
+          );
+=======
   
         if (user) {
           const alarmHours = user.taskAlarm || 24;
           const alarmDate = calculateAlarmDate(findTask.deadline, alarmHours);
   
           await alarmRepository.createTaskAlarm(userId, findTask.id, findTask.title, alarmDate, tx);
+>>>>>>> develop
         }
       }
   
