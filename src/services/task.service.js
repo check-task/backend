@@ -711,7 +711,7 @@ class TaskService {
     // 트랜잭션으로 멤버 추가 및 알림 생성
     return await prisma.$transaction(async (tx) => {
       // 멤버 추가 (role: true = member)
-      const newMember = await taskRepository.createMember(userId, task.id, true, tx);
+      const newMember = await taskRepository.createMember(userId, task.id, true, null, tx);
 
       // 새로 참여한 유저 정보 조회
       const newUser = await tx.user.findUnique({
@@ -749,11 +749,13 @@ class TaskService {
       if (task.isAlarm) {
         const user = await tx.user.findUnique({
           where: { id: userId },
-          select: { taskAlarm: true },
+          include: {
+            alarmSetting: true
+          }
         });
 
-        if (user) {
-          const alarmHours = user.taskAlarm || 24;
+        if (user && user.alarmSetting) {
+          const alarmHours = user.alarmSetting.taskAlarm || 24;
           const alarmDate = calculateAlarmDate(task.deadline, alarmHours);
 
           await alarmRepository.createTaskAlarm(
