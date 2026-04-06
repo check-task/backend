@@ -112,7 +112,7 @@ export class KakaoAuthService {
 
     try {
       //기존 사용자 조회
-      let user = await prisma.user.findFirst({
+      let user = await prisma.user.findUnique({
         where:{
           provider: "KAKAO",
           providerId: providerId,
@@ -289,7 +289,7 @@ export class KakaoAuthService {
       throw new BadRequestError("INVALID_TOKEN", "유효하지 않거나 만료된 토큰입니다.");
     }
 
-    const user = await prisma.user.findFirst({
+    const user = await prisma.user.findUnique({
       where: {
         provider: "KAKAO",
         providerId,

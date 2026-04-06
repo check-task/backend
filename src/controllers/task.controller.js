@@ -42,39 +42,11 @@ class TaskController {
   // 과제 수정
   async updateTask(req, res, next) {
     try {
-      const { taskId } = req.params;
       const userId = req.user.id;
+      const { taskId } = req.params;
 
-      let customFileNames = [];
-      if (req.body.fileNames) {
-        const rawNames = req.body.fileNames;
-        if (typeof rawNames === "string" && rawNames.startsWith("[")) {
-          customFileNames = JSON.parse(rawNames);
-        } else if (typeof rawNames === "string") {
-          customFileNames = rawNames.split(",").map((name) => name.trim());
-        } else {
-          customFileNames = rawNames;
-        }
-      }
-
-      let fileReferences = [];
-      if (req.files && req.files.length > 0) {
-        for (let i = 0; i < req.files.length; i++) {
-          const file = req.files[i];
-          const fileUrl = await uploadToS3(file);
-
-          fileReferences.push({
-            name:
-              customFileNames && customFileNames[i]
-                ? customFileNames[i]
-                : file.originalname,
-            fileUrl: fileUrl,
-          });
-        }
-      }
-
-      const taskRequest = TaskRequestDTO.toUpdate(req.body, fileReferences);
-      const result = await taskService.modifyTask(taskId, taskRequest, userId);
+      const taskRequest = TaskRequestDTO.toUpdate(req.body);
+      const result = await taskService.modifyTask(taskId, userId, taskRequest);
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -144,6 +116,7 @@ class TaskController {
       next(error);
     }
   }
+
   // Task 마감일 변경
   async updateTaskDeadline(req, res, next) {
     try {
@@ -345,9 +318,9 @@ class TaskController {
   async joinTaskByInviteCode(req, res, next) {
     try {
       const userId = req.user.id;
-      const { inviteCode } = req.body;
+      const { folderId = null, inviteCode } = req.body;
 
-      const result = await taskService.joinTaskByInviteCode(userId, inviteCode);
+      const result = await taskService.joinTaskByInviteCode(userId, folderId, inviteCode);
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -356,6 +329,7 @@ class TaskController {
           task_id: result.taskId,
           task_title: result.taskTitle,
           member_id: result.memberId,
+          folderId: result.folderId
         },
       });
     } catch (error) {
@@ -368,11 +342,12 @@ class TaskController {
     try {
       const { taskId } = req.params;
       const userId = req.user.id;
+      const dto = TaskRequestDTO.toCreateSubTask(req.body);
 
       const result = await taskService.createSingleSubTask(
         userId,
         taskId,
-        req.body,
+        dto,
       );
 
       res.status(200).json({
@@ -383,6 +358,76 @@ class TaskController {
           title: result.title,
           deadline: result.endDate,
         },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  
+  // 세부 과제 수정
+  async patchSubTask(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const { taskId, subTaskId } = req.params;
+      const dto = TaskRequestDTO.toSubUpdate(req.body);
+
+      console.log(req.params);
+
+      const result = await taskService.updateSingleSubTask(userId, taskId, subTaskId, dto);
+
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "세부 Task가 성공적으로 수정되었습니다.",
+        data: {
+          subTaskId: result.id,
+          title: result.title,
+          deadline: result.endDate,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // 세부 과제 선택 삭제
+  async deleteSubTask(req, res, next) {
+    try {
+      const { taskId } = req.params;
+      const userId = req.user.id;
+      const { subTaskIds } = req.body;
+      if (!Array.isArray(subTaskIds)) { throw new Error("subTaskIds는 배열이어야 합니다."); }
+  
+      const result = await taskService.deleteSelectedSubTasks(
+        userId,
+        Number(taskId),
+        subTaskIds.map(Number)
+      );
+  
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "선택한 세부 과제들이 삭제되었습니다.",
+        data: result
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // 세부 과제 전체 삭제
+  async allDeleteSubTask(req, res, next) {
+    try {
+      const { taskId } = req.params;
+      const userId = req.user.id;
+  
+      const result = await taskService.deleteAllSubTasks(
+        userId,
+        Number(taskId)
+      );
+  
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "선택한 과제에 대한 세부 과제가 삭제되었습니다.",
+        data: result
       });
     } catch (error) {
       next(error);
