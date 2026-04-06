@@ -44,6 +44,7 @@ class TaskController {
     try {
       const userId = req.user.id;
       const { taskId } = req.params;
+      const userId = req.user.id;
 
       const taskRequest = TaskRequestDTO.toUpdate(req.body);
       const result = await taskService.modifyTask(taskId, userId, taskRequest);
@@ -78,7 +79,9 @@ class TaskController {
   async getTaskDetail(req, res, next) {
     try {
       const { taskId } = req.params;
-      const task = await taskService.getTaskDetail(taskId);
+      const userId = req.user.id;
+      
+      const task = await taskService.getTaskDetail(taskId, userId);
 
       res.status(200).json({
         resultType: "SUCCESS",
