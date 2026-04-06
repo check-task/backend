@@ -703,7 +703,11 @@ class TaskService {
     if (!parentTask) throw new NotFoundError("존재하지 않는 과제입니다.");
 
     // 팀 과제: NULL, 개인 과제: 생성자 본인
-    const assigneeId = parentTask.type === "TEAM" ? null : userId;
+    let assigneeId = null;
+    if (parentTask.type === "PERSONAL") {
+      const member = await taskRepository.findMemberInTask(taskId, userId);
+      assigneeId = member?.id ?? null;
+    }
 
     return await prisma.$transaction(async (tx) => {
       // 세부 과제 생성

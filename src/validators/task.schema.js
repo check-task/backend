@@ -118,7 +118,7 @@ export const addSubTaskSchema = z.object({
   }),
   body: z.object({
     title: z.string().trim().min(1, "세부 과제 제목은 필수입니다."),
-    endDate: z.string().optional(),
+    deadline: z.string().optional(),
   }),
 });
 
@@ -167,5 +167,37 @@ export const generateInviteCodeSchema = z.object({
 export const joinTaskSchema = z.object({
   body: z.object({
     inviteCode: z.string().trim().min(1, "초대 코드는 필수입니다."),
+  }),
+});
+
+// ─── 단일 세부 과제 수정 ──────────────────────────────────────────
+export const patchSubTaskSchema = z.object({
+  params: z.object({
+    taskId: idParam,
+    subTaskId: idParam
+  }),
+  body: z.object({
+    title: z.string().optional(),
+    endDate: z.string().optional(),
+    status: z.enum(["COMPLETED", "PENDING"]).optional(),
+  }),
+});
+
+// ─── 선택 세부 과제 삭제 ──────────────────────────────────────────
+export const deleteSelectedSubTaskSchema = z.object({
+  params: z.object({
+    taskId: z.string().regex(/^\d+$/, "유효한 taskId여야 합니다."),
+  }),
+  body: z.object({
+    subTaskIds: z
+      .array(z.union([z.string().regex(/^\d+$/), z.number()]))
+      .min(1, "삭제할 세부 과제를 최소 1개 이상 선택해야 합니다."),
+  }),
+});
+
+// ─── 전체 세부 과제 삭제 ──────────────────────────────────────────
+export const deleteAllSubTaskParamsSchema = z.object({
+  params: z.object({
+    taskId: z.string().regex(/^\d+$/, "유효한 taskId여야 합니다."),
   }),
 });

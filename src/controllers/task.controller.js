@@ -369,6 +369,8 @@ class TaskController {
       const { taskId, subTaskId } = req.params;
       const dto = TaskRequestDTO.toSubUpdate(req.body);
 
+      console.log(req.params);
+
       const result = await taskService.updateSingleSubTask(userId, taskId, subTaskId, dto);
 
       res.status(200).json({
@@ -385,6 +387,7 @@ class TaskController {
     }
   }
 
+  // 세부 과제 선택 삭제
   async deleteSubTask(req, res, next) {
     try {
       const { taskId } = req.params;
@@ -408,21 +411,20 @@ class TaskController {
     }
   }
 
+  // 세부 과제 전체 삭제
   async allDeleteSubTask(req, res, next) {
     try {
       const { taskId } = req.params;
       const userId = req.user.id;
-      const { subTaskIds } = req.body;
   
-      const result = await taskService.deleteSelectedSubTasks(
+      const result = await taskService.deleteAllSubTasks(
         userId,
-        Number(taskId),
-        subTaskIds
+        Number(taskId)
       );
   
       res.status(200).json({
         resultType: "SUCCESS",
-        message: "선택한 세부 과제가 삭제되었습니다.",
+        message: "선택한 과제에 대한 세부 과제가 삭제되었습니다.",
         data: result
       });
     } catch (error) {

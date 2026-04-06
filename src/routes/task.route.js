@@ -19,6 +19,9 @@ import {
   setSubTaskAssigneeSchema,
   generateInviteCodeSchema,
   joinTaskSchema,
+  patchSubTaskSchema,
+  deleteSelectedSubTaskSchema,
+  deleteAllSubTaskParamsSchema,
 } from "../validators/task.schema.js";
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -116,24 +119,24 @@ router.post(
 router.patch(
   "/:taskId/subTask/:subTaskId",
   authenticate,
-  validate(addSubTaskSchema),
+  validate(patchSubTaskSchema),
   taskController.patchSubTask
-);
-
-// PATCH /api/v1/task/:taskId/subTask/:subTaskId -- 목록 세부 과제 삭제
-router.delete(
-  "/:taskId/subTask/:subTaskId",
-  authenticate,
-  validate(addSubTaskSchema),
-  taskController.deleteSubTask
 );
 
 // PATCH /api/v1/task/:taskId/subTask/all -- 전체 세부 과제 삭제
 router.delete(
   "/:taskId/subTask/all",
   authenticate,
-  validate(addSubTaskSchema),
+  validate(deleteAllSubTaskParamsSchema),
   taskController.allDeleteSubTask
+);
+
+// PATCH /api/v1/task/:taskId/subTask/:subTaskId -- 목록 세부 과제 삭제
+router.delete(
+  "/:taskId/subTask/:subTaskId",
+  authenticate,
+  validate(deleteSelectedSubTaskSchema),
+  taskController.deleteSubTask
 );
 
 // Task 마감일 변경 API
