@@ -19,6 +19,9 @@ import {
   setSubTaskAssigneeSchema,
   generateInviteCodeSchema,
   joinTaskSchema,
+  patchSubTaskSchema,
+  deleteSelectedSubTaskSchema,
+  deleteAllSubTaskParamsSchema,
 } from "../validators/task.schema.js";
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -69,14 +72,8 @@ router.patch(
 // GET /api/v1/task?sort=우선순위 -- 과제 목록 조회
 router.get("/", authenticate, validate(getTasksSchema), taskController.getTasks);
 
-// PATCH /api/v1/task/:taskId -- 과제 수정 (multer 먼저 실행 후 validate)
-router.patch(
-  "/:taskId",
-  authenticate,
-  upload.array("files"),
-  validate(updateTaskSchema),
-  taskController.updateTask
-);
+// PATCH /api/v1/task/:taskId -- 과제 수정 (validate)
+router.patch( "/:taskId", authenticate, validate(updateTaskSchema), taskController.updateTask);
 
 // DELETE /api/v1/task/:taskId -- 과제 삭제
 router.delete(
@@ -116,6 +113,30 @@ router.post(
   authenticate,
   validate(addSubTaskSchema),
   taskController.addSubTask
+);
+
+// PATCH /api/v1/task/:taskId/subTask/:subTaskId -- 단일 세부 과제 수정
+router.patch(
+  "/:taskId/subTask/:subTaskId",
+  authenticate,
+  validate(patchSubTaskSchema),
+  taskController.patchSubTask
+);
+
+// PATCH /api/v1/task/:taskId/subTask/all -- 전체 세부 과제 삭제
+router.delete(
+  "/:taskId/subTask/all",
+  authenticate,
+  validate(deleteAllSubTaskParamsSchema),
+  taskController.allDeleteSubTask
+);
+
+// PATCH /api/v1/task/:taskId/subTask/:subTaskId -- 목록 세부 과제 삭제
+router.delete(
+  "/:taskId/subTask/:subTaskId",
+  authenticate,
+  validate(deleteSelectedSubTaskSchema),
+  taskController.deleteSubTask
 );
 
 // Task 마감일 변경 API

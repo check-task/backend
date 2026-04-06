@@ -112,7 +112,7 @@ export class KakaoAuthService {
 
     try {
       //기존 사용자 조회
-      let user = await prisma.user.findFirst({
+        let user = await prisma.user.findFirst({
         where:{
           provider: "KAKAO",
           providerId: providerId,

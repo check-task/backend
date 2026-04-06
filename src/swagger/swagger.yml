@@ -1097,8 +1097,8 @@ paths:
               example:
                 resultType: "FAIL"
                 code: 400
-                errorCode: "BAD_REQUEST | TEAM_FOLDER_REQUIRED | INVALID_FOLDER"
-                reason: "과제명은 필수입니다. | 팀 과제는 '팀' 폴더에만 생성할 수 있습니다. | 개인 과제는 '팀' 폴더에 생성할 수 없습니다. | 팀 과제는 '팀' 폴더에만 생성할 수 있습니다."
+                errorCode: "BAD_REQUEST"
+                reason: "과제명은 필수입니다."
                 data: null
         '401':
           description: 인증 실패 (토큰 만료 또는 누락)
@@ -2183,6 +2183,205 @@ paths:
                   errorCode: "INVALID_INVITE_CODE"
                   reason: "유효하지 않은 초대 코드입니다."
                   data: null
+
+  /api/v1/task/{taskId}/subtask:
+    post:
+      tags:
+        - Task
+      summary: 세부 TASK 생성
+      description: 특정 과제에 세부 TASK를 추가합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+          description: 부모 TASK ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+              properties:
+                title:
+                  type: string
+                  example: "세부 작업 1"
+                deadline:
+                  type: string
+                  format: date-time
+                  example: "2026-04-10T12:00:00"
+                isAlarm:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: 세부 TASK 생성 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "세부 Task가 성공적으로 추가되었습니다."
+                  data:
+                    type: object
+                    properties:
+                      subTaskId:
+                        type: integer
+                        example: 1
+                      title:
+                        type: string
+                        example: "세부 작업 1"
+                      deadline:
+                        type: string
+                        format: date-time
+    delete:
+      tags:
+        - Task
+      summary: 세부 TASK 선택 삭제
+      description: 여러 개의 세부 TASK를 선택하여 삭제합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - subTaskIds
+              properties:
+                subTaskIds:
+                  type: array
+                  items:
+                    type: integer
+                  example: [1, 2, 3]
+      responses:
+        '200':
+          description: 세부 TASK 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      deletedCount:
+                        type: integer
+                        example: 3
+
+  /api/v1/task/{taskId}/subtask/{subTaskId}:
+    patch:
+      tags:
+        - Task
+      summary: 세부 TASK 수정
+      description: 세부 TASK의 내용을 수정합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: subTaskId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "수정된 세부 작업"
+                deadline:
+                  type: string
+                  format: date-time
+                  example: "2026-04-11T15:00:00"
+                isAlarm:
+                  type: boolean
+                  example: false
+      responses:
+        '200':
+          description: 세부 TASK 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      subTaskId:
+                        type: integer
+                      title:
+                        type: string
+                      deadline:
+                        type: string
+                        format: date-time
+
+  /api/v1/task/{taskId}/subtask/all:
+    delete:
+      tags:
+        - Task
+      summary: 세부 TASK 전체 삭제
+      description: 특정 TASK에 포함된 모든 세부 TASK를 삭제합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 전체 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      deletedCount:
+                        type: integer
+                        example: 5
+  
   # -- 팀원 API --
   # 특정 과제의 팀원 목록 조회
   /api/v1/task/{taskId}/members:
@@ -2972,7 +3171,6 @@ paths:
                     example: null
         '400':
           description: |
-            - PROTECTED_FOLDER: 보호된 폴더('팀' 폴더) 삭제 시도.
             - FOLDER_NOT_EMPTY: 폴더 내부에 과제가 존재할 때 삭제 시도.
           content:
             application/json:
@@ -2981,8 +3179,8 @@ paths:
                 example:
                   resultType: "FAIL"
                   code: 400
-                  errorCode: "PROTECTED_FOLDER | FOLDER_NOT_EMPTY"
-                  reason: "'팀' 폴더는 삭제할 수 없습니다. | 폴더 내부에 과제(완료된 과제 포함)가 존재하여 삭제할 수 없습니다."
+                  errorCode: "FOLDER_NOT_EMPTY"
+                  reason: "폴더 내부에 과제(완료된 과제 포함)가 존재하여 삭제할 수 없습니다."
                   data: null
         '401':
           description: |
