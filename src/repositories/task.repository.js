@@ -29,7 +29,17 @@ class TaskRepository {
 
   // 폴더 찾기
   async findFolderById(id) {
-    return await prisma.folder.findFirst({ where: { id } });
+    return await prisma.folder.findUnique({ where: { id } });
+  }
+
+  // 폴더 찾기 (지정안함 폴더)
+  async findFolderByUserIdAndName(userId, folderName) {
+    return await prisma.folder.findFirst({
+      where: {
+        userId: userId,
+        name: folderName,
+      },
+    });
   }
 
   // 과제 찾기
@@ -38,20 +48,39 @@ class TaskRepository {
   }
 
   // 과제 생성
-  async createTask(data, tx) {
+  async createTask(data, tx = prisma) {
     return await tx.task.create({ data });
   }
 
   // 과제 수정
-  async updateTask(id, data, tx) {
+  async updateTask(id, data, tx = prisma) {
     return await tx.task.update({ where: { id }, data });
   }
 
+  // 폴더 수정하기
+  async updateMemberFolder({ userId, taskId, folderId }) {
+    return await prisma.member.update({
+      where: {
+        userId_taskId: {
+          userId,
+          taskId,
+        },
+      },
+      data: {
+        folderId,
+      },
+    });
+  }
+
   // 과제 세부 사항 조회
-  async findTaskDetail(id) {
+  async findTaskDetail(taskId, userId) {
     return await prisma.task.findUnique({
-      where: { id },
+      where: { id: parseInt(taskId) },
       include: {
+        members: {
+          where: { userId: parseInt(userId) },
+          include: { folder: true }
+        },
         subTasks: {
           include: {
             comments: {
@@ -61,10 +90,8 @@ class TaskRepository {
               orderBy: { createdAt: 'asc' } // 오래된 순으로 정렬
             },
             assignee: {
-              select: {
-                id: true,
-                nickname: true,
-                profileImage: true
+              include: {
+                user: { select: { id: true, nickname: true, profileImage: true } }
               }
             },
             _count: {
@@ -74,7 +101,6 @@ class TaskRepository {
             }
           }
         },
-        folder: true,
         references: true,
         logs: true,
         communications: true
@@ -90,12 +116,17 @@ class TaskRepository {
       where: {
         members: {
           some: {
-            userId: userId
+            userId: userId,
+            ...(folderId ? { folderId: parseInt(folderId) } : {}) // 폴더 필터링을 여기서 수행
           }
         },
+        ...(type ? { type: type === "TEAM" ? "TEAM" : "PERSONAL" } : {}),
       },
       include: {
-        folder: true,
+        members: {
+          where: { userId: userId },
+          include: { folder: true }
+        },
         subTasks: true,
         priorities: {
           where: { userId: userId }
@@ -109,12 +140,12 @@ class TaskRepository {
       };
     }
 
-    if (type) {
-      query.where.type = (type === "TEAM") ? "TEAM" : "PERSONAL";
-    }
-    if (folderId) {
-      query.where.folderId = parseInt(folderId);
-    }
+    // if (type) {
+    //   query.where.type = (type === "TEAM") ? "TEAM" : "PERSONAL";
+    // }
+    // if (folderId) {
+    //   query.where.folderId = parseInt(folderId);
+    // }
 
     if (sort === 'DEADLINE') {
       query.orderBy = { deadline: 'asc' };
@@ -123,6 +154,9 @@ class TaskRepository {
     const tasks = await prisma.task.findMany(query);
 
     const processedTasks = tasks.map(task => {
+      const myMemberInfo = task.members[0]; // 내 멤버 정보
+      const folder = myMemberInfo?.folder || null;
+
       // 진행률 계산
       const total = task.subTasks.length;
       const completed = task.subTasks.filter(st => st.status === 'COMPLETED').length;
@@ -130,7 +164,13 @@ class TaskRepository {
 
       const myRank = task.priorities[0]?.rank ?? 999;
 
-      return { ...task, progress, myRank };
+      return { 
+        ...task, 
+        folder, 
+        folderId: folder?.id || null, // folderId를 명시적으로 추가
+        progress, 
+        myRank 
+      };
     });
 
     if (!sort || sort === 'PRIORITY') {
@@ -170,7 +210,7 @@ class TaskRepository {
   }
 
   // 멤버 생성
-  async createMember(userId, taskId, role, folderId = null, tx = prisma) {
+  async createMember(userId, taskId, role, tx = prisma, folderId) {
     return await tx.member.create({
       data: {
         userId,
@@ -202,7 +242,7 @@ class TaskRepository {
     });
   }
 
-  // 멤버 존재 여부 확인 
+  // 멤버 존재 여부 확인
   async findMemberInTask(taskId, userId) {
     return await prisma.member.findFirst({
       where: {
@@ -228,10 +268,106 @@ class TaskRepository {
     return await tx.reference.deleteMany({ where: { taskId } });
   }
 
+  // 세부 과제 찾기
+  async findSubTaskById(id, tx) {
+    return await tx.subTask.findUnique({
+      where: { id },
+      include: { assignee: true }
+    });
+  }
+
+  // 세부 과제 생성 
+  async createSubTask(data, tx = prisma) {
+    return await tx.subTask.create({
+      data,
+      include: {
+        assignee: {
+          include: {
+            user: {
+              include: {
+                alarmSetting: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // 세부 과제 수정
+  async updateSubTask(id, data, tx) {
+    return await tx.subTask.update({
+      where: { id },
+      data,
+      include: {
+        assignee: {
+          include: {
+            user: {
+              include: {
+                alarmSetting: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  // 세부 과제 알림 찾기
+  async findAlarmBySubTaskId(subTaskId, tx) {
+    return await tx.userAlarm.findFirst({
+      where: { subTaskId }
+    });
+  }
+  
+  // 세부 과제 알림 추가
+  async createAlarm(data, tx) {
+    return await tx.userAlarm.create({ data });
+  }
+  
+  // 세부 과제 알림 업데이트
+  async updateAlarm(id, data, tx) {
+    return await tx.userAlarm.update({
+      where: { id },
+      data
+    });
+  }
+  
+  // 세부 과제 알림 삭제
+  async deleteAlarm(id, tx) {
+    return await tx.userAlarm.delete({
+      where: { id }
+    });
+  }
+
   // 세부 과제 추가
   async addSubTasks(taskId, subTasks, tx) {
     return await tx.subTask.createMany({
       data: subTasks.map(st => ({ ...st, taskId }))
+    });
+  }
+
+  // 세부 과제 삭제
+  async deleteSubTasksByIds(subTaskIds, tx = prisma) {
+    return await tx.subTask.deleteMany({
+      where: {
+        id: { in: subTaskIds }
+      }
+    });
+  }
+
+  // 세부 과제 전체 삭제
+  async deleteAllSubTasksByTaskId(taskId, tx = prisma) {
+    return await tx.subTask.deleteMany({
+      where: { taskId }
+    });
+  }
+
+  // task 기준 subTask id 조회
+  async findSubTaskIdsByTaskId(taskId, tx = prisma) {
+    return await tx.subTask.findMany({
+      where: { taskId },
+      select: { id: true }
     });
   }
 
@@ -268,6 +404,8 @@ class TaskRepository {
     });
   }
 
+
+  // 멤버 삭제
   async deleteMember(memberId) {
     const deleted = await prisma.member.delete({
       where: {
@@ -288,6 +426,16 @@ class TaskRepository {
     });
 
     return result._max.rank || 0;
+  }
+
+  // 코드로 과제 찾기
+  async findTaskByCode(inviteCode) {
+    return task = await prisma.task.findFirst({
+      where: {
+        inviteCode: inviteCode,
+        type: 'TEAM',
+      },
+    });
   }
 }
 

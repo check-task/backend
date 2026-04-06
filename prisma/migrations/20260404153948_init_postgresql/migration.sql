@@ -10,6 +10,12 @@ CREATE TYPE "TaskStatus" AS ENUM ('PENDING', 'PROGRESS', 'COMPLETED');
 -- CreateEnum
 CREATE TYPE "TaskType" AS ENUM ('PERSONAL', 'TEAM');
 
+-- CreateEnum
+CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
+
+-- CreateEnum
+CREATE TYPE "DeviceType" AS ENUM ('WEB_CHROME', 'WEB_SAFARI', 'WEB_FIREFOX', 'APP_IOS', 'APP_ANDROID');
+
 -- CreateTable
 CREATE TABLE "TaskPriority" (
     "priority_id" SERIAL NOT NULL,
@@ -25,20 +31,57 @@ CREATE TABLE "TaskPriority" (
 -- CreateTable
 CREATE TABLE "User" (
     "user_id" SERIAL NOT NULL,
-    "nickname" VARCHAR(100) NOT NULL,
-    "phone_num" VARCHAR(15) NOT NULL,
+    "nickname" VARCHAR(30) NOT NULL,
+    "phone_num" VARCHAR(20) NOT NULL,
     "email" VARCHAR(50) NOT NULL,
     "profile_image" VARCHAR(200),
     "password" VARCHAR(50),
+    "role" "Role" NOT NULL DEFAULT 'USER',
     "provider" "Provider",
-    "provider_id" VARCHAR(10),
+    "provider_id" VARCHAR(100),
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP,
     "deleted_at" TIMESTAMP,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("user_id")
+);
+
+-- CreateTable
+CREATE TABLE "UserAgreement" (
+    "agreement_id" SERIAL NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "terms_agreed_at" DATE NOT NULL,
+    "push_updated_at" DATE,
+    "is_push" BOOLEAN NOT NULL DEFAULT false,
+    "third_party_updated_at" DATE,
+    "is_third_party" BOOLEAN NOT NULL DEFAULT false,
+    "marketing_updated_at" DATE,
+    "is_marketing" BOOLEAN NOT NULL DEFAULT false,
+
+    CONSTRAINT "UserAgreement_pkey" PRIMARY KEY ("agreement_id")
+);
+
+-- CreateTable
+CREATE TABLE "UserDevice" (
+    "device_id" SERIAL NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "fcm_token" VARCHAR(255) NOT NULL,
+    "device_type" "DeviceType" NOT NULL,
+    "is_active" BOOLEAN NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP,
+
+    CONSTRAINT "UserDevice_pkey" PRIMARY KEY ("device_id")
+);
+
+-- CreateTable
+CREATE TABLE "UserAlarmSetting" (
+    "user_alarm_id" SERIAL NOT NULL,
+    "user_id" INTEGER NOT NULL,
     "deadline_alarm" INTEGER NOT NULL DEFAULT 24,
     "task_alarm" INTEGER NOT NULL DEFAULT 24,
 
-    CONSTRAINT "User_pkey" PRIMARY KEY ("user_id")
+    CONSTRAINT "UserAlarmSetting_pkey" PRIMARY KEY ("user_alarm_id")
 );
 
 -- CreateTable
@@ -70,7 +113,6 @@ CREATE TABLE "Folder" (
 -- CreateTable
 CREATE TABLE "Task" (
     "task_id" SERIAL NOT NULL,
-    "folder_id" INTEGER,
     "title" VARCHAR(100) NOT NULL,
     "deadline" DATE NOT NULL,
     "type" "TaskType" NOT NULL,
@@ -89,6 +131,7 @@ CREATE TABLE "Member" (
     "member_id" SERIAL NOT NULL,
     "user_id" INTEGER NOT NULL,
     "task_id" INTEGER NOT NULL,
+    "folder_id" INTEGER,
     "role" BOOLEAN NOT NULL,
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -173,6 +216,12 @@ CREATE INDEX "User_deleted_at_idx" ON "User"("deleted_at");
 CREATE UNIQUE INDEX "User_provider_provider_id_key" ON "User"("provider", "provider_id");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "UserAgreement_user_id_key" ON "UserAgreement"("user_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserAlarmSetting_user_id_key" ON "UserAlarmSetting"("user_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Member_user_id_task_id_key" ON "Member"("user_id", "task_id");
 
 -- AddForeignKey
@@ -180,6 +229,15 @@ ALTER TABLE "TaskPriority" ADD CONSTRAINT "TaskPriority_user_id_fkey" FOREIGN KE
 
 -- AddForeignKey
 ALTER TABLE "TaskPriority" ADD CONSTRAINT "TaskPriority_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "Task"("task_id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserAgreement" ADD CONSTRAINT "UserAgreement_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserDevice" ADD CONSTRAINT "UserDevice_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserAlarmSetting" ADD CONSTRAINT "UserAlarmSetting_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "UserAlarm" ADD CONSTRAINT "UserAlarm_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("user_id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -194,19 +252,19 @@ ALTER TABLE "UserAlarm" ADD CONSTRAINT "UserAlarm_sub_task_id_fkey" FOREIGN KEY 
 ALTER TABLE "Folder" ADD CONSTRAINT "Folder_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("user_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Task" ADD CONSTRAINT "Task_folder_id_fkey" FOREIGN KEY ("folder_id") REFERENCES "Folder"("folder_id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Member" ADD CONSTRAINT "Member_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("user_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Member" ADD CONSTRAINT "Member_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "Task"("task_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Member" ADD CONSTRAINT "Member_folder_id_fkey" FOREIGN KEY ("folder_id") REFERENCES "Folder"("folder_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "SubTask" ADD CONSTRAINT "SubTask_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "Task"("task_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "SubTask" ADD CONSTRAINT "SubTask_assignee_id_fkey" FOREIGN KEY ("assignee_id") REFERENCES "User"("user_id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "SubTask" ADD CONSTRAINT "SubTask_assignee_id_fkey" FOREIGN KEY ("assignee_id") REFERENCES "Member"("member_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Comment" ADD CONSTRAINT "Comment_sub_task_id_fkey" FOREIGN KEY ("sub_task_id") REFERENCES "SubTask"("sub_task_id") ON DELETE CASCADE ON UPDATE CASCADE;
