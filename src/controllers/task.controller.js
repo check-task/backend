@@ -44,7 +44,6 @@ class TaskController {
     try {
       const userId = req.user.id;
       const { taskId } = req.params;
-      const userId = req.user.id;
 
       const taskRequest = TaskRequestDTO.toUpdate(req.body);
       const result = await taskService.modifyTask(taskId, userId, taskRequest);
