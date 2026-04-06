@@ -833,7 +833,7 @@ class TaskService {
     if (!userCheck) throw new ForbiddenError("권한이 없습니다.");
   
     if (!subTaskIds || subTaskIds.length === 0) {
-      throw new Error("삭제할 세부 과제가 없습니다.");
+      throw new NotFoundError("삭제할 세부 과제가 없습니다.");
     }
   
     return await prisma.$transaction(async (tx) => {
