@@ -24,7 +24,7 @@ const subTaskSchema = z.object({
 export const createTaskSchema = z.object({
   body: z.object({
     title: z.string().trim().min(1, "제목은 필수입니다."),
-    folderId: z.coerce.number().int().positive("folderId는 양수입니다."),
+    folderId: z.coerce.number().optional().nullable(),
     deadline: z.string().optional(),
     type: z.enum(["TEAM", "PERSONAL"]).default("PERSONAL"),
     subTasks: z.array(subTaskSchema).optional().default([]),
