@@ -72,35 +72,44 @@ export class TaskRequestDTO {
   }
 
   // 과제 수정
-  static toUpdate(data, uploadedFiles = []) {
-    const subTasks = typeof data.subTasks === 'string' ? JSON.parse(data.subTasks) : (data.subTasks || []);
-    const existingRefs = typeof data.references === 'string' ? JSON.parse(data.references) : (data.references || []);
+  static toUpdate(data) {
+    const result = {};
 
+    if (data.title !== undefined) { result.title = data.title; }
+
+    if (data.folderId !== undefined) {
+      if (data.folderId === null) {
+        result.folderId = null;
+      } else {
+        const folderId = Number(data.folderId);
+        if (isNaN(folderId)) throw new Error("folderId는 숫자여야 합니다.");
+        result.folderId = folderId;
+      }
+    }
+
+    if (data.deadline !== undefined) { result.deadline = new Date(data.deadline); }
+
+    return result;
+  }
+
+  // 세부 과제 생성
+  static toCreateSubTask(data) {
     return {
       title: data.title,
-      folderId: data.folderId ? Number(data.folderId) : undefined,
-      deadline: data.deadline ? new Date(data.deadline) : undefined,
-      type: (data.type === "TEAM" || data.type === "팀") ? "TEAM" : "PERSONAL",
-      subTasks: subTasks
-        .filter(st => st !== null && st !== undefined) // 빈 객체 제거
-        .map(st => ({
-          title: st.title || "제목 없음", 
-          endDate: st.endDate ? new Date(st.endDate) : new Date(),
-          status: st.status || "PENDING"
-        })),
-      references: [
-        ...existingRefs.map(ref => ({
-          name: ref.name,
-          url: ref.url || null,
-          fileUrl: ref.fileUrl || ref.file_url || null 
-        })),
-        ...uploadedFiles.map(file => ({
-          name: file.name,
-          url: null,
-          fileUrl: file.fileUrl || file.file_url 
-        }))
-      ]
+      endDate: data.deadline ? new Date(data.deadline) : undefined,
+      isAlarm: data.isAlarm ?? false
     };
+  }
+  
+  // 세부 과제 수정
+  static toSubUpdate(data) {
+    const result = {};
+
+    if (data.title !== undefined) { result.title = data.title; }
+    if (data.deadline !== undefined) { result.deadline = new Date(data.deadline); }
+    if (data.isAlarm !== undefined) { result.isAlarm = Boolean(data.isAlarm); }
+
+    return result;
   }
 }
 

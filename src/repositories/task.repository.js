@@ -16,7 +16,10 @@ class TaskRepository {
         },
       },
       include: {
-        folder: true,
+        members: {
+          where: { userId: userId },
+          include: { folder: true }
+        }
       },
       orderBy: {
         deadline: 'desc',
@@ -26,7 +29,17 @@ class TaskRepository {
 
   // 폴더 찾기
   async findFolderById(id) {
-    return await prisma.folder.findFirst({ where: { id } });
+    return await prisma.folder.findUnique({ where: { id } });
+  }
+
+  // 폴더 찾기 (지정안함 폴더)
+  async findFolderByUserIdAndName(userId, folderName) {
+    return await prisma.folder.findFirst({
+      where: {
+        userId: userId,
+        name: folderName,
+      },
+    });
   }
 
   // 과제 찾기
@@ -35,29 +48,26 @@ class TaskRepository {
   }
 
   // 과제 생성
-  async createTask(data, tx) {
+  async createTask(data, tx = prisma) {
     return await tx.task.create({ data });
   }
 
   // 과제 수정
   async updateTask(id, data, tx = prisma) {
-    return await tx.task.update({
-      where: { id: parseInt(id) },
-      data: data, // 여기에 folderId가 들어있으면 안 됩니다.
-    });
+    return await tx.task.update({ where: { id }, data });
   }
 
-  // 멤버 폴더 수정
-  async updateMemberFolder(userId, taskId, folderId, tx = prisma) {
-    return await tx.member.update({
+  // 폴더 수정하기
+  async updateMemberFolder({ userId, taskId, folderId }) {
+    return await prisma.member.update({
       where: {
-        userId_taskId: { // 스키마의 @@unique([userId, taskId])를 사용
-          userId: parseInt(userId),
-          taskId: parseInt(taskId),
+        userId_taskId: {
+          userId,
+          taskId,
         },
       },
       data: {
-        folderId: folderId ? parseInt(folderId) : null,
+        folderId,
       },
     });
   }
@@ -200,7 +210,7 @@ class TaskRepository {
   }
 
   // 멤버 생성
-  async createMember(userId, taskId, role, folderId = null, tx = prisma) {
+  async createMember(userId, taskId, role, tx = prisma, folderId) {
     return await tx.member.create({
       data: {
         userId,
@@ -232,7 +242,7 @@ class TaskRepository {
     });
   }
 
-  // 멤버 존재 여부 확인 
+  // 멤버 존재 여부 확인
   async findMemberInTask(taskId, userId) {
     return await prisma.member.findFirst({
       where: {
@@ -258,10 +268,106 @@ class TaskRepository {
     return await tx.reference.deleteMany({ where: { taskId } });
   }
 
+  // 세부 과제 찾기
+  async findSubTaskById(id, tx) {
+    return await tx.subTask.findUnique({
+      where: { id },
+      include: { assignee: true }
+    });
+  }
+
+  // 세부 과제 생성 
+  async createSubTask(data, tx = prisma) {
+    return await tx.subTask.create({
+      data,
+      include: {
+        assignee: {
+          include: {
+            user: {
+              include: {
+                alarmSetting: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // 세부 과제 수정
+  async updateSubTask(id, data, tx) {
+    return await tx.subTask.update({
+      where: { id },
+      data,
+      include: {
+        assignee: {
+          include: {
+            user: {
+              include: {
+                alarmSetting: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  // 세부 과제 알림 찾기
+  async findAlarmBySubTaskId(subTaskId, tx) {
+    return await tx.userAlarm.findFirst({
+      where: { subTaskId }
+    });
+  }
+  
+  // 세부 과제 알림 추가
+  async createAlarm(data, tx) {
+    return await tx.userAlarm.create({ data });
+  }
+  
+  // 세부 과제 알림 업데이트
+  async updateAlarm(id, data, tx) {
+    return await tx.userAlarm.update({
+      where: { id },
+      data
+    });
+  }
+  
+  // 세부 과제 알림 삭제
+  async deleteAlarm(id, tx) {
+    return await tx.userAlarm.delete({
+      where: { id }
+    });
+  }
+
   // 세부 과제 추가
   async addSubTasks(taskId, subTasks, tx) {
     return await tx.subTask.createMany({
       data: subTasks.map(st => ({ ...st, taskId }))
+    });
+  }
+
+  // 세부 과제 삭제
+  async deleteSubTasksByIds(subTaskIds, tx = prisma) {
+    return await tx.subTask.deleteMany({
+      where: {
+        id: { in: subTaskIds }
+      }
+    });
+  }
+
+  // 세부 과제 전체 삭제
+  async deleteAllSubTasksByTaskId(taskId, tx = prisma) {
+    return await tx.subTask.deleteMany({
+      where: { taskId }
+    });
+  }
+
+  // task 기준 subTask id 조회
+  async findSubTaskIdsByTaskId(taskId, tx = prisma) {
+    return await tx.subTask.findMany({
+      where: { taskId },
+      select: { id: true }
     });
   }
 
@@ -298,6 +404,8 @@ class TaskRepository {
     });
   }
 
+
+  // 멤버 삭제
   async deleteMember(memberId) {
     const deleted = await prisma.member.delete({
       where: {
@@ -318,6 +426,16 @@ class TaskRepository {
     });
 
     return result._max.rank || 0;
+  }
+
+  // 코드로 과제 찾기
+  async findTaskByCode(inviteCode) {
+    return task = await prisma.task.findFirst({
+      where: {
+        inviteCode: inviteCode,
+        type: 'TEAM',
+      },
+    });
   }
 }
 
