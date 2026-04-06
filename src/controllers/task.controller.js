@@ -349,24 +349,6 @@ class TaskController {
 
       const result = await taskService.joinTaskByInviteCode(userId, inviteCode);
 
-      // 소켓 이벤트 발생 (실시간 알림)
-      if (req.io && result.taskId) {
-        // 해당 팀 방에 입장
-        req.io.sockets.sockets.forEach((socket) => {
-          if (socket.user && socket.user.id === userId) {
-            socket.join(`task:${result.taskId}`);
-          }
-        });
-
-        // 기존 팀원들에게 새로운 팀원 참여 알림 브로드캐스트
-        req.io.to(`task:${result.taskId}`).emit("member:joined", {
-          taskId: result.taskId,
-          taskTitle: result.taskTitle,
-          memberId: result.memberId,
-          message: `${req.user.nickname}님이 팀에 참여했습니다.`
-        });
-      }
-
       res.status(200).json({
         resultType: "SUCCESS",
         message: "팀에 성공적으로 참여했습니다.",

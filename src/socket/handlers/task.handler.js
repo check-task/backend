@@ -18,7 +18,6 @@ export const taskEvents = {
   UPDATE_TASK: "task:update", // 과제 수정
   UPDATE_MEMBER: "member:update", // 멤버 역할 변경
   CREATE_SUBTASK: "subtask:create", // 단일 세부 과제 생성
-  JOIN_BY_INVITE: "joinByInvite", // 초대 코드로 팀 참여
   //서버 -> 클라이언트로 결과
   SUBTASK_UPDATED: "subtaskStatusUpdated", //세부과제 상태 업데이트 완료
   DEADLINE_UPDATED: "deadlineUpdated", //세부과제 마감일 업데이트 완료
@@ -26,7 +25,6 @@ export const taskEvents = {
   TASK_UPDATED: "task:updated", // 과제 수정 완료
   MEMBER_UPDATED: "member:updated", // 멤버 역할 변경
   SUBTASK_CREATED: "subtask:created", // 단일 세부 과제 생성
-  MEMBER_JOINED: "member:joined", // 팀원 참여 알림
 };
 
 //자료 API 관련 SOCKET
@@ -555,43 +553,6 @@ export const setupTaskHandlers = (io, socket) => {
     }
   });
 
-  // 초대 코드로 팀 참여
-  socket.on(taskEvents.JOIN_BY_INVITE, async (payload, callback) => {
-    try {
-      const { inviteCode } = payload;
-      console.log(`[SOCKET][joinByInvite] 요청 수신`, { 
-        userId: socket.user.id, 
-        inviteCode 
-      });
-
-      const result = await taskService.joinTaskByInviteCode(socket.user.id, inviteCode);
-
-      // 해당 팀 방에 입장
-      socket.join(`task:${result.taskId}`);
-
-      // 기존 팀원들에게 새로운 팀원 참여 알림 브로드캐스트
-      io.to(`task:${result.taskId}`).emit(taskEvents.MEMBER_JOINED, {
-        taskId: result.taskId,
-        taskTitle: result.taskTitle,
-        memberId: result.memberId,
-        message: `${socket.user.nickname}님이 팀에 참여했습니다.`
-      });
-
-      console.log(`✅ [${socket.user.id}] 팀 참여 성공:`, result);
-      callback?.({ 
-        success: true, 
-        data: result,
-        message: "팀에 성공적으로 참여했습니다."
-      });
-    } catch (err) {
-      console.error(`[SOCKET][joinByInvite] 실패:`, err);
-      callback?.({ 
-        success: false, 
-        error: err.message,
-        reason: err.message 
-      });
-    }
-  });
   // 커뮤니케이션
 
   // 커뮤니케이션 생성 Socket
