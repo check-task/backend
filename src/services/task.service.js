@@ -216,14 +216,14 @@ class TaskService {
         targetFolderId = Number(updateData.folderId);
         if (isNaN(targetFolderId)) throw new Error("folderId는 숫자여야 합니다.");
   
-        // 본인 소유 폴더 확인
         const folderCheck = await taskRepository.findFolderById(targetFolderId);
         if (!folderCheck) throw new Error("폴더가 존재하지 않습니다.");
         if (folderCheck.userId !== userId) throw new Error("본인 폴더가 아닙니다.");
       }
   
+      // 폴더 업데이트
       await taskRepository.updateMemberFolder({ userId, taskId, folderId: targetFolderId });
-      updateData.folderId = targetFolderId;
+        delete updateData.folderId;
     }
   
     const updatedTask = await taskRepository.updateTask(taskId, updateData);
