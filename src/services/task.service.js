@@ -119,13 +119,13 @@ class TaskService {
         if (newTask.type === 'TEAM') {
           const members = await tx.member.findMany({
             where: { taskId: newTask.id },
-            include: { user: true },
+            include: { user: { include: { alarmSetting: true } } },
           });
 
           if (members.length > 0) {
             const alarmPromises = members.map(async (member) => {
-              const user = member.user;
-              const alarmHours = user.deadlineAlarm || 24;
+              const u = member.user;
+              const alarmHours = u.alarmSetting?.deadlineAlarm ?? 24;
               const alarmDate = calculateAlarmDate(newTask.deadline, alarmHours);
 
               return alarmRepository.createTaskAlarm(
@@ -166,26 +166,27 @@ class TaskService {
 
         const createdSubTasksList = await tx.subTask.findMany({
           where: { taskId: newTask.id },
-          include: { assignee: true },
+          include: {
+            assignee: { include: { user: { include: { alarmSetting: true } } } },
+          },
         });
 
         for (const subTask of createdSubTasksList) {
-          if (subTask.isAlarm && subTask.assigneeId) {
+          if (subTask.isAlarm && subTask.assigneeId && subTask.assignee?.userId) {
             const assignee = subTask.assignee;
-            if (assignee) {
-              const alarmHours = assignee.taskAlarm || 24;
-              const alarmDate = new Date(subTask.endDate);
-              alarmDate.setHours(alarmDate.getHours() - alarmHours);
+            const alarmHours =
+              assignee.user?.alarmSetting?.taskAlarm ?? 24;
+            const alarmDate = new Date(subTask.endDate);
+            alarmDate.setHours(alarmDate.getHours() - alarmHours);
 
-              await alarmRepository.createSubTaskAlarm(
-                subTask.assigneeId,
-                subTask.taskId,
-                subTask.id,
-                subTask.title,
-                alarmDate,
-                tx
-              );
-            }
+            await alarmRepository.createSubTaskAlarm(
+              assignee.userId,
+              subTask.taskId,
+              subTask.id,
+              subTask.title,
+              alarmDate,
+              tx
+            );
           }
         }
       }
@@ -517,12 +518,11 @@ class TaskService {
         if (assigneeId && updatedTask.isAlarm && previousAssigneeId !== parseInt(assigneeId)) {
           const newAssignee = await tx.user.findUnique({
             where: { id: parseInt(assigneeId) },
-            select: { taskAlarm: true },
+            include: { alarmSetting: true },
           });
 
           if (newAssignee) {
-            // 사용자의 taskAlarm 설정에 따라 알림 시간 계산 (기본 24시간 전)
-            const alarmHours = newAssignee.taskAlarm || 24;
+            const alarmHours = newAssignee.alarmSetting?.taskAlarm ?? 24;
             const alarmDate = calculateAlarmDate(updatedTask.endDate, alarmHours);
 
             await alarmRepository.createSubTaskAlarm(
@@ -637,90 +637,67 @@ class TaskService {
     if (existingMember) throw new ForbiddenError("ALREADY_MEMBER", "이미 팀 멤버입니다.");
   
     // 트랜잭션으로 멤버 추가 및 알림 생성
-<<<<<<< feat/issue-367
     return await prisma.$transaction(async (tx) => {
-      // 멤버 추가 (role: true = member)
-      const newMember = await taskRepository.createMember(userId, task.id, true, null, tx);
+      const newMember = await taskRepository.createMember(
+        userId,
+        findTask.id,
+        true,
+        targetFolderId,
+        tx,
+      );
 
-      // 새로 참여한 유저 정보 조회
       const newUser = await tx.user.findUnique({
         where: { id: userId },
         select: { nickname: true },
       });
 
-      // 기존 팀원들에게 알림 생성
       const existingMembers = await tx.member.findMany({
         where: {
-          taskId: task.id,
-          userId: { not: userId }, // 새로 참여한 유저 제외
+          taskId: findTask.id,
+          userId: { not: userId },
         },
-        include: {
-          user: true,
-        },
+        include: { user: true },
       });
 
-      // 기존 팀원들에게 "새로운 팀원 참여" 알림 생성
-      const alarmPromises = existingMembers.map(async (member) => {
-        return alarmRepository.createMemberJoinAlarm(
+      const joinAlarmPromises = existingMembers.map((member) =>
+        alarmRepository.createMemberJoinAlarm(
           member.userId,
-          task.id,
-          task.title,
+          findTask.id,
+          findTask.title,
           newUser.nickname,
-          tx
-        );
-      });
-
-      if (alarmPromises.length > 0) {
-        await Promise.all(alarmPromises);
+          tx,
+        ),
+      );
+      if (joinAlarmPromises.length > 0) {
+        await Promise.all(joinAlarmPromises);
       }
 
-      // 과제 알림이 켜져있으면 새로 참여한 유저에게도 과제 알림 생성
-      if (task.isAlarm) {
-=======
-    const task = await prisma.$transaction(async (tx) => {
-      const newMember = await taskRepository.createMember(userId, findTask.id, true, tx, targetFolderId);
-  
       if (findTask.isAlarm) {
->>>>>>> develop
         const user = await tx.user.findUnique({
           where: { id: userId },
-          include: {
-            alarmSetting: true
-          }
+          include: { alarmSetting: true },
         });
-<<<<<<< feat/issue-367
 
-        if (user && user.alarmSetting) {
-          const alarmHours = user.alarmSetting.taskAlarm || 24;
-          const alarmDate = calculateAlarmDate(task.deadline, alarmHours);
-
+        if (user) {
+          const alarmHours = user.alarmSetting?.deadlineAlarm ?? 24;
+          const alarmDate = calculateAlarmDate(findTask.deadline, alarmHours);
           await alarmRepository.createTaskAlarm(
             userId,
-            task.id,
-            task.title,
+            findTask.id,
+            findTask.title,
             alarmDate,
-            tx
+            tx,
           );
-=======
-  
-        if (user) {
-          const alarmHours = user.taskAlarm || 24;
-          const alarmDate = calculateAlarmDate(findTask.deadline, alarmHours);
-  
-          await alarmRepository.createTaskAlarm(userId, findTask.id, findTask.title, alarmDate, tx);
->>>>>>> develop
         }
       }
-  
+
       return {
         taskId: findTask.id,
         taskTitle: findTask.title,
         memberId: newMember.id,
-        folderId: targetFolderId
+        folderId: targetFolderId,
       };
     });
-  
-    return task;
   }
 
   // 멤버 역할 수정 
@@ -728,14 +705,15 @@ class TaskService {
     const member = await taskRepository.findMemberInTask(taskId, userId);
     if (!member) throw new NotFoundError("해당 과제에서 해당 유저를 찾을 수 없음");
 
-    const isTargetBecomingOwner = (role === 0);
+    const isTargetBecomingOwner = role === 0;
 
     return await prisma.$transaction(async (tx) => {
       if (isTargetBecomingOwner) {
         await taskRepository.resetOtherMembersRole(taskId, userId, tx);
       }
 
-      return await taskRepository.updateMemberRole(memberId, isAdmin, tx);
+      const dbRoleValue = isTargetBecomingOwner ? false : true;
+      return await taskRepository.updateMemberRole(member.id, dbRoleValue, tx);
     });
   }
 
@@ -788,15 +766,15 @@ class TaskService {
 
       let alarmDate = null;
 
-      if (newSubTask.isAlarm && newSubTask.assigneeId) {
+      if (newSubTask.isAlarm && newSubTask.assigneeId && newSubTask.assignee?.userId) {
         const alarmHours =
-          newSubTask.assignee?.user?.alarmSetting?.taskAlarm || 24;
+          newSubTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
 
         alarmDate = new Date(newSubTask.endDate);
         alarmDate.setHours(alarmDate.getHours() - alarmHours);
 
         await alarmRepository.createSubTaskAlarm(
-          newSubTask.assigneeId,
+          newSubTask.assignee.userId,
           newSubTask.taskId,
           newSubTask.id,
           newSubTask.title,
@@ -860,14 +838,17 @@ class TaskService {
             alarmDate
           }, tx);
         } else {
-          await alarmRepository.createSubTaskAlarm(
-            updatedSubTask.assigneeId,
-            updatedSubTask.taskId,
-            updatedSubTask.id,
-            updatedSubTask.title,
-            alarmDate,
-            tx
-          );
+          const notifyUserId = updatedSubTask.assignee?.userId;
+          if (notifyUserId) {
+            await alarmRepository.createSubTaskAlarm(
+              notifyUserId,
+              updatedSubTask.taskId,
+              updatedSubTask.id,
+              updatedSubTask.title,
+              alarmDate,
+              tx
+            );
+          }
         }
       } else if (existingAlarm) {
         await alarmRepository.deleteAlarmById(existingAlarm.id, tx);

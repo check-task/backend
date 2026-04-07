@@ -27,25 +27,30 @@ class AlarmRepository {
       // ✅ 과제와 세부과제 정보를 함께 조회 (진척도 계산용)
       include: {
         task: {
-          include: { subTasks: true }
-        }
+          include: { subTasks: true },
+        },
       },
-      orderBy: [
-        { [orderBy]: order },
-        { id: order }
-      ],
+      orderBy: [{ [orderBy]: order }, { id: order }],
       cursor: cursor ? { id: cursor } : undefined,
       skip: cursor ? 1 : 0,
       take: limit + 1,
     });
 
     // ✅ 조회된 알림 목록을 순회하며 진척도 실시간 반영
-    return alarms.map(alarm => {
+    return alarms.map((alarm) => {
       // 과제 알림이고(taskId 있음, subTaskId 없음), 관련 과제 정보가 있는 경우
-      if (alarm.taskId && !alarm.subTaskId && alarm.task && alarm.task.subTasks) {
+      if (
+        alarm.taskId &&
+        !alarm.subTaskId &&
+        alarm.task &&
+        alarm.task.subTasks
+      ) {
         const total = alarm.task.subTasks.length;
-        const completed = alarm.task.subTasks.filter(st => st.status === 'COMPLETED').length;
-        const currentProgress = total > 0 ? Math.round((completed / total) * 100) : 0;
+        const completed = alarm.task.subTasks.filter(
+          (st) => st.status === "COMPLETED",
+        ).length;
+        const currentProgress =
+          total > 0 ? Math.round((completed / total) * 100) : 0;
 
         // 알림 내용 업데이트 (덮어쓰기)
         alarm.alarmContent = `'현재 ${currentProgress}%완성 중이에요. 빨리 끝내고 쉬어요!`;
@@ -61,7 +66,6 @@ class AlarmRepository {
 
   //과제 알림 생성
   async createTaskAlarm(userId, taskId, taskTitle, alarmDate, tx = prisma) {
-
     const user = await tx.user.findFirst({
       where: { id: userId },
       include: { alarmSetting: true },
@@ -72,26 +76,36 @@ class AlarmRepository {
       include: { subTasks: true },
     });
     const totalSubTasks = task?.subTasks?.length || 0;
-    const completedSubTasks = task?.subTasks?.filter(st => st.status === 'COMPLETED').length || 0;
-    const progressRate = totalSubTasks > 0 ? Math.round((completedSubTasks / totalSubTasks) * 100) : 0;
+    const completedSubTasks =
+      task?.subTasks?.filter((st) => st.status === "COMPLETED").length || 0;
+    const progressRate =
+      totalSubTasks > 0
+        ? Math.round((completedSubTasks / totalSubTasks) * 100)
+        : 0;
 
-    const deadlineAlarm = user.deadlineAlarm;
+    const deadlineAlarmHours = user.alarmSetting?.deadlineAlarm ?? 24;
 
     return await tx.userAlarm.create({
       data: {
         userId,
         taskId,
-        title: `'${taskTitle}'의 마감까지 ${deadlineAlarm}시간 남았어요!`,
+        title: `'${taskTitle}'의 마감까지 ${deadlineAlarmHours}시간 남았어요!`,
         alarmContent: `'현재 ${progressRate}%완성 중이에요. 빨리 끝내고 쉬어요!`,
         alarmDate,
-        isRead: false
+        isRead: false,
       },
     });
   }
 
   //세부과제 알림 생성
-  async createSubTaskAlarm(userId, taskId, subTaskId, subTaskTitle, alarmDate, tx = prisma) {
-
+  async createSubTaskAlarm(
+    userId,
+    taskId,
+    subTaskId,
+    subTaskTitle,
+    alarmDate,
+    tx = prisma,
+  ) {
     const user = await tx.user.findUnique({
       where: { id: userId },
       select: { alarmSetting: true },
@@ -109,16 +123,16 @@ class AlarmRepository {
         taskId,
         subTaskId,
         title: `'${subTaskTitle}'의 마감까지 ${taskAlarm}시간 남았어요!`,
-        alarmContent: `'현재 ${subTask.status === 'COMPLETED' ? '완료' : '진행 중'} 상태에요. 빨리 끝내고 쉬어요!`,
+        alarmContent: `'현재 ${subTask.status === "COMPLETED" ? "완료" : "진행 중"} 상태에요. 빨리 끝내고 쉬어요!`,
         alarmDate,
-        isRead: false
+        isRead: false,
       },
     });
   }
 
   //유저의 개별 알림 삭제
-  async deleteAlarmById(alarmId) {
-    return await prisma.userAlarm.delete({
+  async deleteAlarmById(alarmId, tx = prisma) {
+    return await tx.userAlarm.delete({
       where: { id: alarmId },
     });
   }
@@ -134,7 +148,6 @@ class AlarmRepository {
     });
   }
 
-
   //유저의 모든 알림 삭제
   async deleteAllAlarmsByUserId(userId) {
     return await prisma.userAlarm.deleteMany({
@@ -142,30 +155,40 @@ class AlarmRepository {
     });
   }
 
-  //최종 마감 알림 시간 수정
+  //최종 마감 알림 시간 수정 → UserAlarmSetting
   async updateDeadlineAlarm(userId, deadlineAlarm) {
-    return await prisma.user.update({
-      where: { id: userId },
-      data: { deadlineAlarm },
-      select: {
-        id: true,
-        nickname: true,
-        deadlineAlarm: true,
-      },
+    const setting = await prisma.userAlarmSetting.upsert({
+      where: { userId },
+      create: { userId, deadlineAlarm, taskAlarm: 24 },
+      update: { deadlineAlarm },
     });
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, nickname: true },
+    });
+    return {
+      id: user.id,
+      nickname: user.nickname,
+      deadlineAlarm: setting.deadlineAlarm,
+    };
   }
 
-  //과제 알림 시간 수정
+  //과제(세부과제) 알림 시간 수정 → UserAlarmSetting
   async updateTaskAlarm(userId, taskAlarm) {
-    return await prisma.user.update({
-      where: { id: userId },
-      data: { taskAlarm },
-      select: {
-        id: true,
-        nickname: true,
-        taskAlarm: true,
-      },
+    const setting = await prisma.userAlarmSetting.upsert({
+      where: { userId },
+      create: { userId, taskAlarm, deadlineAlarm: 24 },
+      update: { taskAlarm },
     });
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, nickname: true },
+    });
+    return {
+      id: user.id,
+      nickname: user.nickname,
+      taskAlarm: setting.taskAlarm,
+    };
   }
 
   //과제 알림 상태 변경
@@ -229,8 +252,8 @@ class AlarmRepository {
   }
 
   //세부과제 알림 삭제 - 단건삭제
-  async deleteSubTaskAlarm(userId, subTaskId) {
-    return await prisma.userAlarm.deleteMany({
+  async deleteSubTaskAlarm(userId, subTaskId, tx = prisma) {
+    return await tx.userAlarm.deleteMany({
       where: {
         userId,
         subTaskId,
@@ -242,12 +265,12 @@ class AlarmRepository {
   async deleteAlarmsBySubTaskIds(subTaskIds, tx = prisma) {
     return await tx.userAlarm.deleteMany({
       where: {
-        subTaskId: { in: subTaskIds }
-      }
+        subTaskId: { in: subTaskIds },
+      },
     });
   }
 
-  //안읽음 알림 여부 
+  //안읽음 알림 여부
   async countUnreadAlarms(userId) {
     const kstDate = new Date();
 
@@ -256,7 +279,7 @@ class AlarmRepository {
         userId,
         isRead: false,
         alarmDate: {
-          lte: kstDate
+          lte: kstDate,
         },
       },
     });
@@ -291,6 +314,17 @@ class AlarmRepository {
     });
   }
 
+  async updateAlarm(alarmId, data, tx = prisma) {
+    return await tx.userAlarm.update({
+      where: { id: alarmId },
+      data: {
+        title: data.title,
+        alarmContent: data.alarmContent,
+        alarmDate: data.alarmDate,
+      },
+    });
+  }
+
   // (추가) 알림 시간 업데이트 (개별)
   async updateAlarmDate(alarmId, newAlarmDate) {
     return await prisma.userAlarm.update({
@@ -308,14 +342,13 @@ class AlarmRepository {
         subTaskId: null, // 세부과제 알림 제외 (과제 알림만)
       },
       include: {
-        user: true,
+        user: { include: { alarmSetting: true } },
       },
     });
 
     // 2. 각 알림별로 새로운 마감일 기준 알림 시간 재계산 및 업데이트
     for (const alarm of alarms) {
-      // 유저별 설정값 확인
-      const alarmHours = alarm.user.deadlineAlarm || 24;
+      const alarmHours = alarm.user.alarmSetting?.deadlineAlarm ?? 24;
       // 새로운 알림 시간 계산
       const newAlarmDate = calculateAlarmDate(newDeadline, alarmHours);
 
@@ -332,7 +365,13 @@ class AlarmRepository {
   }
 
   // 팀원 참여 알림 생성
-  async createMemberJoinAlarm(userId, taskId, taskTitle, memberName, tx = prisma) {
+  async createMemberJoinAlarm(
+    userId,
+    taskId,
+    taskTitle,
+    memberName,
+    tx = prisma,
+  ) {
     return await tx.userAlarm.create({
       data: {
         userId,

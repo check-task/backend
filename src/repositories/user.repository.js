@@ -5,21 +5,47 @@ class UserRepository {
   async getUserData(userId) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { folders: true },
+      include: { folders: true, alarmSetting: true },
     });
 
     return user;
   }
 
-  // 프로필 수정
+  // 프로필 수정 (알림 시간은 UserAlarmSetting)
   async updateProfile(userId, data) {
-    const updatedUser = await prisma.user.update({
+    const { deadlineAlarm, taskAlarm, ...userFields } = data;
+    const cleanUser = Object.fromEntries(
+      Object.entries(userFields).filter(([, v]) => v !== undefined),
+    );
+    const hasAlarmUpdate =
+      deadlineAlarm !== undefined || taskAlarm !== undefined;
+
+    if (Object.keys(cleanUser).length > 0) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: cleanUser,
+      });
+    }
+
+    if (hasAlarmUpdate) {
+      await prisma.userAlarmSetting.upsert({
+        where: { userId },
+        create: {
+          userId,
+          deadlineAlarm: deadlineAlarm ?? 24,
+          taskAlarm: taskAlarm ?? 24,
+        },
+        update: {
+          ...(deadlineAlarm !== undefined && { deadlineAlarm }),
+          ...(taskAlarm !== undefined && { taskAlarm }),
+        },
+      });
+    }
+
+    return prisma.user.findUnique({
       where: { id: userId },
-      data: {
-        ...data 
-      },
+      include: { folders: true, alarmSetting: true },
     });
-    return updatedUser;
   }
 
   // 탈퇴한 회원인지 확인
