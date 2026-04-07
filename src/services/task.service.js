@@ -260,9 +260,6 @@ class TaskService {
       throw new BadRequestError("유효하지 않은 날짜 형식입니다.");
     }
 
-    // 한국 시간으로 변경 (기존 로직 유지)
-    newDeadline.setHours(newDeadline.getHours());
-
     // 4. 세부 과제들의 마감일보다 이른 날짜로 변경 불가하도록 검증
     const subTasks = await prisma.subTask.findMany({
       where: { taskId: taskId }
