@@ -205,6 +205,12 @@ export class KakaoAuthService {
       throw new BadRequestError("ALREADY_WITHDRAWN","이미 탈퇴 처리된 사용자입니다.");
     }
     try{
+      // 카카오 연결 해제
+      await axios.post(
+        "https://kapi.kakao.com/v1/user/unlink",
+        new URLSearchParams({ target_id_type: "user_id", target_id: user.providerId }),
+        { headers: { Authorization: `KakaoAK ${process.env.KAKAO_ADMIN_KEY}` } }
+      );
       await prisma.user.update({
         where: {
           id: user.id
@@ -214,6 +220,7 @@ export class KakaoAuthService {
         },
       });
     }catch (error){
+      console.error("WITHDRAW ERROR:", error.response?.data ?? error.message);
       throw new InternalServerError("USER_WITHDRAW_FAILED","회원 탈퇴 처리 중 오류가 발생했습니다.");
     }
   }
