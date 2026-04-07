@@ -261,7 +261,7 @@ class TaskService {
     }
 
     // 한국 시간으로 변경 (기존 로직 유지)
-    newDeadline.setHours(newDeadline.getHours() + 9);
+    newDeadline.setHours(newDeadline.getHours());
 
     // 4. 세부 과제들의 마감일보다 이른 날짜로 변경 불가하도록 검증
     const subTasks = await prisma.subTask.findMany({
