@@ -169,8 +169,8 @@ export class TaskResponseDTO extends TaskUtils {
       taskList.push({
         taskId: task.id,
         folderId: task.folderId,
-        foldercolor: task.folder?.color || "값 없음",
-        folderTitle: task.folder?.folderTitle || "미지정",
+        foldercolor: task.folder?.color || "#818892",
+        folderTitle: task.folder?.folderTitle || "지정안함",
         priority: task.priorities?.[0]?.rank ?? null,
         status: task.status || "PENDING",
         title: task.title,
