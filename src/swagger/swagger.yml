@@ -4,7 +4,6 @@ info:
   description: Check-Task API 문서입니다.
   version: 1.0.0
 
-
 components:
   securitySchemes:
     bearerAuth:
@@ -12,7 +11,7 @@ components:
       scheme: bearer
       bearerFormat: JWT
 
-tags:
+  tags:
   - name: Task
     description: 과제 관련 API
   - name: Alarm
@@ -2105,7 +2104,14 @@ paths:
       tags:
         - Task
       summary: 초대 코드로 팀 참여
-      description: 초대 코드를 사용하여 팀 과제에 참여합니다.
+      description: |
+        초대 코드를 사용하여 팀 과제에 참여합니다.
+        
+        **팀원 참여 알림 기능:**
+        - 새로운 팀원이 참여하면 기존 팀원들에게 알림이 생성됩니다.
+        - DB에 알림 기록이 저장됩니다.
+        - 알림 내용: "새로운 팀원이 참여했어요!"
+        - 알림은 기존 팀원들의 알림 목록에서 확인할 수 있습니다.
       security:
         - bearerAuth: []
       requestBody:
@@ -3550,8 +3556,10 @@ paths:
         - Kakao Auth
       summary: 카카오 회원탈퇴
       description: |
-        카카오 OAuth를 통해 로그인한 사용자의 카카오 계정과 서비스 간 연결을 해제하고,
-        서비스 DB에서 해당 사용자의 deleted_at을 업데이트합니다.
+        카카오 0Atuh를 통해 로그인한 사용자의 회원 탈퇴를 처리한다.
+        탈퇴 요청 시 즉시 삭제되지 않으며, deleted_at이 현재 시각으로 업데이트 된다.
+        탈퇴 후 7일이 지난 계정은 스케줄러에 의해 DB에서 영구적으로 삭제 및 카카오 연동 해제된다.
+        탈퇴 후 7일 이내에는 재로그인 시 계정 복구가 가능하다.
       security:
         - bearerAuth: []
       requestBody:
@@ -3617,6 +3625,77 @@ paths:
                   reason: "회원 탈퇴 처리 중 오류가 발생했습니다"
                   data: null
   
+  # 탈퇴 계정 복구
+  /api/v1/auth/restore:
+    post:
+      tags:
+        - Kakao Auth
+      summary: 탈퇴 계정 복구
+      description: |
+        탈퇴 처리된 카카오 계정을 복구합니다.
+        탈퇴 후 재로그인 시 발급된 복구 토큰(restoreToken)을 사용하며,
+        복구 성공 시 Access Token을 반환하고 Refresh Token을 HttpOnly Cookie로 설정합니다.
+        복구 토큰은 1회성으로 사용 후 폐기됩니다. (유효시간: 5분)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: 계정 복구 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "계정이 복구되었으며 로그인되었습니다."
+                  data:
+                    type: object
+                    properties:
+                      accessToken:
+                        type: string
+                        example: "jwt_access_token"
+                      accessTokenExpireIn:
+                        type: integer
+                        example: 3600
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "TOKEN_REQUIRED | INVALID_TOKEN | USER_NOT_FOUND"
+                  reason: "복구 토큰이 필요합니다. | 유효하지 않거나 만료된 토큰입니다. | 복구할 사용자가 없습니다."
+                  data: null
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "INTERNAL_SERVER_ERROR"
+                  reason: "서버 내부 오류가 발생했습니다."
+                  data: null
+
   # Access Token 재발급
   /api/v1/auth/refresh:
     post:
@@ -3685,7 +3764,8 @@ paths:
                   errorCode: "INTERNAL_SERVER_ERROR"
                   reason: "서버 내부 오류가 발생했습니다."
                   data: null
-  
+
+
   # -- 자료 API --
   # 자료 생성 (파일 업로드)
   /api/v1/reference/data/{taskId}:

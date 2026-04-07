@@ -552,6 +552,7 @@ export const setupTaskHandlers = (io, socket) => {
       callback?.({ success: false, reason: err.message });
     }
   });
+
   // 커뮤니케이션
 
   // 커뮤니케이션 생성 Socket
