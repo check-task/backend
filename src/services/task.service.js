@@ -39,16 +39,16 @@ class TaskService {
       status
     });
 
-    return tasks.map(task => {
-        if (task.type === 'TEAM' && myTeamFolder) {
+    return tasks.map(taskItem => {
+        if (taskItem.type === 'TEAM' && myTeamFolder) {
             return {
-                ...task,
+                ...taskItem,
                 folderId: myTeamFolder.id,       
                 folderTitle: myTeamFolder.folderTitle,
                 foldercolor: myTeamFolder.color 
             };
         }
-        return task;
+        return taskItem;
     });
   }
 
@@ -119,13 +119,17 @@ class TaskService {
         if (newTask.type === 'TEAM') {
           const members = await tx.member.findMany({
             where: { taskId: newTask.id },
-            include: { user: true },
+            include: { 
+              user: {
+                include: { alarmSetting: true }
+              }
+            },
           });
 
           if (members.length > 0) {
             const alarmPromises = members.map(async (member) => {
               const user = member.user;
-              const alarmHours = user.deadlineAlarm || 24;
+              const alarmHours = user.alarmSetting?.deadlineAlarm || 24;
               const alarmDate = calculateAlarmDate(newTask.deadline, alarmHours);
 
               return alarmRepository.createTaskAlarm(
@@ -166,14 +170,18 @@ class TaskService {
 
         const createdSubTasksList = await tx.subTask.findMany({
           where: { taskId: newTask.id },
-          include: { assignee: true },
+          include: { 
+            assignee: {
+              include: { alarmSetting: true }
+            }
+          },
         });
 
         for (const subTask of createdSubTasksList) {
           if (subTask.isAlarm && subTask.assigneeId) {
             const assignee = subTask.assignee;
             if (assignee) {
-              const alarmHours = assignee.taskAlarm || 24;
+              const alarmHours = assignee.alarmSetting?.taskAlarm || 24;
               const alarmDate = new Date(subTask.endDate);
               alarmDate.setHours(alarmDate.getHours() - alarmHours);
 
@@ -235,8 +243,8 @@ class TaskService {
   // Task 마감일 변경 서비스
   async updateTaskDeadline(userId, taskId, deadline) {
     // 1. Task 존재 여부 확인
-    const task = await taskRepository.findTaskById(taskId);
-    if (!task) {
+    const existingTask = await taskRepository.findTaskById(taskId);
+    if (!existingTask) {
       throw new NotFoundError("존재하지 않는 과제입니다.");
     }
 
@@ -301,13 +309,13 @@ class TaskService {
 
   // 과제 세부 사항 조회
   async getTaskDetail(taskId, userId) {
-    const task = await taskRepository.findTaskDetail(taskId, userId);
+    const taskDetail = await taskRepository.findTaskDetail(taskId, userId);
 
-    if (!task) {
+    if (!taskDetail) {
       throw new NotFoundError("과제를 찾을 수 없음");
     }
 
-    return task;
+    return taskDetail;
   }
 
   // 우선순위 변경
@@ -452,8 +460,8 @@ class TaskService {
         throw error;
       }
 
-      const task = existingTask.task;
-      const isTeamTask = task.type === 'TEAM';
+      const parentTask = existingTask.task;
+      const isTeamTask = parentTask.type === 'TEAM';
       const previousAssigneeId = existingTask.assigneeId; // 이전 담당자 ID 저장
 
       // assigneeId가 있는 경우에만 멤버 확인
@@ -467,11 +475,11 @@ class TaskService {
 
         if (isTeamTask) {
           // 팀 과제인 경우: 팀 멤버인지 확인
-          const isTeamMember = task.members.some(
+          const isTeamMember = parentTask.members.some(
             member => member.userId === parsedAssigneeId
           );
 
-          console.log('Is team member:', isTeamMember, 'Team members:', task.members);
+          console.log('Is team member:', isTeamMember, 'Team members:', parentTask.members);
 
           if (!isTeamMember) {
             const error = new Error('팀원만 담당자로 지정할 수 있습니다.');
@@ -480,7 +488,7 @@ class TaskService {
           }
         } else {
           // 개인 과제인 경우: 본인만 담당자로 지정 가능
-          const taskOwner = task.members.find(member => member.role === false)?.user;
+          const taskOwner = parentTask.members.find(member => member.role === false)?.user;
           if (taskOwner && taskOwner.id !== parsedAssigneeId) {
             const error = new Error('개인 과제는 본인만 담당자로 지정할 수 있습니다.');
             error.statusCode = 400;
@@ -517,12 +525,12 @@ class TaskService {
         if (assigneeId && updatedTask.isAlarm && previousAssigneeId !== parseInt(assigneeId)) {
           const newAssignee = await tx.user.findUnique({
             where: { id: parseInt(assigneeId) },
-            select: { taskAlarm: true },
+            select: { alarmSetting: true },
           });
 
           if (newAssignee) {
             // 사용자의 taskAlarm 설정에 따라 알림 시간 계산 (기본 24시간 전)
-            const alarmHours = newAssignee.taskAlarm || 24;
+            const alarmHours = newAssignee.alarmSetting?.taskAlarm || 24;
             const alarmDate = calculateAlarmDate(updatedTask.endDate, alarmHours);
 
             await alarmRepository.createSubTaskAlarm(
@@ -568,34 +576,34 @@ class TaskService {
   }
 
   // 초대 코드 조회
-  async checkInviteCode(task) {
+  async checkInviteCode(taskInfo) {
     // 초대 코드 / 만료시간 없는 경우
-    if (task.inviteCode == null || !task.inviteExpiredAt == null) {
+    if (taskInfo.inviteCode == null || !taskInfo.inviteExpiredAt == null) {
       return { isValid: false };
     }
 
     // 만료 여부 체크
     const now = new Date();
-    if (now > task.inviteExpiredAt) {
+    if (now > taskInfo.inviteExpiredAt) {
       return { isValid: false };
     }
 
     return {
       isValid: true,
-      invite_code: task.inviteCode,
-      invite_expired: task.inviteExpiredAt
+      invite_code: taskInfo.inviteCode,
+      invite_expired: taskInfo.inviteExpiredAt
     };
   }
 
   // 초대 코드 생성
-  async generateInviteCode(task, userId) {
-    if (task.type === 'PERSONAL') {
+  async generateInviteCode(taskInfo, userId) {
+    if (taskInfo.type === 'PERSONAL') {
       throw new ForbiddenError("PERSONAL_TASK", "개인 과제는 초대 코드 생성이 불가능합니다.");
     }
 
     // 사용자가 해당 과제의 멤버인지 확인 - 모든 멤버가 초대할 수 있음
     const isMember = await prisma.member.findFirst({
-      where: { taskId: task.id, userId }
+      where: { taskId: taskInfo.id, userId }
     });
 
     if (!isMember) {
@@ -609,7 +617,7 @@ class TaskService {
       .join('');
 
     const result = await prisma.$transaction(async (tx) => {
-      return await taskRepository.updateTaskInviteCode(task.id, inviteCode, tx);
+      return await taskRepository.updateTaskInviteCode(taskInfo.id, inviteCode, tx);
     });
 
     return {
@@ -637,8 +645,39 @@ class TaskService {
     if (existingMember) throw new ForbiddenError("ALREADY_MEMBER", "이미 팀 멤버입니다.");
   
     // 트랜잭션으로 멤버 추가 및 알림 생성
-    const task = await prisma.$transaction(async (tx) => {
-      const newMember = await taskRepository.createMember(userId, findTask.id, true, tx, targetFolderId);
+    const result = await prisma.$transaction(async (tx) => {
+      const newMember = await taskRepository.createMember(userId, findTask.id, true, targetFolderId, tx);
+
+      // 새로 참여한 유저 정보 조회 (닉네임)
+      const newUser = await tx.user.findUnique({
+        where: { id: userId },
+        select: { nickname: true },
+      });
+
+      // 기존 팀원들에게 "새 멤버 참여" 알림 생성
+      const existingMembers = await tx.member.findMany({
+        where: {
+          taskId: findTask.id,
+          userId: { not: userId }, // 본인 제외
+        },
+        include: {
+          user: true,
+        },
+      });
+
+      const alarmPromises = existingMembers.map((member) => {
+        return alarmRepository.createMemberJoinAlarm(
+          member.userId,
+          findTask.id,
+          findTask.title,
+          newUser?.nickname || '새로운 팀원',
+          tx
+        );
+      });
+
+      if (alarmPromises.length > 0) {
+        await Promise.all(alarmPromises);
+      }
   
       if (findTask.isAlarm) {
         const user = await tx.user.findUnique({
@@ -649,7 +688,7 @@ class TaskService {
         });
   
         if (user) {
-          const alarmHours = user.taskAlarm || 24;
+          const alarmHours = user.alarmSetting?.taskAlarm || 24;
           const alarmDate = calculateAlarmDate(findTask.deadline, alarmHours);
   
           await alarmRepository.createTaskAlarm(userId, findTask.id, findTask.title, alarmDate, tx);
@@ -664,7 +703,7 @@ class TaskService {
       };
     });
   
-    return task;
+    return result;
   }
 
   // 멤버 역할 수정 
