@@ -37,7 +37,7 @@ class TaskRepository {
     return await prisma.folder.findFirst({
       where: {
         userId: userId,
-        name: folderName,
+        folderTitle: folderName,
       },
     });
   }
@@ -430,7 +430,7 @@ class TaskRepository {
 
   // 코드로 과제 찾기
   async findTaskByCode(inviteCode) {
-    return task = await prisma.task.findFirst({
+    return await prisma.task.findFirst({
       where: {
         inviteCode: inviteCode,
         type: 'TEAM',
