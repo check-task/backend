@@ -1,7 +1,7 @@
 /**
  * TaskService / AlarmService 알림 검증
  * - 과제(Task) 단위 알림 시각: UserAlarmSetting.deadlineAlarm + calculateAlarmDate(과제 마감)
- * - 세부과제(SubTask) 알림 시각: UserAlarmSetting.taskAlarm + endDate 기준 오프셋
+ * - 세부과제(SubTask) 알림 시각: UserAlarmSetting.taskAlarm + calculateAlarmDate(endDate)
  * - vitest.config.js 의 TZ=UTC 와 맞춰 날짜 단언이 환경에 흔들리지 않음
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -215,14 +215,12 @@ describe("TaskService 알림 — deadlineAlarm / taskAlarm", () => {
         mockTx,
       );
 
-      const expectedSub = new Date(endDate);
-      expectedSub.setHours(expectedSub.getHours() - 6);
       expect(alarmRepository.createSubTaskAlarm).toHaveBeenCalledWith(
         ownerUserId,
         20,
         500,
         "하위",
-        expectedSub,
+        calculateAlarmDate(endDate, 6),
         mockTx,
       );
     });
@@ -265,14 +263,12 @@ describe("TaskService 알림 — deadlineAlarm / taskAlarm", () => {
         assigneeId: userIdForAlarm,
       });
 
-      const expected = new Date(endDate);
-      expected.setHours(expected.getHours() - 8);
       expect(alarmRepository.createSubTaskAlarm).toHaveBeenCalledWith(
         userIdForAlarm,
         40,
         700,
         "신규 ST",
-        expected,
+        calculateAlarmDate(endDate, 8),
         mockTx,
       );
     });
@@ -305,14 +301,12 @@ describe("TaskService 알림 — deadlineAlarm / taskAlarm", () => {
         isAlarm: true,
       });
 
-      const expectedAlarmDate = new Date(endDate);
-      expectedAlarmDate.setHours(expectedAlarmDate.getHours() - 3);
       expect(alarmRepository.updateAlarm).toHaveBeenCalledWith(
         9001,
         {
           title: `'수정된 ST'의 마감 알림`,
           alarmContent: `'수정된 ST' 진행 중입니다.`,
-          alarmDate: expectedAlarmDate,
+          alarmDate: calculateAlarmDate(endDate, 3),
         },
         mockTx,
       );

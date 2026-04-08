@@ -300,8 +300,10 @@ class AlarmService {
 
       const alarmHours =
         subTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
-      const alarmDate = new Date(updatedSubTask.endDate);
-      alarmDate.setHours(alarmDate.getHours() - alarmHours);
+      const alarmDate = calculateAlarmDate(
+        updatedSubTask.endDate,
+        alarmHours,
+      );
 
       const existingAlarm = await prisma.userAlarm.findFirst({
         where: { subTaskId: updatedSubTask.id },

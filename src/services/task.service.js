@@ -281,8 +281,7 @@ class TaskService {
           ) {
             const assignee = subTask.assignee;
             const alarmHours = assignee.user?.alarmSetting?.taskAlarm ?? 24;
-            const alarmDate = new Date(subTask.endDate);
-            alarmDate.setHours(alarmDate.getHours() - alarmHours);
+            const alarmDate = calculateAlarmDate(subTask.endDate, alarmHours);
 
             await alarmRepository.createSubTaskAlarm(
               assignee.userId,
@@ -661,8 +660,7 @@ class TaskService {
 
           if (newMember?.userId) {
             const alarmHours = newMember.user?.alarmSetting?.taskAlarm ?? 24;
-            const alarmDate = new Date(updatedTask.endDate);
-            alarmDate.setHours(alarmDate.getHours() - alarmHours);
+            const alarmDate = calculateAlarmDate(updatedTask.endDate, alarmHours);
 
             await alarmRepository.createSubTaskAlarm(
               newMember.userId,
@@ -973,8 +971,7 @@ class TaskService {
       ) {
         const alarmHours =
           newSubTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
-        const alarmDate = new Date(newSubTask.endDate);
-        alarmDate.setHours(alarmDate.getHours() - alarmHours);
+        const alarmDate = calculateAlarmDate(newSubTask.endDate, alarmHours);
 
         await alarmRepository.createSubTaskAlarm(
           newSubTask.assignee.userId,
@@ -1035,8 +1032,7 @@ class TaskService {
         const alarmHours =
           updatedSubTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
 
-        alarmDate = new Date(updatedSubTask.endDate);
-        alarmDate.setHours(alarmDate.getHours() - alarmHours);
+        alarmDate = calculateAlarmDate(updatedSubTask.endDate, alarmHours);
       }
 
       if (updatedSubTask.isAlarm && alarmDate) {
