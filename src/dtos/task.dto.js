@@ -129,8 +129,10 @@ export class TaskRequestDTO {
     if (data.title !== undefined) {
       result.title = data.title;
     }
-    if (data.endDate !== undefined) {
-      result.endDate = new Date(data.endDate);
+    const endDateRaw =
+      data.endDate !== undefined ? data.endDate : data.deadline;
+    if (endDateRaw !== undefined) {
+      result.endDate = new Date(endDateRaw);
     }
     if (data.isAlarm !== undefined) {
       result.isAlarm = Boolean(data.isAlarm);

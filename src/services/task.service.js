@@ -1084,7 +1084,7 @@ class TaskService {
       return {
         subTaskId: updatedSubTask.id,
         title: updatedSubTask.title,
-        alarmDate: updatedSubTask.alarmDate,
+        deadline: updatedSubTask.endDate,
       };
     });
   }

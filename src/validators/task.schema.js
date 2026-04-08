@@ -187,7 +187,10 @@ export const patchSubTaskSchema = z.object({
   }),
   body: z.object({
     title: z.string().optional(),
+    /** 생성 API와 동일 키; DTO에서 endDate로 매핑 */
+    deadline: z.string().optional(),
     endDate: z.string().optional(),
+    isAlarm: z.boolean().optional(),
     status: z.enum(["COMPLETED", "PENDING"]).optional(),
   }),
 });
