@@ -63,7 +63,7 @@ export const updateTaskAlarmStatusDto = (data) => {
 export const updateSubtaskAlarmStatusDto = (data) => {
   return {
     subtask: {
-      subTaskId: data.subTaskId,
+      subTaskId: data.subTaskId ?? data.id,
       assigneeId: data.assigneeId,
       taskId: data.taskId,
       title: data.title,

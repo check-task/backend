@@ -599,15 +599,15 @@ describe("DELETE /api/v1/task/:taskId/member/:memberId — 팀원 추방", () =>
 describe("POST /api/v1/task/:taskId/subTask — 세부 과제 추가", () => {
   it("200: 정상 추가 후 응답 data 검증", async () => {
     taskService.createSingleSubTask.mockResolvedValue({
-      id: 10,
+      subTaskId: 10,
       title: "새 세부 과제",
-      endDate: new Date("2026-12-31"),
+      deadline: new Date("2026-12-31"),
     });
 
     const res = await supertest(app)
       .post("/api/v1/task/1/subTask")
       .set("Authorization", AUTH)
-      .send({ title: "새 세부 과제", endDate: "2026-12-31" });
+      .send({ title: "새 세부 과제", deadline: "2026-12-31" });
 
     expect(res.status).toBe(200);
     expect(res.body.resultType).toBe("SUCCESS");

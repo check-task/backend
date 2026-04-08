@@ -17,8 +17,8 @@ export class UserDto {
       phoneNum: user.phoneNum,
       email: user.email,
       profileImage: user.profileImage,
-      deadlineAlarm: user.deadlineAlarm,
-      taskAlarm: user.taskAlarm,
+      deadlineAlarm: user.alarmSetting?.deadlineAlarm ?? 24,
+      taskAlarm: user.alarmSetting?.taskAlarm ?? 24,
       folders: user.folders
         ? user.folders.map((folder) => ({
             folderId: folder.id,

@@ -160,6 +160,10 @@ export class KakaoAuthService {
           color: "#818892", 
         });
 
+        await prisma.userAlarmSetting.create({
+          data: { userId: user.id },
+        });
+
         // 동의 항목 저장
         await prisma.userAgreement.upsert({
           where: { userId: user.id },

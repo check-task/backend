@@ -18,6 +18,9 @@ const subTaskSchema = z.object({
   title: z.string().trim().min(1, "세부 과제 제목은 필수입니다."),
   endDate: z.string().optional(),
   status: z.enum(["PENDING", "COMPLETED"]).optional(),
+  /** 해당 과제 멤버의 User.id */
+  assigneeId: z.coerce.number().int().positive().optional(),
+  isAlarm: z.boolean().optional(),
 });
 
 // ─── 과제 생성 ────────────────────────────────────────────────────
@@ -84,7 +87,7 @@ export const updateTaskPrioritiesSchema = z.object({
         z.object({
           taskId: z.coerce.number().int().positive(),
           rank: z.number().int().min(1),
-        })
+        }),
       )
       .min(1, "orderedTasks는 최소 1개 이상이어야 합니다."),
   }),
@@ -119,6 +122,9 @@ export const addSubTaskSchema = z.object({
   body: z.object({
     title: z.string().trim().min(1, "세부 과제 제목은 필수입니다."),
     deadline: z.string().optional(),
+    isAlarm: z.boolean().optional(),
+    /** 담당자 User.id (서버에서 Member.id로 변환) */
+    assigneeId: z.coerce.number().int().positive().optional(),
   }),
 });
 
@@ -152,7 +158,10 @@ export const setSubTaskAssigneeSchema = z.object({
     subTaskId: idParam,
   }),
   body: z.object({
-    assigneeId: z.coerce.number().int().positive("assigneeId는 양수여야 합니다."),
+    assigneeId: z.coerce
+      .number()
+      .int()
+      .positive("담당자는 해당 과제 멤버의 User.id(양의 정수)여야 합니다."),
   }),
 });
 
@@ -174,11 +183,14 @@ export const joinTaskSchema = z.object({
 export const patchSubTaskSchema = z.object({
   params: z.object({
     taskId: idParam,
-    subTaskId: idParam
+    subTaskId: idParam,
   }),
   body: z.object({
     title: z.string().optional(),
+    /** 생성 API와 동일 키; DTO에서 endDate로 매핑 */
+    deadline: z.string().optional(),
     endDate: z.string().optional(),
+    isAlarm: z.boolean().optional(),
     status: z.enum(["COMPLETED", "PENDING"]).optional(),
   }),
 });
