@@ -354,9 +354,9 @@ class TaskController {
         resultType: "SUCCESS",
         message: "세부 Task가 성공적으로 추가되었습니다.",
         data: {
-          subTaskId: result.id,
+          subTaskId: result.subTaskId,
           title: result.title,
-          deadline: result.endDate,
+          deadline: result.deadline,
         },
       });
     } catch (error) {
@@ -379,9 +379,9 @@ class TaskController {
         resultType: "SUCCESS",
         message: "세부 Task가 성공적으로 수정되었습니다.",
         data: {
-          subTaskId: result.id,
+          subTaskId: result.subTaskId,
           title: result.title,
-          deadline: result.endDate,
+          deadline: result.deadline,
         },
       });
     } catch (error) {

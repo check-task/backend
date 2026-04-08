@@ -17,7 +17,7 @@ vi.mock("../../src/db.config.js", () => {
   const prisma = {
     $transaction: vi.fn(async (fn) => fn(mockTx)),
     user: { findUnique: vi.fn() },
-    member: { findFirst: vi.fn() },
+    member: { findFirst: vi.fn(), findMany: vi.fn() },
     subTask: { findMany: vi.fn(), findUnique: vi.fn() },
   };
   return { prisma, default: prisma };
@@ -73,6 +73,7 @@ describe("TaskService 알림 — deadlineAlarm / taskAlarm", () => {
     mockTx.user.findUnique.mockReset();
     mockTx.member.findMany.mockReset();
     mockTx.subTask.findMany.mockReset();
+    prisma.member.findMany.mockReset();
   });
 
   const deadline = new Date(Date.UTC(2025, 5, 15, 6, 0, 0));
@@ -155,8 +156,8 @@ describe("TaskService 알림 — deadlineAlarm / taskAlarm", () => {
 
     it("과제+세부과제: Task는 deadlineAlarm, SubTask는 assignee.user.alarmSetting.taskAlarm (알림 수신자는 assignee.userId)", async () => {
       const endDate = new Date(Date.UTC(2025, 5, 14, 9, 0, 0));
-      const memberId = 88;
-      const actualUserId = 420;
+      const ownerMemberId = 1;
+      const ownerUserId = 1;
 
       prisma.user.findUnique.mockResolvedValue({ id: 1 });
       taskRepository.createTask.mockResolvedValue({
@@ -166,7 +167,7 @@ describe("TaskService 알림 — deadlineAlarm / taskAlarm", () => {
         type: "PERSONAL",
         isAlarm: true,
       });
-      taskRepository.createMember.mockResolvedValue({ id: 1 });
+      taskRepository.createMember.mockResolvedValue({ id: ownerMemberId });
       taskRepository.findMaxRank.mockResolvedValue(0);
       taskRepository.upsertTaskPriority.mockResolvedValue({});
       taskRepository.addSubTasks.mockResolvedValue({ count: 1 });
@@ -174,6 +175,14 @@ describe("TaskService 알림 — deadlineAlarm / taskAlarm", () => {
         id: 1,
         alarmSetting: { deadlineAlarm: 24 },
       });
+      mockTx.member.findMany.mockResolvedValue([
+        {
+          id: ownerMemberId,
+          userId: ownerUserId,
+          taskId: 20,
+          role: false,
+        },
+      ]);
       mockTx.subTask.findMany.mockResolvedValue([
         {
           id: 500,
@@ -181,10 +190,10 @@ describe("TaskService 알림 — deadlineAlarm / taskAlarm", () => {
           title: "하위",
           endDate,
           isAlarm: true,
-          assigneeId: memberId,
+          assigneeId: ownerMemberId,
           assignee: {
-            id: memberId,
-            userId: actualUserId,
+            id: ownerMemberId,
+            userId: ownerUserId,
             user: { alarmSetting: { taskAlarm: 6 } },
           },
         },
@@ -195,9 +204,7 @@ describe("TaskService 알림 — deadlineAlarm / taskAlarm", () => {
         type: "PERSONAL",
         deadline,
         isAlarm: true,
-        subTasks: [
-          { title: "하위", endDate, isAlarm: true, assigneeId: memberId },
-        ],
+        subTasks: [{ title: "하위", endDate, isAlarm: true }],
       });
 
       expect(alarmRepository.createTaskAlarm).toHaveBeenCalledWith(
@@ -211,7 +218,7 @@ describe("TaskService 알림 — deadlineAlarm / taskAlarm", () => {
       const expectedSub = new Date(endDate);
       expectedSub.setHours(expectedSub.getHours() - 6);
       expect(alarmRepository.createSubTaskAlarm).toHaveBeenCalledWith(
-        actualUserId,
+        ownerUserId,
         20,
         500,
         "하위",
@@ -228,6 +235,14 @@ describe("TaskService 알림 — deadlineAlarm / taskAlarm", () => {
       const userIdForAlarm = 1001;
 
       taskRepository.findTaskById.mockResolvedValue({ id: 40, type: "TEAM" });
+      prisma.member.findMany.mockResolvedValue([
+        {
+          id: memberRowId,
+          userId: userIdForAlarm,
+          taskId: 40,
+          role: true,
+        },
+      ]);
       taskRepository.createSubTask.mockResolvedValue({
         id: 700,
         taskId: 40,
@@ -247,6 +262,7 @@ describe("TaskService 알림 — deadlineAlarm / taskAlarm", () => {
         title: "신규 ST",
         endDate,
         isAlarm: true,
+        assigneeId: userIdForAlarm,
       });
 
       const expected = new Date(endDate);

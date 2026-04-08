@@ -115,7 +115,7 @@ class AlarmRepository {
       where: { id: subTaskId },
     });
 
-    const taskAlarm = user.alarmSetting?.taskAlarm || 24;
+    const taskAlarm = user?.alarmSetting?.taskAlarm ?? 24;
 
     return await tx.userAlarm.create({
       data: {
@@ -123,7 +123,7 @@ class AlarmRepository {
         taskId,
         subTaskId,
         title: `'${subTaskTitle}'의 마감까지 ${taskAlarm}시간 남았어요!`,
-        alarmContent: `'현재 ${subTask.status === "COMPLETED" ? "완료" : "진행 중"} 상태에요. 빨리 끝내고 쉬어요!`,
+        alarmContent: `'현재 ${subTask?.status === "COMPLETED" ? "완료" : "진행 중"} 상태에요. 빨리 끝내고 쉬어요!`,
         alarmDate,
         isRead: false,
       },

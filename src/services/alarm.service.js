@@ -233,13 +233,13 @@ class AlarmService {
         "params의 subTaskId는 숫자로 보내야합니다.",
       );
     }
-    // 세부과제 존재 여부 및 과제에 속한 맴버인지 확인
     const subTask = await prisma.subTask.findUnique({
       where: { id: subTaskId },
       include: {
-        task: {
+        task: { include: { members: true } },
+        assignee: {
           include: {
-            members: true, // 모든 멤버 가져오기 (where 제거)
+            user: { include: { alarmSetting: true } },
           },
         },
       },
@@ -271,37 +271,11 @@ class AlarmService {
         "Body의 isAlarm 데이터는 boolean 형식으로 보내야합니다.",
       );
     }
-    //  세부과제 알림 여부 설정 (Repository 호출)
     const updatedSubTask = await this.alarmRepository.updateSubtaskAlarmStatus(
       subTaskId,
       isAlarm,
     );
 
-    // [수정] 담당자가 있는 경우에만 알림 생성/삭제 로직 수행
-    if (updatedSubTask.assigneeId) {
-      if (updatedSubTask.isAlarm === true) {
-        // 알림 켜짐: 알림 생성
-        // 알림 생성 시 필요한 시간 계산 로직 추가 (필요 시)
-        // 현재 코드에서는 endDate를 그대로 쓰고 있는데,
-        // 일반적으로는 '마감 N시간 전'으로 계산된 시간이 들어가야 할 수 있습니다.
-        // 기존 로직 유지:
-        await alarmRepository.createSubTaskAlarm(
-          updatedSubTask.assigneeId,
-          updatedSubTask.taskId,
-          updatedSubTask.id,
-          updatedSubTask.title,
-          updatedSubTask.endDate,
-        );
-      } else {
-        // 알림 꺼짐: 기존 알림 삭제
-        await alarmRepository.deleteSubTaskAlarm(
-          updatedSubTask.assigneeId,
-          updatedSubTask.id,
-        );
-      }
-    }
-
-    // updatedSubTask가 null인 경우 체크
     if (!updatedSubTask) {
       throw new NotFoundError(
         "SUBTASK_UPDATE_FAILED",
@@ -309,7 +283,59 @@ class AlarmService {
       );
     }
 
-    // DTO 변환
+    const notifyUserId =
+      subTask.assignee?.userId ??
+      (subTask.assigneeId != null
+        ? subTask.task.members.find((m) => m.id === subTask.assigneeId)
+            ?.userId
+        : null);
+
+    if (updatedSubTask.isAlarm === true) {
+      if (!updatedSubTask.assigneeId || !notifyUserId) {
+        throw new BadRequestError(
+          "SUBTASK_NO_ASSIGNEE",
+          "담당자가 지정된 세부과제만 알림을 켤 수 있습니다.",
+        );
+      }
+
+      const alarmHours =
+        subTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
+      const alarmDate = new Date(updatedSubTask.endDate);
+      alarmDate.setHours(alarmDate.getHours() - alarmHours);
+
+      const existingAlarm = await prisma.userAlarm.findFirst({
+        where: { subTaskId: updatedSubTask.id },
+      });
+
+      const alarmContent = `'현재 ${subTask?.status === "COMPLETED" ? "완료" : "진행 중"} 상태에요. 빨리 끝내고 쉬어요!`;
+      const alarmTitle = `'${updatedSubTask.title}'의 마감까지 ${alarmHours}시간 남았어요!`;
+
+      if (existingAlarm && existingAlarm.userId === notifyUserId) {
+        await this.alarmRepository.updateAlarm(existingAlarm.id, {
+          title: alarmTitle,
+          alarmContent,
+          alarmDate,
+        });
+      } else {
+        if (existingAlarm) {
+          await this.alarmRepository.deleteAlarmsBySubTaskIds([
+            updatedSubTask.id,
+          ]);
+        }
+        await this.alarmRepository.createSubTaskAlarm(
+          notifyUserId,
+          updatedSubTask.taskId,
+          updatedSubTask.id,
+          updatedSubTask.title,
+          alarmDate,
+        );
+      }
+    } else {
+      await this.alarmRepository.deleteAlarmsBySubTaskIds([
+        updatedSubTask.id,
+      ]);
+    }
+
     return updateSubtaskAlarmStatusDto(updatedSubTask);
   }
 

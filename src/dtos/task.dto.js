@@ -94,10 +94,19 @@ export class TaskRequestDTO {
 
   // 세부 과제 생성
   static toCreateSubTask(data) {
+    const assigneeId =
+      data.assigneeId !== undefined && data.assigneeId !== null
+        ? Number(data.assigneeId)
+        : undefined;
     return {
       title: data.title,
       endDate: data.deadline ? new Date(data.deadline) : undefined,
-      isAlarm: data.isAlarm ?? false
+      deadline: data.deadline,
+      isAlarm:
+        data.isAlarm === undefined ? true : Boolean(data.isAlarm),
+      ...(assigneeId !== undefined && !Number.isNaN(assigneeId)
+        ? { assigneeId }
+        : {}),
     };
   }
   
