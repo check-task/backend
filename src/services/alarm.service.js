@@ -124,13 +124,16 @@ class AlarmService {
 
     for (const alarm of pendingAlarms) {
       if (alarm.task && alarm.task.deadline) {
-        // 새로운 설정값으로 알림 시간 재계산
         const newAlarmDate = calculateAlarmDate(
           alarm.task.deadline,
           deadlineAlarm,
         );
-        // DB 업데이트
-        await this.alarmRepository.updateAlarmDate(alarm.id, newAlarmDate);
+        const taskTitle = alarm.task.title ?? "";
+        await this.alarmRepository.updateAlarm(alarm.id, {
+          title: `'${taskTitle}'의 마감까지 ${deadlineAlarm}시간 남았어요!`,
+          alarmContent: alarm.alarmContent,
+          alarmDate: newAlarmDate,
+        });
       }
     }
 
@@ -151,13 +154,16 @@ class AlarmService {
 
     for (const alarm of pendingAlarms) {
       if (alarm.subTask && alarm.subTask.endDate) {
-        // 새로운 설정값으로 알림 시간 재계산
         const newAlarmDate = calculateAlarmDate(
           alarm.subTask.endDate,
           taskAlarm,
         );
-        // DB 업데이트
-        await this.alarmRepository.updateAlarmDate(alarm.id, newAlarmDate);
+        const subTaskTitle = alarm.subTask.title ?? "";
+        await this.alarmRepository.updateAlarm(alarm.id, {
+          title: `'${subTaskTitle}'의 마감까지 ${taskAlarm}시간 남았어요!`,
+          alarmContent: alarm.alarmContent,
+          alarmDate: newAlarmDate,
+        });
       }
     }
 

@@ -405,7 +405,7 @@ describe("TaskService 알림 — deadlineAlarm / taskAlarm", () => {
 describe("AlarmService 알림 설정 변경 시 pending 알람 재계산", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("updateDeadline: task 마감 + 새 deadlineAlarm → updateAlarmDate", async () => {
+  it("updateDeadline: task 마감 + 새 deadlineAlarm → updateAlarm(title·시각)", async () => {
     const taskDeadline = new Date(Date.UTC(2025, 2, 20, 0, 0, 0));
     alarmRepository.updateDeadlineAlarm.mockResolvedValue({
       id: 1,
@@ -413,18 +413,24 @@ describe("AlarmService 알림 설정 변경 시 pending 알람 재계산", () =>
       deadlineAlarm: 36,
     });
     alarmRepository.findPendingTaskAlarms.mockResolvedValue([
-      { id: 100, task: { deadline: taskDeadline } },
+      {
+        id: 100,
+        alarmContent: "'현재 50%완성 중이에요. 빨리 끝내고 쉬어요!",
+        task: { title: "팀 과제", deadline: taskDeadline },
+      },
     ]);
 
     await alarmService.updateDeadline(1, 36);
 
-    expect(alarmRepository.updateAlarmDate).toHaveBeenCalledWith(
-      100,
-      calculateAlarmDate(taskDeadline, 36),
-    );
+    expect(alarmRepository.updateAlarm).toHaveBeenCalledWith(100, {
+      title: `'팀 과제'의 마감까지 36시간 남았어요!`,
+      alarmContent:
+        "'현재 50%완성 중이에요. 빨리 끝내고 쉬어요!",
+      alarmDate: calculateAlarmDate(taskDeadline, 36),
+    });
   });
 
-  it("updateTask: subTask.endDate + 새 taskAlarm → updateAlarmDate", async () => {
+  it("updateTask: subTask.endDate + 새 taskAlarm → updateAlarm(title·시각)", async () => {
     const stEnd = new Date(Date.UTC(2025, 8, 15, 12, 0, 0));
     alarmRepository.updateTaskAlarm.mockResolvedValue({
       id: 1,
@@ -432,14 +438,20 @@ describe("AlarmService 알림 설정 변경 시 pending 알람 재계산", () =>
       taskAlarm: 10,
     });
     alarmRepository.findPendingSubTaskAlarms.mockResolvedValue([
-      { id: 200, subTask: { endDate: stEnd } },
+      {
+        id: 200,
+        alarmContent: "'현재 진행 중 상태에요. 빨리 끝내고 쉬어요!",
+        subTask: { title: "세부 A", endDate: stEnd },
+      },
     ]);
 
     await alarmService.updateTask(1, 10);
 
-    expect(alarmRepository.updateAlarmDate).toHaveBeenCalledWith(
-      200,
-      calculateAlarmDate(stEnd, 10),
-    );
+    expect(alarmRepository.updateAlarm).toHaveBeenCalledWith(200, {
+      title: `'세부 A'의 마감까지 10시간 남았어요!`,
+      alarmContent:
+        "'현재 진행 중 상태에요. 빨리 끝내고 쉬어요!",
+      alarmDate: calculateAlarmDate(stEnd, 10),
+    });
   });
 });
