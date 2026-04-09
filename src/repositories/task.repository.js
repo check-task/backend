@@ -378,6 +378,17 @@ class TaskRepository {
     });
   }
 
+  // 커뮤니케이션 추가
+  async addCommunications(taskId, comms, tx = prisma) {
+  return await tx.communication.createMany({
+    data: comms.map(c => ({
+      taskId,
+      name: c.name,
+      url: c.url
+    }))
+  });
+}
+
   // 과제 삭제
   async deleteTask(id) {
     return await prisma.task.delete({

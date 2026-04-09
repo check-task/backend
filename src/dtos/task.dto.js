@@ -76,16 +76,27 @@ export class TaskRequestDTO {
         title: st.title,
         endDate: st.endDate ? new Date(st.endDate) : new Date(),
       })),
-      references: data.references || [],
+      references: (data.references || []).map(ref => ({
+        name: ref.name,
+        url: ref.url || null,
+        fileUrl: ref.fileUrl || null
+      })),
+      communications: data.communications || []
     };
   }
 
   // 과제 수정
-  static toUpdate(data) {
+  static toUpdate(data = {}) {
     const result = {};
+    
+    if (!data) return result;
 
     if (data.title !== undefined) {
       result.title = data.title;
+    }
+
+    if (data.status !== undefined) {
+      result.status = data.status;
     }
 
     if (data.folderId !== undefined) {
@@ -100,6 +111,10 @@ export class TaskRequestDTO {
 
     if (data.deadline !== undefined) {
       result.deadline = new Date(data.deadline);
+    }
+
+    if (data.references !== undefined) {
+      result.references = data.references;
     }
 
     return result;
