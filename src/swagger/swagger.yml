@@ -1022,7 +1022,7 @@ paths:
       tags:
         - Task
       summary: 과제 생성
-      description: 새로운 과제와 세부 태스크들을 생성합니다.
+      description: 새로운 과제와 세부 태스크, 참고 자료, 커뮤니케이션 채널을 한 번에 생성합니다.
       security:
         - bearerAuth: []
       requestBody:
@@ -1035,20 +1035,29 @@ paths:
               properties:
                 title:
                   type: string
-                  example: "프로젝트1"
+                  description: "과제 제목"
+                  example: "프로젝트 이름"
                 folderId:
                   type: integer
+                  description: "소속 폴더 ID"
                   example: 1
                 deadline:
                   type: string
-                  format: date
-                  example: "2026-05-10"
+                  format: date-time
+                  description: "과제 마감 기한 (ISO 8601 형식)"
+                  example: "2026-05-10T18:30:00"
                 type:
                   type: string
                   enum: [TEAM, PERSONAL]
+                  description: "과제 유형"
                   example: "PERSONAL"
+                isAlarm:
+                  type: boolean
+                  description: "전체 알림 여부"
+                  example: true
                 subTasks:
                   type: array
+                  description: "세부 과제 리스트"
                   items:
                     type: object
                     properties:
@@ -1057,19 +1066,39 @@ paths:
                         example: "세부과제1"
                       endDate:
                         type: string
-                        format: date
-                        example: "2026-05-05"
+                        format: date-time
+                        example: "2026-05-01T14:00:00"
+                      isAlarm:
+                        type: boolean
+                        example: true
                 references:
                   type: array
+                  description: "참고 자료 (링크 및 파일)"
                   items:
                     type: object
                     properties:
                       name:
                         type: string
-                        example: "참고 문서 1"
+                        example: "기획안 공식 문서 (Notion)"
                       url:
                         type: string
-                        example: "https://example.com"
+                        example: "https://notion.so/project/12345"
+                      fileUrl:
+                        type: string
+                        description: "업로드된 파일 경로"
+                        example: "https://s3.amazonaws.com/my-bucket/erd_v2.png"
+                communications:
+                  type: array
+                  description: "커뮤니케이션 채널"
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        example: "팀 카카오톡 오픈채팅"
+                      url:
+                        type: string
+                        example: "https://open.kakao.com/o/test1234"
       responses:
         '201':
           description: 과제 등록 성공
@@ -1091,15 +1120,45 @@ paths:
                         type: integer
                         example: 13
         '400':
-          description: 잘못된 요청 (필수 값 누락 또는 형식 오류, 팀 과제 폴더 규칙 위반 등)
+          description: 잘못된 요청 (필수 값 누락, 형식 오류, 유효성 검사 실패 등)
           content:
             application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "FAIL"
+                  code:
+                    type: integer
+                    example: 400
+                  errorCode:
+                    type: string
+                    example: "VALIDATION_ERROR"
+                  reason:
+                    type: string
+                    example: "요청값이 올바르지 않습니다."
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        field:
+                          type: string
+                          description: "에러가 발생한 필드 위치"
+                          example: "body.title"
+                        message:
+                          type: string
+                          description: "에러 상세 메시지"
+                          example: "제목은 필수입니다."
               example:
                 resultType: "FAIL"
                 code: 400
-                errorCode: "BAD_REQUEST"
-                reason: "과제명은 필수입니다."
-                data: null
+                errorCode: "VALIDATION_ERROR"
+                reason: "요청값이 올바르지 않습니다."
+                data:
+                  - field: "body.title"
+                    message: "제목은 필수입니다."
         '401':
           description: 인증 실패 (토큰 만료 또는 누락)
         '404':

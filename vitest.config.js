@@ -8,6 +8,7 @@ export default defineConfig({
     include: ["tests/**/*.test.js"],
     env: {
       JWT_SECRET: "test-secret",
+      TZ: "UTC",
     },
     coverage: {
       reporter: ["text", "html"],
