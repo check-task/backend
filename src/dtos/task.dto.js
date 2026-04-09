@@ -165,14 +165,14 @@ export class TaskResponseDTO extends TaskUtils {
       folderTitle: folder?.folderTitle || "지정안함",
       status: task.status || "PENDING",
       type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
-      deadline: this.formatDate(task.deadline, ".", true),
+      deadline: task.deadline ? task.deadline.toISOString().split('.')[0] : null,
       dDay: this.calculateDDay(task.deadline),
       progressRate: progressRate,
       subTasks:
         task.subTasks?.map((st) => ({
           subTaskId: st.id,
           title: st.title,
-          deadline: this.formatDate(st.endDate, "-"),
+          deadline: st.endDate ? st.endDate.toISOString().split('.')[0] : null,
           status: st.status === "COMPLETED" ? "COMPLETED" : "PENDING",
           isAlarm: st.isAlarm || false,
           commentCount: st._count?.comments || 0,
@@ -210,7 +210,7 @@ export class TaskResponseDTO extends TaskUtils {
         status: task.status || "PENDING",
         title: task.title,
         type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
-        deadline: this.formatDate(task.deadline, ".", true),
+        deadline: task.deadline ? task.deadline.toISOString().split('.')[0] : null,
         dDay: this.calculateDDay(task.deadline),
         progressRate: task.progress || 0,
       });
@@ -224,7 +224,7 @@ export class TaskResponseDTO extends TaskUtils {
               taskId: task.id,
               title: st.title,
               status: st.status || "PENDING",
-              deadline: this.formatDate(st.endDate, ".", true),
+              deadline: st.endDate ? st.endDate.toISOString().split('.')[0] : null,
             });
           }
         });
@@ -244,7 +244,7 @@ export class TaskResponseDTO extends TaskUtils {
       tasks: tasks.map((task) => ({
         taskId: task.id,
         title: task.title,
-        deadline: this.formatDate(task.deadline, "-"),
+        deadline: task.deadline ? task.deadline.toISOString().split('.')[0] : null,
         type: task.type === "PERSONAL" ? "개인" : "팀",
         status: task.status === "COMPLETED" ? "완료" : "미완료",
         folderId: task.folder?.id || null,
