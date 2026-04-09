@@ -2,6 +2,7 @@ import taskService from "../services/task.service.js";
 import { uploadToS3 } from "../middlewares/upload.middleware.js";
 import { TaskRequestDTO, TaskResponseDTO } from "../dtos/task.dto.js";
 import taskRepository from "../repositories/task.repository.js";
+import { NotFoundError, BadRequestError } from "../errors/custom.error.js";
 
 class TaskController {
   // 완료 과제 조회
@@ -27,7 +28,7 @@ class TaskController {
       const userId = req.user.id;
       const taskRequest = TaskRequestDTO.toCreate(req.body);
 
-      const result = await taskService.registerTask(userId, taskRequest);
+      const result = await taskService.registerTask(userId, taskRequest, req.files);
 
       res.status(201).json({
         resultType: "SUCCESS",
@@ -45,8 +46,12 @@ class TaskController {
       const userId = req.user.id;
       const { taskId } = req.params;
 
+      if (!req.body || Object.keys(req.body).length === 0) {
+        throw new BadRequestError("DATA_NOT_PROVIDED", "수정할 데이터가 전달되지 않았습니다.");
+      }
+
       const taskRequest = TaskRequestDTO.toUpdate(req.body);
-      const result = await taskService.modifyTask(taskId, userId, taskRequest);
+      const result = await taskService.modifyTask(parseInt(taskId), userId, taskRequest, req.files);
 
       res.status(200).json({
         resultType: "SUCCESS",

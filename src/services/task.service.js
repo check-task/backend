@@ -99,7 +99,7 @@ class TaskService {
 
   // 과제 생성
   async registerTask(userId, data) {
-    const { subTasks, references, folderId, ...taskData } = data;
+    const { subTasks, references, communications, folderId, ...taskData } = data;
 
     // 1. 유저 존재 확인
     const user = await prisma.user.findUnique({
@@ -299,12 +299,17 @@ class TaskService {
         await taskRepository.addReferences(newTask.id, references, tx);
       }
 
+      if (communications && communications.length > 0) {
+        // 레포지토리에 addCommunications 함수가 있다면 호출
+        await taskRepository.addCommunications(newTask.id, communications, tx);
+      }
+
       return { taskId: newTask.id };
     });
   }
 
   // 과제 수정
-  async modifyTask(taskId, userId, updateData) {
+  async modifyTask(taskId, userId, updateData, files = []) {
     // 과제 존재 여부 확인
     const currentTask = await taskRepository.findTaskById(taskId);
     if (!currentTask)
@@ -345,8 +350,45 @@ class TaskService {
       delete updateData.folderId;
     }
 
-    const updatedTask = await taskRepository.updateTask(taskId, updateData);
-    return { taskId: updatedTask.id };
+    return await prisma.$transaction(async (tx) => {
+      const referenceData = [];
+
+      // JSON 문자열로 들어온 링크 데이터 취합
+      if (updateData.references && Array.isArray(updateData.references)) {
+        updateData.references.forEach(ref => {
+          referenceData.push({
+            taskId: Number(taskId),
+            name: ref.name,
+            url: ref.url || null,
+            fileUrl: ref.fileUrl || null
+          });
+        });
+        delete updateData.references; // Task 테이블 데이터에서는 삭제
+      }
+
+      // 업로드된 파일 정보 취합
+      if (files && files.length > 0) {
+        files.forEach(file => {
+          referenceData.push({
+            taskId: Number(taskId),
+            name: file.originalname,
+            fileUrl: file.location || file.path
+          });
+        });
+      }
+
+      // DB에 한꺼번에 저장
+      if (referenceData.length > 0) {
+        await tx.reference.createMany({ data: referenceData });
+      }
+
+      const updatedTask = await tx.task.update({
+        where: { id: Number(taskId) },
+        data: updateData
+      });
+
+      return { taskId: updatedTask.id };
+    });
   }
 
   // Task 마감일 변경 서비스
@@ -719,8 +761,8 @@ class TaskService {
 
     return {
       isValid: true,
-      invite_code: task.inviteCode,
-      invite_expired: task.inviteExpiredAt,
+      invite_code: taskInfo.inviteCode,
+      invite_expired: taskInfo.inviteExpiredAt,
     };
   }
 
@@ -767,9 +809,17 @@ class TaskService {
 
   // 초대 코드로 팀 참여
   async joinTaskByInviteCode(userId, folderId, inviteCode) {
-    const targetFolderId =
-      folderId ||
-      (await taskRepository.findFolderByUserIdAndName(userId, "지정안함")).id;
+    let targetFolderId = folderId;
+
+    if (!targetFolderId) {
+      const defaultFolder = await taskRepository.findFolderByUserIdAndName(userId, "지정안함");
+      
+      // "지정안함" 폴더조차 없는 경우에 대한 방어 로직
+      if (!defaultFolder) {
+        throw new NotFoundError("DEFAULT_FOLDER_NOT_FOUND", "기본 폴더(지정안함)를 찾을 수 없습니다. 폴더를 먼저 생성해주세요.");
+      }
+      targetFolderId = defaultFolder.id;
+    }
 
     // 폴더id가 본인 것인지 확인
     const folderCheck = await taskRepository.findFolderById(targetFolderId);
