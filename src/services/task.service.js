@@ -101,8 +101,6 @@ class TaskService {
   async registerTask(userId, data) {
     const { subTasks, references, folderId, ...taskData } = data;
 
-    console.log("생성 시도 유저 ID:", userId);
-
     // 1. 유저 존재 확인
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -115,7 +113,7 @@ class TaskService {
       );
     }
 
-    if (!taskData.title) throw new BadRequestError("과제명은 필수입니다.");
+    if (!taskData.title) throw new BadRequestError("TASK_TITLE_REQUIRED", "과제명은 필수입니다.");
 
     let folder = null;
 
@@ -124,12 +122,12 @@ class TaskService {
 
       // 폴더가 없으면 에러
       if (!folder) {
-        throw new NotFoundError("존재하지 않는 폴더입니다.");
+        throw new NotFoundError("FOLDER_NOT_FOUND", "존재하지 않는 폴더입니다.");
       }
 
       // 내 폴더가 아니면 에러 (보안)
       if (folder.userId !== userId) {
-        throw new ForbiddenError("권한이 없는 폴더입니다.");
+        throw new ForbiddenError("FORBIDDEN_FOLDER", "권한이 없는 폴더입니다.");
       }
     }
 
@@ -171,7 +169,6 @@ class TaskService {
         maxRank + 1,
         tx,
       );
-
       // --- [알림 생성 로직 유지] ---
       if (newTask.isAlarm) {
         if (newTask.type === "TEAM") {
@@ -927,7 +924,6 @@ class TaskService {
 
   // 단일 세부 과제 생성 서비스
   async createSingleSubTask(userId, taskId, createData) {
-    console.log("📍 서비스로 넘어온 taskId:", taskId);
     const parentTask = await taskRepository.findTaskById(taskId);
     if (!parentTask) throw new NotFoundError("존재하지 않는 과제입니다.");
 
