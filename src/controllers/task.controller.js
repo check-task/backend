@@ -27,6 +27,7 @@ class TaskController {
     try {
       const userId = req.user.id;
       const taskRequest = TaskRequestDTO.toCreate(req.body);
+      console.log(taskRequest);
 
       const result = await taskService.registerTask(userId, taskRequest, req.files);
 

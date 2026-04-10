@@ -1045,7 +1045,7 @@ paths:
                   type: string
                   format: date-time
                   description: "과제 마감 기한 (ISO 8601 형식)"
-                  example: "2026-05-10T18:30:00"
+                  example: "2026-05-10T18:30:00Z"
                 type:
                   type: string
                   enum: [TEAM, PERSONAL]
@@ -1067,7 +1067,7 @@ paths:
                       endDate:
                         type: string
                         format: date-time
-                        example: "2026-05-01T14:00:00"
+                        example: "2026-05-01T14:00:00Z"
                       isAlarm:
                         type: boolean
                         example: true
@@ -1370,11 +1370,7 @@ paths:
       tags:
         - Task
       summary: 과제 수정
-      description: |
-        과제 정보와 여러 개의 파일을 수정합니다.
-        - **files**: 여러 개의 파일을 한꺼번에 선택할 수 있습니다.
-        - **fileNames**: 업로드한 파일 순서대로 이름을 쉽표(,)로 구분해서 적어주세요. 
-          (예: `보고서최종, 참고자료1`)
+      description: 특정 과제의 제목, 폴더, 마감일을 수정합니다.
       security:
         - bearerAuth: []
       parameters:
@@ -1383,71 +1379,41 @@ paths:
           required: true
           schema:
             type: integer
+          example: 101
       requestBody:
         required: true
         content:
-          multipart/form-data: 
+          application/json:
             schema:
               type: object
               properties:
                 title:
                   type: string
-                  example: "수정된 프로젝트 이름"
-                deadline:
-                  type: string
-                  format: date
-                  example: "2026-06-30"
-                type:
-                  type: string
-                  enum: [TEAM, PERSONAL]
-                  example: "TEAM"
-                status:
-                  type: string
-                  enum: [PENDING, PROGRESS, COMPLETED]
-                  example: "PROGRESS"
+                  example: "프로젝트1"
                 folderId:
                   type: integer
+                  nullable: true
                   example: 2
-                subTasks:
-                  type: string 
-                  description: "세부 과제 배열 (JSON string)"
-                  example: '[{"title": "세부과제 1", "endDate": "2026-05-10", "status": "COMPLETED", "isAlarm": true, "assigneeId": 5}]'
-                references:
-                  type: string 
-                  description: "기존 유지할 자료 목록 (JSON string)"
-                  example: '[{"name": "자료1", "url": "https://mariadb.org/documentation/"}]'
-                fileNames:
+                deadline:
                   type: string
-                  description: "파일 원본 이름 대신 저장할 이름 (쉼표 구분)"
-                  example: "과제발표자료, 참고도면"
-                files:
-                  type: array 
-                  items:
-                    type: string
-                    format: binary 
-                  description: "업로드할 파일들을 모두 선택하세요."
+                  format: date-time
+                  example: "2026-02-28T12:00:00Z"
+            example:
+              title: "프로젝트1"
+              folderId: 2
+              deadline: "2026-02-28T12:00:00Z"
       responses:
         '200':
           description: 과제 수정 성공
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  message:
-                    type: string
-                    example: "요청이 처리되어서 새로운 과제가 생성되었습니다."
-                  data:
-                    type: object
-                    properties:
-                      taskId:
-                        type: integer
-                        example: 1
+              example:
+                resultType: "SUCCESS"
+                message: "과제가 성공적으로 수정되었습니다."
+                data:
+                  taskId: 101
         '401':
-          description: 인증 실패 (토큰 만료 또는 누락)
+          description: 인증 실패
         '403':
           description: 권한 없음
           content:
@@ -1456,29 +1422,28 @@ paths:
                 resultType: "FAIL"
                 code: 403
                 errorCode: "FORBIDDEN_TASK"
-                reason: "해당 과제를 수정할 권한이 없습니다."
+                reason: "해당 과제에 접근할 권한이 없습니다."
                 data: null
         '404':
-          description: 존재하지 않는 폴더
+          description: 과제를 찾을 수 없음
           content:
             application/json:
               example:
                 resultType: "FAIL"
                 code: 404
-                errorCode: "변경하려는 폴더가 존재하지 않습니다."
-                reason: "리소스를 찾을 수 없습니다"
-                data: null
-          description: 존재하지 않는 과제
-          content:
-            application/json:
-              example:
-                resultType: "FAIL"
-                code: 404
-                errorCode: "수정하려는 과제가 존재하지 않습니다."
-                reason: "리소스를 찾을 수 없습니다."
+                errorCode: "TASK_NOT_FOUND"
+                reason: "해당 과제를 찾을 수 없습니다."
                 data: null
         '500':
           description: 서버 내부 오류
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 500
+                errorCode: "INTERNAL_SERVER_ERROR"
+                reason: "서버 내부 오류가 발생했습니다"
+                data: null
 
     # 과제 삭제
     delete:

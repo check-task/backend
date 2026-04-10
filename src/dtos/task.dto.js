@@ -65,16 +65,16 @@ export class TaskRequestDTO {
       data.folderId && data.folderId !== "null" && data.folderId !== ""
         ? Number(data.folderId)
         : null;
-
+  
     return {
       title: data.title,
       folderId: isNaN(parsedFolderId) ? null : parsedFolderId,
-      deadline: data.deadline ? new Date(data.deadline) : new Date(),
+      deadline: data.deadline,
       type: data.type === "TEAM" ? "TEAM" : "PERSONAL",
       status: "PENDING",
       subTasks: (data.subTasks || []).map((st) => ({
         title: st.title,
-        endDate: st.endDate ? new Date(st.endDate) : new Date(),
+        endDate: st.endDate ? new Date(st.endDate) : null,
       })),
       references: (data.references || []).map(ref => ({
         name: ref.name,
