@@ -315,6 +315,12 @@ class TaskService {
     if (!currentTask)
       throw new NotFoundError("수정하려는 과제가 존재하지 않습니다.");
 
+    // 본인이 멤버인지 확인
+    const member = await taskRepository.findMemberInTask(taskId, userId);
+    if (!member) {
+      throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제를 수정할 권한이 없습니다.");
+    }
+
     if (Object.keys(updateData).length === 0) {
       throw new Error("수정할 값이 없습니다.");
     }
@@ -454,11 +460,17 @@ class TaskService {
   }
 
   // 과제 삭제
-  async removeTask(taskId) {
+  async removeTask(taskId, userId) {
     // 과제 존재 여부 확인
     const currentTask = await taskRepository.findTaskById(taskId);
     if (!currentTask) {
       throw new NotFoundError("삭제하려는 과제가 존재하지 않습니다.");
+    }
+
+    // 본인이 멤버인지 확인
+    const member = await taskRepository.findMemberInTask(taskId, userId);
+    if (!member) {
+      throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제를 삭제할 권한이 없습니다.");
     }
 
     // 과제 삭제 실행
@@ -473,11 +485,25 @@ class TaskService {
       throw new NotFoundError("과제를 찾을 수 없음");
     }
 
+    // 본인이 멤버인지 확인
+    const member = await taskRepository.findMemberInTask(taskId, userId);
+    if (!member) {
+      throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
+    }
+
     return taskDetail;
   }
 
   // 우선순위 변경
   async updatePriorities(userId, orderedTasks) {
+    // 각 과제에 대해 본인이 멤버인지 확인
+    for (const item of orderedTasks) {
+      const member = await taskRepository.findMemberInTask(item.taskId, userId);
+      if (!member) {
+        throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
+      }
+    }
+
     // 일괄 변경 트랜잭션 처리
     return await prisma.$transaction(async (tx) => {
       for (const item of orderedTasks) {
@@ -492,7 +518,7 @@ class TaskService {
   }
 
   // 세부 TASK 완료 처리 API
-  async updateSubTaskStatus(subTaskId, status) {
+  async updateSubTaskStatus(subTaskId, status, userId) {
     try {
       // 서브태스크 존재 여부 확인
       const existingTask = await prisma.subTask.findUnique({
@@ -503,6 +529,12 @@ class TaskService {
         const error = new Error("해당하는 세부 태스크를 찾을 수 없습니다.");
         error.status = 404;
         throw error;
+      }
+
+      // 본인이 멤버인지 확인
+      const member = await taskRepository.findMemberInTask(existingTask.taskId, userId);
+      if (!member) {
+        throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
       }
 
       // 상태 업데이트(프리지마 모델명은 대소문자 구분!)
@@ -522,7 +554,7 @@ class TaskService {
   }
 
   // 세부task 날짜 변경 API
-  async updateSubTaskDeadline(subTaskId, deadline) {
+  async updateSubTaskDeadline(subTaskId, deadline, userId) {
     try {
       // 서브태스크와 상위 태스크 정보 조회
       const existingTask = await prisma.subTask.findUnique({
@@ -541,6 +573,12 @@ class TaskService {
         error.statusCode = 404;
         error.errorCode = "SUBTASK_NOT_FOUND";
         throw error;
+      }
+
+      // 본인이 멤버인지 확인
+      const member = await taskRepository.findMemberInTask(existingTask.taskId, userId);
+      if (!member) {
+        throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
       }
 
       const newDeadline = new Date(deadline);
@@ -571,7 +609,7 @@ class TaskService {
 
   // 세부 TASK 담당자 설정 API
   /** body.assigneeId = User.id. DB SubTask.assigneeId = 해당 Task의 Member.id (FK). */
-  async setSubTaskAssignee(subTaskId, assigneeId) {
+  async setSubTaskAssignee(subTaskId, assigneeId, userId) {
     console.log(
       "Service - subTaskId:",
       subTaskId,
@@ -626,6 +664,12 @@ class TaskService {
         error.statusCode = 404;
         error.errorCode = "SUBTASK_NOT_FOUND";
         throw error;
+      }
+
+      // 본인이 멤버인지 확인
+      const member = await taskRepository.findMemberInTask(existingTask.taskId, userId);
+      if (!member) {
+        throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
       }
 
       const task = existingTask.task;
@@ -976,6 +1020,12 @@ class TaskService {
   async createSingleSubTask(userId, taskId, createData) {
     const parentTask = await taskRepository.findTaskById(taskId);
     if (!parentTask) throw new NotFoundError("존재하지 않는 과제입니다.");
+
+    // 본인이 멤버인지 확인
+    const member = await taskRepository.findMemberInTask(taskId, userId);
+    if (!member) {
+      throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
+    }
 
     const endDateRaw = createData.endDate ?? createData.deadline;
     const endDate =
