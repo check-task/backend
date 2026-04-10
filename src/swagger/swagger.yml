@@ -1342,6 +1342,16 @@ paths:
                       updatedAt: null
         '401':
           description: 인증 실패
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN_TASK"
+                reason: "해당 과제에 접근할 권한이 없습니다."
+                data: null
         '404':
           description: 과제를 찾을 수 없음
           content:
@@ -1438,6 +1448,16 @@ paths:
                         example: 1
         '401':
           description: 인증 실패 (토큰 만료 또는 누락)
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN_TASK"
+                reason: "해당 과제를 수정할 권한이 없습니다."
+                data: null
         '404':
           description: 존재하지 않는 폴더
           content:
@@ -1493,6 +1513,16 @@ paths:
                   example: null
         '401':
           description: 인증 실패
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN_TASK"
+                reason: "해당 과제를 삭제할 권한이 없습니다."
+                data: null
         '404':
           description: 과제를 찾을 수 없음
           content:
@@ -1773,6 +1803,16 @@ paths:
                 code: 400
                 errorCode: "INVALID_DEADLINE"
                 reason: "세부 과제의 마감일은 부모 과제의 마감일보다 늦을 수 없습니다."
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN_TASK"
+                reason: "해당 과제에 접근할 권한이 없습니다."
+                data: null
         '404':
           description: 부모 과제를 찾을 수 없음
           content:
@@ -2030,10 +2070,19 @@ paths:
                       status:
                         type: string
                         example: "완료"
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN_TASK"
+                reason: "해당 과제에 접근할 권한이 없습니다."
+                data: null
         '404':
           description: |
             - SUBTASK_NOT_FOUND: 해당하는 세부 태스크를 찾을 수 없습니다.
-                      
 
   # 세부 TASK 마감일 변경
   /api/v1/task/subtask/{subTaskId}/deadline:
@@ -2092,6 +2141,16 @@ paths:
         '400':
           description: |
             - INVALID_DEADLINE: 부모 Task의 마감일을 초과할 수 없습니다.
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN_TASK"
+                reason: "해당 과제에 접근할 권한이 없습니다."
+                data: null
         '404':
           description: |
             - SUBTASK_NOT_FOUND: 해당하는 세부 태스크를 찾을 수 없습니다.
@@ -2148,7 +2207,16 @@ paths:
                       assignee_id:
                         type: integer
                         example: 5
-
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN_TASK"
+                reason: "해당 과제에 접근할 권한이 없습니다."
+                data: null
         '404':
           description: |
             - SUBTASK_NOT_FOUND: 해당하는 세부 태스크를 찾을 수 없습니다.

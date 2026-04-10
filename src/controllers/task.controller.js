@@ -67,7 +67,8 @@ class TaskController {
   async deleteTask(req, res, next) {
     try {
       const { taskId } = req.params;
-      await taskService.removeTask(taskId);
+      const userId = req.user.id;
+      await taskService.removeTask(taskId, userId);
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -212,10 +213,12 @@ class TaskController {
     try {
       const { subTaskId } = req.params;
       const { status } = req.body;
+      const userId = req.user.id;
 
       const updatedTask = await taskService.updateSubTaskStatus(
         subTaskId,
         status,
+        userId,
       );
 
       res.status(200).json({
@@ -232,14 +235,16 @@ class TaskController {
   }
 
   // 세부 TASK 날짜 변경
-  async updateSubTaskDeadline(req, res) {
+  async updateSubTaskDeadline(req, res, next) {
     try {
       const { subTaskId } = req.params;
       const { endDate } = req.body;
+      const userId = req.user.id;
 
       const updatedTask = await taskService.updateSubTaskDeadline(
         subTaskId,
         endDate,
+        userId,
       );
 
       res.status(200).json({
@@ -260,10 +265,12 @@ class TaskController {
     try {
       const { subTaskId } = req.params;
       const { assigneeId } = req.body;
+      const userId = req.user.id;
 
       const result = await taskService.setSubTaskAssignee(
         subTaskId,
         assigneeId,
+        userId,
       );
 
       res.status(200).json({
