@@ -131,9 +131,9 @@ router.delete(
   taskController.allDeleteSubTask
 );
 
-// PATCH /api/v1/task/:taskId/subTask/:subTaskId -- 목록 세부 과제 삭제
+// PATCH /api/v1/task/:taskId/subTask -- 목록 세부 과제 삭제
 router.delete(
-  "/:taskId/subTask/:subTaskId",
+  "/:taskId/subTask",
   authenticate,
   validate(deleteSelectedSubTaskSchema),
   taskController.deleteSubTask

@@ -15,7 +15,7 @@ class TaskController {
       res.status(200).json({
         resultType: "SUCCESS",
         message: "완료된 과제 조회 성공",
-        data: TaskResponseDTO.fromCompleted(tasksRaw),
+        data: TaskResponseDTO.fromCompleted(tasksRaw, userId),
       });
     } catch (error) {
       next(error);
