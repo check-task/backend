@@ -2,6 +2,7 @@ import taskService from "../services/task.service.js";
 import { uploadToS3 } from "../middlewares/upload.middleware.js";
 import { TaskRequestDTO, TaskResponseDTO } from "../dtos/task.dto.js";
 import taskRepository from "../repositories/task.repository.js";
+import { NotFoundError, BadRequestError } from "../errors/custom.error.js";
 
 class TaskController {
   // 완료 과제 조회
@@ -14,7 +15,7 @@ class TaskController {
       res.status(200).json({
         resultType: "SUCCESS",
         message: "완료된 과제 조회 성공",
-        data: TaskResponseDTO.fromCompleted(tasksRaw),
+        data: TaskResponseDTO.fromCompleted(tasksRaw, userId),
       });
     } catch (error) {
       next(error);
@@ -26,8 +27,9 @@ class TaskController {
     try {
       const userId = req.user.id;
       const taskRequest = TaskRequestDTO.toCreate(req.body);
+      console.log(taskRequest);
 
-      const result = await taskService.registerTask(userId, taskRequest);
+      const result = await taskService.registerTask(userId, taskRequest, req.files);
 
       res.status(201).json({
         resultType: "SUCCESS",
@@ -45,8 +47,12 @@ class TaskController {
       const userId = req.user.id;
       const { taskId } = req.params;
 
+      if (!req.body || Object.keys(req.body).length === 0) {
+        throw new BadRequestError("DATA_NOT_PROVIDED", "수정할 데이터가 전달되지 않았습니다.");
+      }
+
       const taskRequest = TaskRequestDTO.toUpdate(req.body);
-      const result = await taskService.modifyTask(taskId, userId, taskRequest);
+      const result = await taskService.modifyTask(parseInt(taskId), userId, taskRequest, req.files);
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -62,7 +68,8 @@ class TaskController {
   async deleteTask(req, res, next) {
     try {
       const { taskId } = req.params;
-      await taskService.removeTask(taskId);
+      const userId = req.user.id;
+      await taskService.removeTask(taskId, userId);
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -207,10 +214,12 @@ class TaskController {
     try {
       const { subTaskId } = req.params;
       const { status } = req.body;
+      const userId = req.user.id;
 
       const updatedTask = await taskService.updateSubTaskStatus(
         subTaskId,
         status,
+        userId,
       );
 
       res.status(200).json({
@@ -227,14 +236,16 @@ class TaskController {
   }
 
   // 세부 TASK 날짜 변경
-  async updateSubTaskDeadline(req, res) {
+  async updateSubTaskDeadline(req, res, next) {
     try {
       const { subTaskId } = req.params;
       const { endDate } = req.body;
+      const userId = req.user.id;
 
       const updatedTask = await taskService.updateSubTaskDeadline(
         subTaskId,
         endDate,
+        userId,
       );
 
       res.status(200).json({
@@ -255,10 +266,12 @@ class TaskController {
     try {
       const { subTaskId } = req.params;
       const { assigneeId } = req.body;
+      const userId = req.user.id;
 
       const result = await taskService.setSubTaskAssignee(
         subTaskId,
         assigneeId,
+        userId,
       );
 
       res.status(200).json({

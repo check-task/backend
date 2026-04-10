@@ -65,27 +65,38 @@ export class TaskRequestDTO {
       data.folderId && data.folderId !== "null" && data.folderId !== ""
         ? Number(data.folderId)
         : null;
-
+  
     return {
       title: data.title,
       folderId: isNaN(parsedFolderId) ? null : parsedFolderId,
-      deadline: data.deadline ? new Date(data.deadline) : new Date(),
+      deadline: data.deadline,
       type: data.type === "TEAM" ? "TEAM" : "PERSONAL",
       status: "PENDING",
       subTasks: (data.subTasks || []).map((st) => ({
         title: st.title,
-        endDate: st.endDate ? new Date(st.endDate) : new Date(),
+        endDate: st.endDate ? new Date(st.endDate) : null,
       })),
-      references: data.references || [],
+      references: (data.references || []).map(ref => ({
+        name: ref.name,
+        url: ref.url || null,
+        fileUrl: ref.fileUrl || null
+      })),
+      communications: data.communications || []
     };
   }
 
   // 과제 수정
-  static toUpdate(data) {
+  static toUpdate(data = {}) {
     const result = {};
+    
+    if (!data) return result;
 
     if (data.title !== undefined) {
       result.title = data.title;
+    }
+
+    if (data.status !== undefined) {
+      result.status = data.status;
     }
 
     if (data.folderId !== undefined) {
@@ -100,6 +111,10 @@ export class TaskRequestDTO {
 
     if (data.deadline !== undefined) {
       result.deadline = new Date(data.deadline);
+    }
+
+    if (data.references !== undefined) {
+      result.references = data.references;
     }
 
     return result;
@@ -239,18 +254,23 @@ export class TaskResponseDTO extends TaskUtils {
   }
 
   // 완료 과제 조회 응답
-  static fromCompleted(tasks) {
+  static fromCompleted(tasks, userId) {
     return {
-      tasks: tasks.map((task) => ({
-        taskId: task.id,
-        title: task.title,
-        deadline: task.deadline ? task.deadline.toISOString().split('.')[0] : null,
-        type: task.type === "PERSONAL" ? "개인" : "팀",
-        status: task.status === "COMPLETED" ? "완료" : "미완료",
-        folderId: task.folder?.id || null,
-        folderTitle: task.folder?.folderTitle || null,
-        color: task.folder?.color || "#000000",
-      })),
+      tasks: tasks.map((task) => {
+        const myMember = task.members?.find((m) => m.userId === userId);
+        const folder = myMember?.folder;
+
+        return {
+          taskId: task.id,
+          title: task.title,
+          deadline: task.deadline ? task.deadline.toISOString().split('.')[0] : null,
+          type: task.type === "PERSONAL" ? "개인" : "팀",
+          status: task.status === "COMPLETED" ? "완료" : "미완료",
+          folderId: folder?.id || null,
+          folderTitle: folder?.folderTitle || null,
+          color: folder?.color || "#000000",
+        };
+      }),
     };
   }
 }

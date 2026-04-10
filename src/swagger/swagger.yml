@@ -1045,7 +1045,7 @@ paths:
                   type: string
                   format: date-time
                   description: "과제 마감 기한 (ISO 8601 형식)"
-                  example: "2026-05-10T18:30:00"
+                  example: "2026-05-10T18:30:00Z"
                 type:
                   type: string
                   enum: [TEAM, PERSONAL]
@@ -1067,7 +1067,7 @@ paths:
                       endDate:
                         type: string
                         format: date-time
-                        example: "2026-05-01T14:00:00"
+                        example: "2026-05-01T14:00:00Z"
                       isAlarm:
                         type: boolean
                         example: true
@@ -1342,6 +1342,16 @@ paths:
                       updatedAt: null
         '401':
           description: 인증 실패
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN_TASK"
+                reason: "해당 과제에 접근할 권한이 없습니다."
+                data: null
         '404':
           description: 과제를 찾을 수 없음
           content:
@@ -1360,11 +1370,7 @@ paths:
       tags:
         - Task
       summary: 과제 수정
-      description: |
-        과제 정보와 여러 개의 파일을 수정합니다.
-        - **files**: 여러 개의 파일을 한꺼번에 선택할 수 있습니다.
-        - **fileNames**: 업로드한 파일 순서대로 이름을 쉽표(,)로 구분해서 적어주세요. 
-          (예: `보고서최종, 참고자료1`)
+      description: 특정 과제의 제목, 폴더, 마감일을 수정합니다.
       security:
         - bearerAuth: []
       parameters:
@@ -1373,92 +1379,71 @@ paths:
           required: true
           schema:
             type: integer
+          example: 101
       requestBody:
         required: true
         content:
-          multipart/form-data: 
+          application/json:
             schema:
               type: object
               properties:
                 title:
                   type: string
-                  example: "수정된 프로젝트 이름"
-                deadline:
-                  type: string
-                  format: date
-                  example: "2026-06-30"
-                type:
-                  type: string
-                  enum: [TEAM, PERSONAL]
-                  example: "TEAM"
-                status:
-                  type: string
-                  enum: [PENDING, PROGRESS, COMPLETED]
-                  example: "PROGRESS"
+                  example: "프로젝트1"
                 folderId:
                   type: integer
+                  nullable: true
                   example: 2
-                subTasks:
-                  type: string 
-                  description: "세부 과제 배열 (JSON string)"
-                  example: '[{"title": "세부과제 1", "endDate": "2026-05-10", "status": "COMPLETED", "isAlarm": true, "assigneeId": 5}]'
-                references:
-                  type: string 
-                  description: "기존 유지할 자료 목록 (JSON string)"
-                  example: '[{"name": "자료1", "url": "https://mariadb.org/documentation/"}]'
-                fileNames:
+                deadline:
                   type: string
-                  description: "파일 원본 이름 대신 저장할 이름 (쉼표 구분)"
-                  example: "과제발표자료, 참고도면"
-                files:
-                  type: array 
-                  items:
-                    type: string
-                    format: binary 
-                  description: "업로드할 파일들을 모두 선택하세요."
+                  format: date-time
+                  example: "2026-02-28T12:00:00Z"
+            example:
+              title: "프로젝트1"
+              folderId: 2
+              deadline: "2026-02-28T12:00:00Z"
       responses:
         '200':
           description: 과제 수정 성공
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  message:
-                    type: string
-                    example: "요청이 처리되어서 새로운 과제가 생성되었습니다."
-                  data:
-                    type: object
-                    properties:
-                      taskId:
-                        type: integer
-                        example: 1
+              example:
+                resultType: "SUCCESS"
+                message: "과제가 성공적으로 수정되었습니다."
+                data:
+                  taskId: 101
         '401':
-          description: 인증 실패 (토큰 만료 또는 누락)
-        '404':
-          description: 존재하지 않는 폴더
+          description: 인증 실패
+        '403':
+          description: 권한 없음
           content:
             application/json:
               example:
                 resultType: "FAIL"
-                code: 404
-                errorCode: "변경하려는 폴더가 존재하지 않습니다."
-                reason: "리소스를 찾을 수 없습니다"
+                code: 403
+                errorCode: "FORBIDDEN_TASK"
+                reason: "해당 과제에 접근할 권한이 없습니다."
                 data: null
-          description: 존재하지 않는 과제
+        '404':
+          description: 과제를 찾을 수 없음
           content:
             application/json:
               example:
                 resultType: "FAIL"
                 code: 404
-                errorCode: "수정하려는 과제가 존재하지 않습니다."
-                reason: "리소스를 찾을 수 없습니다."
+                errorCode: "TASK_NOT_FOUND"
+                reason: "해당 과제를 찾을 수 없습니다."
                 data: null
         '500':
           description: 서버 내부 오류
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 500
+                errorCode: "INTERNAL_SERVER_ERROR"
+                reason: "서버 내부 오류가 발생했습니다"
+                data: null
 
     # 과제 삭제
     delete:
@@ -1493,6 +1478,16 @@ paths:
                   example: null
         '401':
           description: 인증 실패
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN_TASK"
+                reason: "해당 과제를 삭제할 권한이 없습니다."
+                data: null
         '404':
           description: 과제를 찾을 수 없음
           content:
@@ -1773,6 +1768,16 @@ paths:
                 code: 400
                 errorCode: "INVALID_DEADLINE"
                 reason: "세부 과제의 마감일은 부모 과제의 마감일보다 늦을 수 없습니다."
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN_TASK"
+                reason: "해당 과제에 접근할 권한이 없습니다."
+                data: null
         '404':
           description: 부모 과제를 찾을 수 없음
           content:
@@ -2030,10 +2035,19 @@ paths:
                       status:
                         type: string
                         example: "완료"
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN_TASK"
+                reason: "해당 과제에 접근할 권한이 없습니다."
+                data: null
         '404':
           description: |
             - SUBTASK_NOT_FOUND: 해당하는 세부 태스크를 찾을 수 없습니다.
-                      
 
   # 세부 TASK 마감일 변경
   /api/v1/task/subtask/{subTaskId}/deadline:
@@ -2092,6 +2106,16 @@ paths:
         '400':
           description: |
             - INVALID_DEADLINE: 부모 Task의 마감일을 초과할 수 없습니다.
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN_TASK"
+                reason: "해당 과제에 접근할 권한이 없습니다."
+                data: null
         '404':
           description: |
             - SUBTASK_NOT_FOUND: 해당하는 세부 태스크를 찾을 수 없습니다.
@@ -2148,7 +2172,16 @@ paths:
                       assignee_id:
                         type: integer
                         example: 5
-
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN_TASK"
+                reason: "해당 과제에 접근할 권한이 없습니다."
+                data: null
         '404':
           description: |
             - SUBTASK_NOT_FOUND: 해당하는 세부 태스크를 찾을 수 없습니다.
@@ -3318,7 +3351,7 @@ paths:
                     example: "SUCCESS"
                   message:
                     type: string
-                    example: "완료된 과제 조회에 성공하였습니다."
+                    example: "완료된 과제 조회 성공"
                   data:
                     type: object
                     properties:
@@ -3335,7 +3368,7 @@ paths:
                               example: "자료구조 과제"
                             deadline:
                               type: string
-                              example: "2025-11-19"
+                              example: "2026-03-01T00:00:00"
                               description: "과제 마감일"
                             type:
                               type: string
@@ -3765,6 +3798,8 @@ paths:
         HttpOnly Cookie에 저장된 Refresh Token을 사용하여 새로운 Access Token을 발급합니다.
         해당 API는 Access Token 인증을 사용하지 않으며,
         Refresh Token이 유효한 경우에만 Access Token을 재발급합니다.
+      security:
+        - bearerAuth: []
       requestBody:
         required: false
       responses:
@@ -4172,7 +4207,7 @@ paths:
           description: 과제를 찾을 수 없음
 
   # 커뮤니케이션 수정 및 삭제
-  /api/v1/modal/communication/{taskId}/{communicationId}:
+  /api/v1/reference/communication/{taskId}/{communicationId}:
     patch:
       tags:
         - Reference

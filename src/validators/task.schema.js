@@ -31,6 +31,15 @@ export const createTaskSchema = z.object({
     deadline: z.string().optional(),
     type: z.enum(["TEAM", "PERSONAL"]).default("PERSONAL"),
     subTasks: z.array(subTaskSchema).optional().default([]),
+    references: z.array(z.object({
+      name: z.string(),
+      url: z.string().url().optional(),
+      fileUrl: z.string().url().optional().nullable(),
+    })).optional().default([]),
+    communications: z.array(z.object({
+      name: z.string().min(1, "링크 이름은 필수입니다."),
+      url: z.string().url("올바른 URL 형식이어야 합니다.")
+    })).optional().default([])
   }),
 });
 
@@ -62,7 +71,13 @@ export const updateTaskSchema = z.object({
       folderId: z.coerce.number().int().positive().optional(),
       deadline: z.string().optional(),
       type: z.enum(["TEAM", "PERSONAL", "팀"]).optional(),
+      status: z.enum(["PENDING", "PROGRESS", "COMPLETED"]).optional(),
       subTasks: jsonArray(z.array(subTaskSchema)).optional(),
+      references: jsonArray(z.array(z.object({
+        name: z.string(),
+        url: z.string().url().optional(),
+        fileUrl: z.string().optional()
+      }))).optional(),
     })
     .optional(),
 });
