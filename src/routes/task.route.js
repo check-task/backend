@@ -73,7 +73,7 @@ router.patch(
 router.get("/", authenticate, validate(getTasksSchema), taskController.getTasks);
 
 // PATCH /api/v1/task/:taskId -- 과제 수정 (validate)
-router.patch( "/:taskId", authenticate, upload.array('files'), validate(updateTaskSchema), taskController.updateTask);
+router.patch( "/:taskId", authenticate, validate(updateTaskSchema), taskController.updateTask);
 
 // DELETE /api/v1/task/:taskId -- 과제 삭제
 router.delete(

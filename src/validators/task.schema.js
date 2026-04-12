@@ -65,19 +65,10 @@ export const updateTaskSchema = z.object({
   params: z.object({
     taskId: idParam,
   }),
-  body: z
-    .object({
+  body: z.object({
       title: z.string().trim().optional(),
-      folderId: z.coerce.number().int().positive().optional(),
-      deadline: z.string().optional(),
-      type: z.enum(["TEAM", "PERSONAL", "팀"]).optional(),
-      status: z.enum(["PENDING", "PROGRESS", "COMPLETED"]).optional(),
-      subTasks: jsonArray(z.array(subTaskSchema)).optional(),
-      references: jsonArray(z.array(z.object({
-        name: z.string(),
-        url: z.string().url().optional(),
-        fileUrl: z.string().optional()
-      }))).optional(),
+      folderId: z.number().int().positive().optional().nullable(),
+      deadline: z.string().optional()
     })
     .optional(),
 });
