@@ -644,7 +644,17 @@ class TaskService {
       }
 
       return await prisma.$transaction(async (tx) => {
+        // 담당자가 변경되거나 null로 설정될 때 기존 알림 삭제
         if (memberIdChanged && previousNotifyUserId != null) {
+          await alarmRepository.deleteSubTaskAlarm(
+            previousNotifyUserId,
+            parsedSubTaskId,
+            tx,
+          );
+        }
+
+        // 담당자를 null로 설정하고, 기존에 담당자가 있었던 경우 추가 알림 삭제
+        if (parsedAssigneeUserId == null && previousNotifyUserId != null) {
           await alarmRepository.deleteSubTaskAlarm(
             previousNotifyUserId,
             parsedSubTaskId,
