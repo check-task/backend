@@ -2381,65 +2381,73 @@ paths:
                       deletedCount:
                         type: integer
                         example: 3
-
-  /api/v1/task/{taskId}/subtask/{subTaskId}:
     patch:
-      tags:
-        - Task
-      summary: 세부 TASK 수정
-      description: 세부 TASK의 내용을 수정합니다.
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: taskId
-          required: true
-          schema:
-            type: integer
-        - in: path
-          name: subTaskId
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
+        tags:
+          - Task
+        summary: 세부 TASK 수정
+        description: 세부 TASK의 내용을 수정합니다.
+        security:
+          - bearerAuth: []
+        parameters:
+          - in: path
+            name: taskId
+            required: true
             schema:
-              type: object
-              properties:
-                title:
-                  type: string
-                  example: "수정된 세부 작업"
-                deadline:
-                  type: string
-                  format: date-time
-                  example: "2026-04-11T15:00:00"
-                isAlarm:
-                  type: boolean
-                  example: false
-      responses:
-        '200':
-          description: 세부 TASK 수정 성공
+              type: integer
+        requestBody:
+          required: true
           content:
             application/json:
               schema:
                 type: object
+                required:
+                  - subTasks
                 properties:
-                  resultType:
-                    type: string
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      subTaskId:
-                        type: integer
-                      title:
-                        type: string
-                      deadline:
-                        type: string
-                        format: date-time
+                  subTasks:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - subTaskId
+                      properties:
+                        subTaskId:
+                          type: integer
+                          example: 1
+                        title:
+                          type: string
+                          example: "수정된 세부과제"
+                        deadline:
+                          type: string
+                          example: "2026-05-01T14:00:00Z"
+                        isAlarm:
+                          type: boolean
+                          example: true
+        responses:
+          '200':
+            description: 세부 TASK 수정 성공
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    resultType:
+                      type: string
+                    message:
+                      type: string
+                    data:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          subTaskId:
+                            type: integer
+                            example: 1
+                          title:
+                            type: string
+                            example: "수정된 세부과제"
+                          deadline:
+                            type: string
+                            format: date-time
 
   /api/v1/task/{taskId}/subtask/all:
     delete:

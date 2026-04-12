@@ -1038,7 +1038,7 @@ class TaskService {
   }
 
   // 단일 세부 과제 수정
-  async updateSingleSubTask(userId, taskId, subTaskId, updateData) {
+  async updateSelectedSubTasks(userId, taskId, subTaskUpdates) {
     // 부모 과제 존재 여부 확인
     const parentTask = await taskRepository.findTaskById(taskId);
     if (!parentTask) throw new NotFoundError("존재하지 않는 과제입니다.");
@@ -1048,70 +1048,74 @@ class TaskService {
     if (!userCheck)
       throw new ForbiddenError("유저가 해당 과제에 권한이 없습니다.");
 
-    if (Object.keys(updateData).length === 0) {
-      throw new Error("수정할 값이 없습니다.");
-    }
-
     return await prisma.$transaction(async (tx) => {
-      const subTask = await taskRepository.findSubTaskById(subTaskId, tx);
-      if (!subTask) {
-        throw new NotFoundError("세부 과제가 존재하지 않습니다.");
-      }
+      const results = [];
+      for (const { subTaskId, ...updateData } of subTaskUpdates) {
+        if (Object.keys(updateData).length === 0) {
+          throw new Error("수정할 값이 없습니다.");
+        }
+        const subTask = await taskRepository.findSubTaskById(subTaskId, tx);
+        if (!subTask) {
+          throw new NotFoundError("세부 과제가 존재하지 않습니다.");
+        }
 
-      // 세부 과제 수정
-      const updatedSubTask = await taskRepository.updateSubTask(
-        subTaskId,
-        updateData,
-        tx,
-      );
 
-      // 기존 알람 찾기
-      const existingAlarm = await taskRepository.findAlarmBySubTaskId(
-        subTaskId,
-        tx,
-      );
+        // 세부 과제 수정
+        const updatedSubTask = await taskRepository.updateSubTask(
+          subTaskId, 
+          updateData, 
+          tx
+        );
 
-      let alarmDate = null;
-      if (updatedSubTask.isAlarm && updatedSubTask.assigneeId) {
-        const alarmHours =
-          updatedSubTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
+        // 기존 알람 찾기
+        const existingAlarm = await taskRepository.findAlarmBySubTaskId(
+          subTaskId,
+          tx,
+        );
 
-        alarmDate = calculateAlarmDate(updatedSubTask.endDate, alarmHours);
-      }
+        let alarmDate = null;
+        if (updatedSubTask.isAlarm && updatedSubTask.assigneeId) {
+          const alarmHours =
+            updatedSubTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
 
-      if (updatedSubTask.isAlarm && alarmDate) {
-        if (existingAlarm) {
-          await alarmRepository.updateAlarm(
-            existingAlarm.id,
-            {
-              title: `'${updatedSubTask.title}'의 마감까지 ${updatedSubTask.assignee?.user?.alarmSetting?.taskAlarm}시간 남았어요!`,
-              alarmContent: `'${updatedSubTask.title}' 진행 중입니다.`,
-              alarmDate,
-            },
-            tx,
-          );
-        } else {
-          const notifyUserId = updatedSubTask.assignee?.userId;
-          if (notifyUserId) {
-            await alarmRepository.createSubTaskAlarm(
-              notifyUserId,
-              updatedSubTask.taskId,
-              updatedSubTask.id,
-              updatedSubTask.title,
-              alarmDate,
+          alarmDate = calculateAlarmDate(updatedSubTask.endDate, alarmHours);
+        }
+
+        if (updatedSubTask.isAlarm && alarmDate) {
+          if (existingAlarm) {
+            await alarmRepository.updateAlarm(
+              existingAlarm.id,
+              {
+                title: `'${updatedSubTask.title}'의 마감까지 ${updatedSubTask.assignee?.user?.alarmSetting?.taskAlarm}시간 남았어요!`,
+                alarmContent: `'${updatedSubTask.title}' 진행 중입니다.`,
+                alarmDate,
+              },
               tx,
             );
+          } else {
+            const notifyUserId = updatedSubTask.assignee?.userId;
+            if (notifyUserId) {
+              await alarmRepository.createSubTaskAlarm(
+                notifyUserId,
+                updatedSubTask.taskId,
+                updatedSubTask.id,
+                updatedSubTask.title,
+                alarmDate,
+                tx,
+              );
+            }
           }
+        } else if (existingAlarm) {
+          await alarmRepository.deleteAlarmById(existingAlarm.id, tx);
         }
-      } else if (existingAlarm) {
-        await alarmRepository.deleteAlarmById(existingAlarm.id, tx);
-      }
 
-      return {
-        subTaskId: updatedSubTask.id,
-        title: updatedSubTask.title,
-        deadline: updatedSubTask.endDate,
-      };
+        results.push({
+          subTaskId: updatedSubTask.id,
+          title: updatedSubTask.title,
+          deadline: updatedSubTask.endDate,
+        });
+      }
+    return results; 
     });
   }
 
