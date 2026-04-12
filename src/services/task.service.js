@@ -29,17 +29,24 @@ class TaskService {
   async getTaskList(userId, queryParams = {}) {
     let { type, folderId, sort, status } = queryParams;
 
-    // 3. 실제 DB 조회
+    // 1. folderId가 없을 때 "지정안함" 처리
+    if (folderId === undefined || folderId === null || folderId === "null" || folderId === "") {
+      const defaultFolder = await taskRepository.findFolderByUserIdAndName(userId, "지정안함");
+      folderId = defaultFolder?.id;
+    }
+
     const tasks = await taskRepository.findAllTasks({
       userId,
       type,
-      folderId,
+      folderId, 
       sort,
       status,
     });
 
-  return tasks;
-}
+    console.log("--- [DEBUG] 조회 결과 개수 ---", tasks.length);
+
+    return tasks;
+  }
 
   /**
    * 세부과제 담당 Member.id 결정. assigneeUserId는 User.id.
@@ -83,23 +90,22 @@ class TaskService {
     const { subTasks, references, communications, folderId, ...taskData } = data;
 
     if (!taskData.title) throw new BadRequestError("TASK_TITLE_REQUIRED", "과제명은 필수입니다.");
-    if ("folderId" in data) {
-      let targetFolderId;
 
-      if (data.folderId === null) {
-        const defaultFolder = await taskRepository.findFolderByUserIdAndName(userId, "지정안함");
-        if (!defaultFolder) throw new Error("기본 폴더가 존재하지 않습니다.");
-        targetFolderId = defaultFolder.id;
-      } else {
-        targetFolderId = Number(data.folderId);
-        if (isNaN(targetFolderId)) throw new Error("folderId는 숫자여야 합니다.");
+    // 저장할 폴더 ID 결정 로직
+    let targetFolderId = null;
 
-        const folderCheck = await taskRepository.findFolderById(targetFolderId);
-        if (!folderCheck) throw new Error("폴더가 존재하지 않습니다.");
-        if (folderCheck.userId !== userId) throw new Error("본인 폴더가 아닙니다.");
-      }
+    // folderId가 아예 없거나, null이거나, 빈 문자열인 경우 모두 "지정안함"으로 처리
+    if (!data.folderId || data.folderId === "null") {
+      const defaultFolder = await taskRepository.findFolderByUserIdAndName(userId, "지정안함");
+      if (!defaultFolder) throw new Error("기본 폴더가 존재하지 않습니다.");
+      targetFolderId = defaultFolder.id;
+    } else {
+      targetFolderId = Number(data.folderId);
+      if (isNaN(targetFolderId)) throw new Error("folderId는 숫자여야 합니다.");
 
-      delete data.folderId;
+      const folderCheck = await taskRepository.findFolderById(targetFolderId);
+      if (!folderCheck) throw new Error("폴더가 존재하지 않습니다.");
+      if (folderCheck.userId !== userId) throw new Error("본인 폴더가 아닙니다.");
     }
 
     // 트랜잭션 시작
@@ -112,7 +118,7 @@ class TaskService {
         userId,
         newTask.id,
         false,
-        folderId || null,
+        targetFolderId || null,
         tx,
       );
 
