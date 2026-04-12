@@ -29,15 +29,6 @@ class TaskService {
   async getTaskList(userId, queryParams = {}) {
     let { type, folderId, sort, status } = queryParams;
 
-    const myTeamFolder = await prisma.folder.findFirst({
-      where: { userId, folderTitle: "팀" },
-    });
-
-    if (folderId && myTeamFolder && parseInt(folderId) === myTeamFolder.id) {
-      folderId = undefined;
-      type = "TEAM";
-    }
-
     // 3. 실제 DB 조회
     const tasks = await taskRepository.findAllTasks({
       userId,
@@ -47,18 +38,8 @@ class TaskService {
       status,
     });
 
-    return tasks.map((task) => {
-      if (task.type === "TEAM" && myTeamFolder) {
-        return {
-          ...task,
-          folderId: myTeamFolder.id,
-          folderTitle: myTeamFolder.folderTitle,
-          foldercolor: myTeamFolder.color,
-        };
-      }
-      return task;
-    });
-  }
+  return tasks;
+}
 
   /**
    * 세부과제 담당 Member.id 결정. assigneeUserId는 User.id.
