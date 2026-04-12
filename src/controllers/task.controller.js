@@ -381,21 +381,25 @@ class TaskController {
   async patchSubTask(req, res, next) {
     try {
       const userId = req.user.id;
-      const { taskId, subTaskId } = req.params;
-      const dto = TaskRequestDTO.toSubUpdate(req.body);
+      const { taskId } = req.params;
+      const { subTasks } = req.body;
+      
+      const dtoList = subTasks.map(({ subTaskId, ...rest }) => ({
+        subTaskId: Number(subTaskId),
+        ...TaskRequestDTO.toSubUpdate(rest),
+      }));
 
-      console.log(req.params);
 
-      const result = await taskService.updateSingleSubTask(userId, taskId, subTaskId, dto);
+      const result = await taskService.updateSelectedSubTasks(  // 메서드 이름 수정
+        userId,
+        Number(taskId),
+        dtoList 
+      );
 
       res.status(200).json({
         resultType: "SUCCESS",
         message: "세부 Task가 성공적으로 수정되었습니다.",
-        data: {
-          subTaskId: result.subTaskId,
-          title: result.title,
-          deadline: result.deadline,
-        },
+        data: result,
       });
     } catch (error) {
       next(error);

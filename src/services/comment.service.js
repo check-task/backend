@@ -4,7 +4,7 @@ import { NotFoundError, ForbiddenError } from "../errors/custom.error.js";
 
 class CommentService {
   // 댓글 생성
-  static async createComment(subTaskId, createCommentDto) {
+  async createComment(subTaskId, createCommentDto) {
     try {
       // 하위 업무 존재 여부 확인
       const subTask = await CommentRepository.findSubTaskById(subTaskId);
@@ -38,7 +38,7 @@ class CommentService {
   }
 
   // 댓글 수정
-  static async updateComment(commentId, userId, content) {
+  async updateComment(commentId, userId, content) {
     try {
       // 댓글 존재 여부 및 소유자 확인
       const comment = await CommentRepository.findCommentById(commentId);
@@ -73,7 +73,7 @@ class CommentService {
   }
 
   // 댓글 삭제
-  static async deleteComment(commentId, userId) {
+  async deleteComment(commentId, userId) {
     try {
       // 댓글 존재 여부 확인
       const comment = await CommentRepository.findCommentById(commentId);

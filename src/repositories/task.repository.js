@@ -117,7 +117,12 @@ class TaskRepository {
         members: {
           some: {
             userId: userId,
-            ...(folderId ? { folderId: parseInt(folderId) } : {}) // 폴더 필터링을 여기서 수행
+            ...(folderId ? {
+              OR: [
+                { folderId: parseInt(folderId) },
+                { folderId: null }
+              ]
+            } : {})
           }
         },
         ...(type ? { type: type === "TEAM" ? "TEAM" : "PERSONAL" } : {}),

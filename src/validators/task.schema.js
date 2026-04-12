@@ -189,15 +189,18 @@ export const joinTaskSchema = z.object({
 export const patchSubTaskSchema = z.object({
   params: z.object({
     taskId: idParam,
-    subTaskId: idParam,
   }),
   body: z.object({
-    title: z.string().optional(),
-    /** 생성 API와 동일 키; DTO에서 endDate로 매핑 */
-    deadline: z.string().optional(),
-    endDate: z.string().optional(),
-    isAlarm: z.boolean().optional(),
-    status: z.enum(["COMPLETED", "PENDING"]).optional(),
+    subTasks: z.array(
+      z.object({
+        subTaskId: z.union([z.string().regex(/^\d+$/), z.number()]),
+        title: z.string().optional(),
+        deadline: z.string().optional(),
+        endDate: z.string().optional(),
+        isAlarm: z.boolean().optional(),
+        status: z.enum(["COMPLETED", "PENDING"]).optional(),
+      })
+    ).min(1, "수정할 세부 과제를 최소 1개 이상 선택해야 합니다."),
   }),
 });
 

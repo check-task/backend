@@ -29,35 +29,23 @@ class TaskService {
   async getTaskList(userId, queryParams = {}) {
     let { type, folderId, sort, status } = queryParams;
 
-    const myTeamFolder = await prisma.folder.findFirst({
-      where: { userId, folderTitle: "팀" },
-    });
-
-    if (folderId && myTeamFolder && parseInt(folderId) === myTeamFolder.id) {
-      folderId = undefined;
-      type = "TEAM";
+    // 1. folderId가 없을 때 "지정안함" 처리
+    if (folderId === undefined || folderId === null || folderId === "null" || folderId === "") {
+      const defaultFolder = await taskRepository.findFolderByUserIdAndName(userId, "지정안함");
+      folderId = defaultFolder?.id;
     }
 
-    // 3. 실제 DB 조회
     const tasks = await taskRepository.findAllTasks({
       userId,
       type,
-      folderId,
+      folderId, 
       sort,
       status,
     });
 
-    return tasks.map((task) => {
-      if (task.type === "TEAM" && myTeamFolder) {
-        return {
-          ...task,
-          folderId: myTeamFolder.id,
-          folderTitle: myTeamFolder.folderTitle,
-          foldercolor: myTeamFolder.color,
-        };
-      }
-      return task;
-    });
+    console.log("--- [DEBUG] 조회 결과 개수 ---", tasks.length);
+
+    return tasks;
   }
 
   /**
@@ -102,23 +90,22 @@ class TaskService {
     const { subTasks, references, communications, folderId, ...taskData } = data;
 
     if (!taskData.title) throw new BadRequestError("TASK_TITLE_REQUIRED", "과제명은 필수입니다.");
-    if ("folderId" in data) {
-      let targetFolderId;
 
-      if (data.folderId === null) {
-        const defaultFolder = await taskRepository.findFolderByUserIdAndName(userId, "지정안함");
-        if (!defaultFolder) throw new Error("기본 폴더가 존재하지 않습니다.");
-        targetFolderId = defaultFolder.id;
-      } else {
-        targetFolderId = Number(data.folderId);
-        if (isNaN(targetFolderId)) throw new Error("folderId는 숫자여야 합니다.");
+    // 저장할 폴더 ID 결정 로직
+    let targetFolderId = null;
 
-        const folderCheck = await taskRepository.findFolderById(targetFolderId);
-        if (!folderCheck) throw new Error("폴더가 존재하지 않습니다.");
-        if (folderCheck.userId !== userId) throw new Error("본인 폴더가 아닙니다.");
-      }
+    // folderId가 아예 없거나, null이거나, 빈 문자열인 경우 모두 "지정안함"으로 처리
+    if (!data.folderId || data.folderId === "null") {
+      const defaultFolder = await taskRepository.findFolderByUserIdAndName(userId, "지정안함");
+      if (!defaultFolder) throw new Error("기본 폴더가 존재하지 않습니다.");
+      targetFolderId = defaultFolder.id;
+    } else {
+      targetFolderId = Number(data.folderId);
+      if (isNaN(targetFolderId)) throw new Error("folderId는 숫자여야 합니다.");
 
-      delete data.folderId;
+      const folderCheck = await taskRepository.findFolderById(targetFolderId);
+      if (!folderCheck) throw new Error("폴더가 존재하지 않습니다.");
+      if (folderCheck.userId !== userId) throw new Error("본인 폴더가 아닙니다.");
     }
 
     // 트랜잭션 시작
@@ -131,7 +118,7 @@ class TaskService {
         userId,
         newTask.id,
         false,
-        folderId || null,
+        targetFolderId || null,
         tx,
       );
 
@@ -1057,7 +1044,7 @@ class TaskService {
   }
 
   // 단일 세부 과제 수정
-  async updateSingleSubTask(userId, taskId, subTaskId, updateData) {
+  async updateSelectedSubTasks(userId, taskId, subTaskUpdates) {
     // 부모 과제 존재 여부 확인
     const parentTask = await taskRepository.findTaskById(taskId);
     if (!parentTask) throw new NotFoundError("존재하지 않는 과제입니다.");
@@ -1067,70 +1054,74 @@ class TaskService {
     if (!userCheck)
       throw new ForbiddenError("유저가 해당 과제에 권한이 없습니다.");
 
-    if (Object.keys(updateData).length === 0) {
-      throw new Error("수정할 값이 없습니다.");
-    }
-
     return await prisma.$transaction(async (tx) => {
-      const subTask = await taskRepository.findSubTaskById(subTaskId, tx);
-      if (!subTask) {
-        throw new NotFoundError("세부 과제가 존재하지 않습니다.");
-      }
+      const results = [];
+      for (const { subTaskId, ...updateData } of subTaskUpdates) {
+        if (Object.keys(updateData).length === 0) {
+          throw new Error("수정할 값이 없습니다.");
+        }
+        const subTask = await taskRepository.findSubTaskById(subTaskId, tx);
+        if (!subTask) {
+          throw new NotFoundError("세부 과제가 존재하지 않습니다.");
+        }
 
-      // 세부 과제 수정
-      const updatedSubTask = await taskRepository.updateSubTask(
-        subTaskId,
-        updateData,
-        tx,
-      );
 
-      // 기존 알람 찾기
-      const existingAlarm = await taskRepository.findAlarmBySubTaskId(
-        subTaskId,
-        tx,
-      );
+        // 세부 과제 수정
+        const updatedSubTask = await taskRepository.updateSubTask(
+          subTaskId, 
+          updateData, 
+          tx
+        );
 
-      let alarmDate = null;
-      if (updatedSubTask.isAlarm && updatedSubTask.assigneeId) {
-        const alarmHours =
-          updatedSubTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
+        // 기존 알람 찾기
+        const existingAlarm = await taskRepository.findAlarmBySubTaskId(
+          subTaskId,
+          tx,
+        );
 
-        alarmDate = calculateAlarmDate(updatedSubTask.endDate, alarmHours);
-      }
+        let alarmDate = null;
+        if (updatedSubTask.isAlarm && updatedSubTask.assigneeId) {
+          const alarmHours =
+            updatedSubTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
 
-      if (updatedSubTask.isAlarm && alarmDate) {
-        if (existingAlarm) {
-          await alarmRepository.updateAlarm(
-            existingAlarm.id,
-            {
-              title: `'${updatedSubTask.title}'의 마감까지 ${updatedSubTask.assignee?.user?.alarmSetting?.taskAlarm}시간 남았어요!`,
-              alarmContent: `'${updatedSubTask.title}' 진행 중입니다.`,
-              alarmDate,
-            },
-            tx,
-          );
-        } else {
-          const notifyUserId = updatedSubTask.assignee?.userId;
-          if (notifyUserId) {
-            await alarmRepository.createSubTaskAlarm(
-              notifyUserId,
-              updatedSubTask.taskId,
-              updatedSubTask.id,
-              updatedSubTask.title,
-              alarmDate,
+          alarmDate = calculateAlarmDate(updatedSubTask.endDate, alarmHours);
+        }
+
+        if (updatedSubTask.isAlarm && alarmDate) {
+          if (existingAlarm) {
+            await alarmRepository.updateAlarm(
+              existingAlarm.id,
+              {
+                title: `'${updatedSubTask.title}'의 마감까지 ${updatedSubTask.assignee?.user?.alarmSetting?.taskAlarm}시간 남았어요!`,
+                alarmContent: `'${updatedSubTask.title}' 진행 중입니다.`,
+                alarmDate,
+              },
               tx,
             );
+          } else {
+            const notifyUserId = updatedSubTask.assignee?.userId;
+            if (notifyUserId) {
+              await alarmRepository.createSubTaskAlarm(
+                notifyUserId,
+                updatedSubTask.taskId,
+                updatedSubTask.id,
+                updatedSubTask.title,
+                alarmDate,
+                tx,
+              );
+            }
           }
+        } else if (existingAlarm) {
+          await alarmRepository.deleteAlarmById(existingAlarm.id, tx);
         }
-      } else if (existingAlarm) {
-        await alarmRepository.deleteAlarmById(existingAlarm.id, tx);
-      }
 
-      return {
-        subTaskId: updatedSubTask.id,
-        title: updatedSubTask.title,
-        deadline: updatedSubTask.endDate,
-      };
+        results.push({
+          subTaskId: updatedSubTask.id,
+          title: updatedSubTask.title,
+          deadline: updatedSubTask.endDate,
+        });
+      }
+    return results; 
     });
   }
 
