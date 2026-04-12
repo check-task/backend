@@ -133,6 +133,7 @@ class AlarmService {
           title: `'${taskTitle}'의 마감까지 ${deadlineAlarm}시간 남았어요!`,
           alarmContent: alarm.alarmContent,
           alarmDate: newAlarmDate,
+          isRead: false,
         });
       }
     }
@@ -163,6 +164,7 @@ class AlarmService {
           title: `'${subTaskTitle}'의 마감까지 ${taskAlarm}시간 남았어요!`,
           alarmContent: alarm.alarmContent,
           alarmDate: newAlarmDate,
+          isRead: false,
         });
       }
     }
