@@ -427,6 +427,7 @@ describe("AlarmService 알림 설정 변경 시 pending 알람 재계산", () =>
       alarmContent:
         "'현재 50%완성 중이에요. 빨리 끝내고 쉬어요!",
       alarmDate: calculateAlarmDate(taskDeadline, 36),
+      isRead: false,
     });
   });
 
@@ -452,6 +453,7 @@ describe("AlarmService 알림 설정 변경 시 pending 알람 재계산", () =>
       alarmContent:
         "'현재 진행 중 상태에요. 빨리 끝내고 쉬어요!",
       alarmDate: calculateAlarmDate(stEnd, 10),
+      isRead: false,
     });
   });
 });

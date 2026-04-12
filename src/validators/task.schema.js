@@ -164,10 +164,13 @@ export const setSubTaskAssigneeSchema = z.object({
     subTaskId: idParam,
   }),
   body: z.object({
-    assigneeId: z.coerce
-      .number()
-      .int()
-      .positive("담당자는 해당 과제 멤버의 User.id(양의 정수)여야 합니다."),
+    assigneeId: z.preprocess(
+      (val) => val === "" || val === null ? null : val,
+      z.union([
+        z.null(),
+        z.coerce.number().int().positive("담당자는 해당 과제 멤버의 User.id(양의 정수)여야 합니다.")
+      ])
+    ),
   }),
 });
 

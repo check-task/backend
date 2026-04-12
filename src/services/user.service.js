@@ -1,6 +1,7 @@
 import { NotFoundError, BadRequestError } from "../errors/custom.error.js";
 import { UserDto } from "../dtos/user.dto.js";
 import { userRepository } from "../repositories/user.repository.js";
+import alarmService from "./alarm.service.js";
 
 class UserService {
   // 1. 내 정보 조회
@@ -50,6 +51,13 @@ class UserService {
     }
 
     const updatedUser = await userRepository.updateProfile(userId, updateData);
+
+    if (updateData.deadlineAlarm !== undefined) {
+      await alarmService.updateDeadline(userId, updateData.deadlineAlarm);
+    }
+    if (updateData.taskAlarm !== undefined) {
+      await alarmService.updateTask(userId, updateData.taskAlarm);
+    }
 
     return UserDto.responseFromUpdatedUser(updatedUser);
   }

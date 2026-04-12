@@ -285,12 +285,11 @@ class AlarmRepository {
     });
   }
 
-  // (추가) 아직 읽지 않은 과제 알림 조회 (과제 정보 포함)
+  // 과제(마감) 알림 전부 — 읽음 포함 (deadlineAlarm 동기화용)
   async findPendingTaskAlarms(userId) {
     return await prisma.userAlarm.findMany({
       where: {
         userId,
-        isRead: false,
         taskId: { not: null },
         subTaskId: null, // 세부과제 알림 제외
       },
@@ -300,12 +299,11 @@ class AlarmRepository {
     });
   }
 
-  // (추가) 아직 읽지 않은 세부과제 알림 조회 (세부과제 정보 포함)
+  // 세부과제 알림 전부 — 읽음 포함 (taskAlarm 동기화용)
   async findPendingSubTaskAlarms(userId) {
     return await prisma.userAlarm.findMany({
       where: {
         userId,
-        isRead: false,
         subTaskId: { not: null }, // 세부과제 알림만
       },
       include: {
@@ -321,6 +319,7 @@ class AlarmRepository {
         title: data.title,
         alarmContent: data.alarmContent,
         alarmDate: data.alarmDate,
+        ...(data.isRead !== undefined && { isRead: data.isRead }),
       },
     });
   }
