@@ -29,12 +29,6 @@ class TaskService {
   async getTaskList(userId, queryParams = {}) {
     let { type, folderId, sort, status } = queryParams;
 
-    // 1. folderId가 없을 때 "지정안함" 처리
-    if (folderId === undefined || folderId === null || folderId === "null" || folderId === "") {
-      const defaultFolder = await taskRepository.findFolderByUserIdAndName(userId, "지정안함");
-      folderId = defaultFolder?.id;
-    }
-
     const tasks = await taskRepository.findAllTasks({
       userId,
       type,
