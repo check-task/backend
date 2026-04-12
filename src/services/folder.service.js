@@ -11,10 +11,10 @@ class FolderService {
   // 1. 폴더 생성
   async createFolder(userId, body) {
     const currentCount = await folderRepository.countByUserId(userId);
-    if (currentCount >= 5) {
+    if (currentCount >= 6) {
       throw new BadRequestError(
         "MAX_FOLDER_LIMIT",
-        "폴더는 최대 5개까지만 생성할 수 있습니다.",
+        "폴더는 최대 6개까지만 생성할 수 있습니다.",
       );
     }
 
@@ -58,12 +58,12 @@ class FolderService {
     if (folder.userId !== userId)
       throw new ForbiddenError("FORBIDDEN", "수정 권한이 없습니다.");
 
-    if (folder.folderTitle === "팀") {
-      throw new BadRequestError(
-        "PROTECTED_FOLDER",
-        "'팀' 폴더는 수정할 수 없습니다.",
-      );
-    }
+    if (folder.folderTitle === "지정안함") {
+    throw new BadRequestError(
+      "PROTECTED_FOLDER",
+      "'지정안함' 폴더는 수정할 수 없습니다."
+    );
+  }
 
     const updateData = FolderDto.updateBodyToFolderDto(body);
 
@@ -122,6 +122,13 @@ class FolderService {
       );
     if (folder.userId !== userId)
       throw new ForbiddenError("FORBIDDEN", "삭제 권한이 없습니다.");
+
+    if (folder.folderTitle === "지정안함") {
+    throw new BadRequestError(
+      "PROTECTED_FOLDER",
+      "'지정안함' 폴더는 삭제할 수 없습니다."
+    );
+  }
 
     const assignedTaskCount = await folderRepository.countAssignedTasksByFolderId(folderId);
     if (assignedTaskCount > 0) {

@@ -109,15 +109,15 @@ router.delete(
 
 // POST /api/v1/task/:taskId/subTask -- 단일 세부 과제 추가
 router.post(
-  "/:taskId/subTask",
+  "/:taskId/subtask",
   authenticate,
   validate(addSubTaskSchema),
   taskController.addSubTask
 );
 
-// PATCH /api/v1/task/:taskId/subTask/:subTaskId -- 단일 세부 과제 수정
+// PATCH /api/v1/task/:taskId/subTask -- 단일 세부 과제 수정
 router.patch(
-  "/:taskId/subTask/:subTaskId",
+  "/:taskId/subtask",
   authenticate,
   validate(patchSubTaskSchema),
   taskController.patchSubTask
@@ -125,7 +125,7 @@ router.patch(
 
 // PATCH /api/v1/task/:taskId/subTask/all -- 전체 세부 과제 삭제
 router.delete(
-  "/:taskId/subTask/all",
+  "/:taskId/subtask/all",
   authenticate,
   validate(deleteAllSubTaskParamsSchema),
   taskController.allDeleteSubTask
@@ -133,7 +133,7 @@ router.delete(
 
 // PATCH /api/v1/task/:taskId/subTask -- 목록 세부 과제 삭제
 router.delete(
-  "/:taskId/subTask",
+  "/:taskId/subtask",
   authenticate,
   validate(deleteSelectedSubTaskSchema),
   taskController.deleteSubTask
