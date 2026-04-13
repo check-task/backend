@@ -241,7 +241,7 @@ class TaskService {
   }
 
   // 과제 수정
-  async modifyTask(taskId, userId, updateData, files = []) {
+  async modifyTask(taskId, userId, updateData) {
     // 과제 존재 여부 확인
     const currentTask = await taskRepository.findTaskById(taskId);
     if (!currentTask) throw new NotFoundError("수정하려는 과제가 존재하지 않습니다.");
@@ -281,50 +281,10 @@ class TaskService {
       });
 
       delete updateData.folderId;
-
-      console.log("폴더 업데이트 성공")
-      console.log(updateData)
     }
 
-    return await prisma.$transaction(async (tx) => {
-      const referenceData = [];
-
-      // JSON 문자열로 들어온 링크 데이터 취합
-      if (updateData.references && Array.isArray(updateData.references)) {
-        updateData.references.forEach(ref => {
-          referenceData.push({
-            taskId: Number(taskId),
-            name: ref.name,
-            url: ref.url || null,
-            fileUrl: ref.fileUrl || null
-          });
-        });
-        delete updateData.references; // Task 테이블 데이터에서는 삭제
-      }
-
-      // 업로드된 파일 정보 취합
-      if (files && files.length > 0) {
-        files.forEach(file => {
-          referenceData.push({
-            taskId: Number(taskId),
-            name: file.originalname,
-            fileUrl: file.location || file.path
-          });
-        });
-      }
-
-      // DB에 한꺼번에 저장
-      if (referenceData.length > 0) {
-        await tx.reference.createMany({ data: referenceData });
-      }
-
-      const updatedTask = await tx.task.update({
-        where: { id: Number(taskId) },
-        data: updateData
-      });
-
-      return { taskId: updatedTask.id };
-    });
+    const updatedTask = await tx.task.updateTask(taskId, updateData);
+    return { taskId: updatedTask.id };
   }
 
   // Task 마감일 변경 서비스

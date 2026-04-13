@@ -8,38 +8,30 @@ import {
   CreateLogDto,
   UpdateLogDto,
 } from "../../dtos/modal.dto.js";
+import { TaskRequestDTO } from "../../dtos/task.dto.js";
 import CommentService from "../../services/comment.service.js";
 import taskService from "../../services/task.service.js";
+import taskHelper from "../../helpers/task.helper.js";
 
 //과제 API 관련 SOCKET
 export const taskEvents = {
   JOIN_TASK: "joinTaskRoom", //태스크 방 입장
   //클라이언트 -> 서버로 명령
+  UPDATE_TASK: "task:update", // 메인 과제 수정
+
   UPDATE_SUBTASK: "updateSubtaskStatus", //세부과제 상태 업데이트
   UPDATE_DEADLINE: "updateDeadline", //세부과제 마감일 업데이트
   SET_ASSIGNEE: "setSubTaskAssignee", //세부과제 담당자 설정
-  UPDATE_TASK: "task:update", // 과제 수정
   UPDATE_MEMBER: "member:update", // 멤버 역할 변경
   CREATE_SUBTASK: "subtask:create", // 단일 세부 과제 생성
   //서버 -> 클라이언트로 결과
+  TASK_UPDATED: "task:updated", // 메인 과제 수정 완료
+
   SUBTASK_UPDATED: "subtaskStatusUpdated", //세부과제 상태 업데이트 완료
   DEADLINE_UPDATED: "deadlineUpdated", //세부과제 마감일 업데이트 완료
   ASSIGNEE_UPDATED: "subtaskAssigneeUpdated", //세부과제 담당자 업데이트
-  TASK_UPDATED: "task:updated", // 과제 수정 완료
   MEMBER_UPDATED: "member:updated", // 멤버 역할 변경
   SUBTASK_CREATED: "subtask:created", // 단일 세부 과제 생성
-};
-
-//자료 API 관련 SOCKET
-export const referenceEvents = {
-  //클라이언트 -> 서버로 명령
-  CREATE_REFERENCE: "reference:create",
-  UPDATE_REFERENCE: "reference:update",
-  DELETE_REFERENCE: "reference:delete",
-  //서버 -> 클라이언트로 결과
-  CREATED_REFERENCE: "reference:created",
-  UPDATED_REFERENCE: "reference:updated",
-  DELETED_REFERENCE: "reference:deleted",
 };
 
 //댓글 API 관련 SOCKET
@@ -54,6 +46,18 @@ export const commentEvents = {
   DELETED_COMMENT: "comment:deleted",
 };
 
+//자료 API 관련 SOCKET
+export const referenceEvents = {
+  //클라이언트 -> 서버로 명령
+  CREATE_REFERENCE: "reference:create",
+  UPDATE_REFERENCE: "reference:update",
+  DELETE_REFERENCE: "reference:delete",
+  //서버 -> 클라이언트로 결과
+  CREATED_REFERENCE: "reference:created",
+  UPDATED_REFERENCE: "reference:updated",
+  DELETED_REFERENCE: "reference:deleted",
+};
+
 //커뮤니케이션 API 관련 SOCKET 이벤트 정의
 export const communicationEvents = {
   // 클라이언트 -> 서버
@@ -66,6 +70,7 @@ export const communicationEvents = {
   DELETED_COMMUNICATION: "communication:deleted",
 };
 
+// 로그 확인 관련 SOCKET
 export const logEvents = {
   //클라이언트 -> 서버로 명령
   CREATE_LOG: "log:create",
@@ -108,7 +113,38 @@ export const setupTaskHandlers = (io, socket) => {
     console.log("====================================");
   });
 
-  // 서브과제 상태 업데이트
+  // 메인 과제 수정
+  socket.on(taskEvents.UPDATE_TASK, async (payload, callback) => {
+    try {
+      const { taskId, body, files } = payload;
+      console.log(`[SOCKET][task:update] 요청 수신`, { taskId, body });
+
+      const inputData = taskHelper.buildUpdateTaskParams({
+        userId: socket.user.id,
+        taskId,
+        body,
+        files,
+      });
+
+      const result = await taskService.modifyTask(
+        inputData.taskId,
+        inputData.userId,
+        inputData.taskRequest,
+        inputData.files
+      );
+
+      // 최신 상세 정보 조회 후 브로드캐스트
+      const updatedTask = await taskService.getTaskDetail(inputData.taskId);
+      io.to(`task:${taskId}`).emit(taskEvents.TASK_UPDATED, updatedTask);
+
+      callback?.({ success: true, data: result });
+    } catch (err) {
+      console.error("[SOCKET][task:update] 실패", err);
+      callback?.({ success: false, reason: err.message });
+    }
+  });
+
+  // 서브과제 상태 업데이트+완료율
   socket.on(
     taskEvents.UPDATE_SUBTASK,
     async ({ taskId, subTaskId, status }, callback) => {
@@ -234,7 +270,6 @@ export const setupTaskHandlers = (io, socket) => {
       }
     },
   );
-
   // 세부과제 담당자 설정 (assigneeId = User.id, HTTP와 동일하게 서비스에서 Member.id 매핑·알림)
   socket.on(
     taskEvents.SET_ASSIGNEE,
@@ -293,114 +328,31 @@ export const setupTaskHandlers = (io, socket) => {
       }
     },
   );
-
-  //자료 생성 Socket
-  socket.on(referenceEvents.CREATE_REFERENCE, async (payload, callback) => {
+  // 세부 과제 생성
+  socket.on(taskEvents.CREATE_SUBTASK, async (payload, callback) => {
     try {
-      const { taskId, type, item } = payload;
-      console.log(`[SOCKET][reference:create] 요청 수신`, {
-        userId: socket.user.id,
-        taskId,
-        type,
-      });
+      const { taskId, ...subtaskData } = payload;
+      console.log(`[SOCKET][subtask:create] 요청 수신`, { taskId });
 
-      //service에서 호출 -> DB 생성
-      const data = await modalService.createReferences(
-        new CreateReferenceDto({
-          taskId: Number(taskId),
-          userId: socket.user.id,
-          type,
-          items: [item],
-        }),
+      const result = await taskService.createSingleSubTask(
+        socket.user.id,
+        Number(taskId),
+        subtaskData,
       );
-      //같은 task 방에 broadcast
-      io.to(`task:${taskId}`).emit(referenceEvents.CREATED_REFERENCE, {
-        taskId: Number(taskId),
-        references: data,
-      });
-      console.log(`[SOCKET][reference:created] 브로드캐스트 완료`);
-      callback?.({ success: true });
+
+      // 방 전체에 새로운 세부과제 정보 브로드캐스트
+      io.to(`task:${taskId}`).emit(taskEvents.SUBTASK_CREATED, result);
+
+      callback?.({ success: true, data: result });
     } catch (err) {
-      console.error("reference:create 실패", err);
-      callback?.({
-        success: false,
-        errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
-        reason: err.reason ?? err.message,
-      });
+      console.error("subtask:create 실패", err);
+      callback?.({ success: false, reason: err.message });
     }
   });
+  // 세부 과제 수정
+  // 세부 과제 삭제
+  // 세부 과제 담당자 설정
 
-  //자료 수정 Socket
-  socket.on(referenceEvents.UPDATE_REFERENCE, async (payload, callback) => {
-    try {
-      const { taskId, referenceId, name, url, file_url } = payload;
-      console.log(`[SOCKET][reference:update] 요청 수신`, {
-        socketId: socket.id,
-        taskId,
-        referenceId,
-      });
-
-      //service에서 호출 -> DB 수정
-      const data = await modalService.updateReference(
-        new UpdateReferenceDto({
-          taskId: Number(taskId),
-          referenceId: Number(referenceId),
-          userId: socket.user.id,
-          name,
-          url,
-          file_url,
-        }),
-      );
-      //같은 task 방에 broadcast
-      io.to(`task:${taskId}`).emit(referenceEvents.UPDATED_REFERENCE, {
-        taskId: Number(taskId),
-        references: data,
-      });
-      console.log(`[SOCKET][reference:updated] 브로드캐스트 완료`);
-      callback?.({ success: true });
-    } catch (err) {
-      console.error("reference:update  실패", err);
-      callback?.({
-        success: false,
-        errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
-        reason: err.reason ?? err.message,
-      });
-    }
-  });
-
-  // 자료 삭제
-  socket.on(referenceEvents.DELETE_REFERENCE, async (payload, callback) => {
-    try {
-      const { taskId, referenceId } = payload;
-      console.log(`[SOCKET][reference:delete] 요청 수신`, {
-        socketId: socket.id,
-        taskId,
-        referenceId,
-      });
-
-      // service에서 호출 -> DB 삭제
-      await modalService.deleteReference({
-        taskId: Number(taskId),
-        referenceId: Number(referenceId),
-        userId: socket.user.id,
-      });
-
-      // 같은 task 방에 broadcast
-      io.to(`task:${taskId}`).emit(referenceEvents.DELETED_REFERENCE, {
-        taskId: Number(taskId),
-        referenceId: Number(referenceId),
-      });
-      console.log(`[SOCKET][reference:deleted] 브로드캐스트 완료`, { taskId });
-      callback?.({ success: true });
-    } catch (err) {
-      console.error("reference:delete 실패", err);
-      callback?.({
-        success: false,
-        errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
-        reason: err.reason ?? err.message,
-      });
-    }
-  });
 
   // 댓글 생성
   socket.on(commentEvents.CREATE_COMMENT, async (payload, callback) => {
@@ -457,7 +409,6 @@ export const setupTaskHandlers = (io, socket) => {
       });
     }
   });
-
   // 댓글 수정
   socket.on(commentEvents.UPDATE_COMMENT, async (payload, callback) => {
     try {
@@ -485,7 +436,6 @@ export const setupTaskHandlers = (io, socket) => {
       callback?.({ success: false, message: err.message });
     }
   });
-
   // 댓글 삭제
   socket.on(commentEvents.DELETE_COMMENT, async (payload, callback) => {
     try {
@@ -506,25 +456,6 @@ export const setupTaskHandlers = (io, socket) => {
     } catch (err) {
       console.error(`[SOCKET][comment:delete] 실패`, err);
       callback?.({ success: false, message: err.message });
-    }
-  });
-
-  // 과제 수정
-  socket.on(taskEvents.UPDATE_TASK, async (payload, callback) => {
-    try {
-      const { taskId, ...data } = payload;
-      console.log(`[SOCKET][task:update] 요청 수신`, { taskId, data });
-      // DB 수정 처리
-      const result = await taskService.modifyTask(Number(taskId), data);
-
-      // 최신 상세 정보 조회 후 브로드캐스트
-      const updatedTask = await taskService.getTaskDetail(Number(taskId));
-      io.to(`task:${taskId}`).emit(taskEvents.TASK_UPDATED, updatedTask);
-
-      callback?.({ success: true, data: result });
-    } catch (err) {
-      console.error("task:update 실패", err);
-      callback?.({ success: false, reason: err.message });
     }
   });
 
@@ -562,29 +493,111 @@ export const setupTaskHandlers = (io, socket) => {
     }
   });
 
-  // 단일 세부과제 추가
-  socket.on(taskEvents.CREATE_SUBTASK, async (payload, callback) => {
+  //자료 생성 Socket
+  socket.on(referenceEvents.CREATE_REFERENCE, async (payload, callback) => {
     try {
-      const { taskId, ...subtaskData } = payload;
-      console.log(`[SOCKET][subtask:create] 요청 수신`, { taskId });
+      const { taskId, type, item } = payload;
+      console.log(`[SOCKET][reference:create] 요청 수신`, {
+        userId: socket.user.id,
+        taskId,
+        type,
+      });
 
-      const result = await taskService.createSingleSubTask(
-        socket.user.id,
-        Number(taskId),
-        subtaskData,
+      //service에서 호출 -> DB 생성
+      const data = await modalService.createReferences(
+        new CreateReferenceDto({
+          taskId: Number(taskId),
+          userId: socket.user.id,
+          type,
+          items: [item],
+        }),
       );
-
-      // 방 전체에 새로운 세부과제 정보 브로드캐스트
-      io.to(`task:${taskId}`).emit(taskEvents.SUBTASK_CREATED, result);
-
-      callback?.({ success: true, data: result });
+      //같은 task 방에 broadcast
+      io.to(`task:${taskId}`).emit(referenceEvents.CREATED_REFERENCE, {
+        taskId: Number(taskId),
+        references: data,
+      });
+      console.log(`[SOCKET][reference:created] 브로드캐스트 완료`);
+      callback?.({ success: true });
     } catch (err) {
-      console.error("subtask:create 실패", err);
-      callback?.({ success: false, reason: err.message });
+      console.error("reference:create 실패", err);
+      callback?.({
+        success: false,
+        errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
+        reason: err.reason ?? err.message,
+      });
     }
   });
+  //자료 수정 Socket
+  socket.on(referenceEvents.UPDATE_REFERENCE, async (payload, callback) => {
+    try {
+      const { taskId, referenceId, name, url, file_url } = payload;
+      console.log(`[SOCKET][reference:update] 요청 수신`, {
+        socketId: socket.id,
+        taskId,
+        referenceId,
+      });
 
-  // 커뮤니케이션
+      //service에서 호출 -> DB 수정
+      const data = await modalService.updateReference(
+        new UpdateReferenceDto({
+          taskId: Number(taskId),
+          referenceId: Number(referenceId),
+          userId: socket.user.id,
+          name,
+          url,
+          file_url,
+        }),
+      );
+      //같은 task 방에 broadcast
+      io.to(`task:${taskId}`).emit(referenceEvents.UPDATED_REFERENCE, {
+        taskId: Number(taskId),
+        references: data,
+      });
+      console.log(`[SOCKET][reference:updated] 브로드캐스트 완료`);
+      callback?.({ success: true });
+    } catch (err) {
+      console.error("reference:update  실패", err);
+      callback?.({
+        success: false,
+        errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
+        reason: err.reason ?? err.message,
+      });
+    }
+  });
+  // 자료 삭제
+  socket.on(referenceEvents.DELETE_REFERENCE, async (payload, callback) => {
+    try {
+      const { taskId, referenceId } = payload;
+      console.log(`[SOCKET][reference:delete] 요청 수신`, {
+        socketId: socket.id,
+        taskId,
+        referenceId,
+      });
+
+      // service에서 호출 -> DB 삭제
+      await modalService.deleteReference({
+        taskId: Number(taskId),
+        referenceId: Number(referenceId),
+        userId: socket.user.id,
+      });
+
+      // 같은 task 방에 broadcast
+      io.to(`task:${taskId}`).emit(referenceEvents.DELETED_REFERENCE, {
+        taskId: Number(taskId),
+        referenceId: Number(referenceId),
+      });
+      console.log(`[SOCKET][reference:deleted] 브로드캐스트 완료`, { taskId });
+      callback?.({ success: true });
+    } catch (err) {
+      console.error("reference:delete 실패", err);
+      callback?.({
+        success: false,
+        errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
+        reason: err.reason ?? err.message,
+      });
+    }
+  });
 
   // 커뮤니케이션 생성 Socket
   socket.on(
@@ -633,7 +646,6 @@ export const setupTaskHandlers = (io, socket) => {
       }
     },
   );
-
   // 커뮤니케이션 수정
   socket.on(
     communicationEvents.UPDATE_COMMUNICATION,
@@ -682,7 +694,6 @@ export const setupTaskHandlers = (io, socket) => {
       }
     },
   );
-
   // 커뮤니케이션 삭제
   socket.on(
     communicationEvents.DELETE_COMMUNICATION,
