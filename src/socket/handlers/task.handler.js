@@ -8,7 +8,6 @@ import {
   CreateLogDto,
   UpdateLogDto,
 } from "../../dtos/modal.dto.js";
-import { TaskRequestDTO } from "../../dtos/task.dto.js";
 import CommentService from "../../services/comment.service.js";
 import taskService from "../../services/task.service.js";
 import taskHelper from "../../helpers/task.helper.js";
@@ -116,24 +115,22 @@ export const setupTaskHandlers = (io, socket) => {
   // 메인 과제 수정
   socket.on(taskEvents.UPDATE_TASK, async (payload, callback) => {
     try {
-      const { taskId, body, files } = payload;
+      const { taskId, body } = payload;
       console.log(`[SOCKET][task:update] 요청 수신`, { taskId, body });
 
       const inputData = taskHelper.buildUpdateTaskParams({
         userId: socket.user.id,
         taskId,
-        body,
-        files,
+        body
       });
 
       const result = await taskService.modifyTask(
         inputData.taskId,
         inputData.userId,
-        inputData.taskRequest,
-        inputData.files
+        inputData.taskRequest
       );
 
-      // 최신 상세 정보 조회 후 브로드캐스트
+      // 브로드캐스트
       const updatedTask = await taskService.getTaskDetail(inputData.taskId);
       io.to(`task:${taskId}`).emit(taskEvents.TASK_UPDATED, updatedTask);
 
@@ -144,200 +141,116 @@ export const setupTaskHandlers = (io, socket) => {
     }
   });
 
-  // 서브과제 상태 업데이트+완료율
-  socket.on(
-    taskEvents.UPDATE_SUBTASK,
-    async ({ taskId, subTaskId, status }, callback) => {
+  // 세부과제 상태 업데이트
+  socket.on(taskEvents.UPDATE_SUBTASK, async (payload, callback) => {
       try {
-        const numericSubTaskId = Number(subTaskId);
-        const normalizedStatus = status.toUpperCase();
+        const { taskId, subTaskId, status } = payload;
+        console.log(`[SOCKET][subTask:update] 요청 수신`, { taskId, subTaskId, status });
 
-        console.log(`🔄 [${socket.user.id}] 서브태스크 상태 업데이트 시도:`, {
-          taskId,
-          subTaskId: numericSubTaskId,
-          status: normalizedStatus,
+        const inputData = taskHelper.buildUpdateSubTaskParams({
+          userId: socket.user.id,
+          subTaskId,
+          status,
         });
 
-        // 1. DB 업데이트
-        const updatedSubTask = await prisma.subTask.update({
-          where: { id: numericSubTaskId },
-          data: {
-            status: normalizedStatus,
-            updatedAt: new Date(),
-          },
-          include: {
-            assignee: {
-              select: {
-                id: true,
-                nickname: true,
-                email: true,
-              },
-            },
-          },
-        });
-
-        console.log(
-          `✅ [${socket.id}] 서브태스크 상태 업데이트 성공:`,
-          updatedSubTask,
+        const updatedSubTask = await taskService.updateSubTaskStatus(
+          inputData.subTaskId,
+          inputData.status,
+          inputData.userId
         );
 
-        // 2. 방에 있는 모든 클라이언트에게 상태 업데이트 알림
+        // 브로드캐스트
         io.to(`task:${taskId}`).emit(taskEvents.SUBTASK_UPDATED, {
           ...updatedSubTask,
           updatedAt: updatedSubTask.updatedAt.toISOString(),
         });
 
-        // 3. 호출자에게 응답
-        respond(callback, {
-          success: true,
-          message: "상태가 업데이트되었습니다.",
-          data: updatedSubTask,
-        });
-      } catch (error) {
-        console.error(
-          `❌ [${socket.user.id}] 서브태스크 상태 업데이트 실패:`,
-          error,
-        );
-        if (typeof callback === "function") {
-          callback({
-            success: false,
-            error: error.message,
-            timestamp: new Date().toISOString(),
-          });
-        }
+        respond(callback, {success: true, data: updatedSubTask});
+      } catch (err) {
+        console.error("[SOCKET][subTask:state update] 실패", err);
+        callback?.({ success: false, reason: err.message });
       }
     },
   );
   // 세부과제 마감일 업데이트
-  socket.on(
-    taskEvents.UPDATE_DEADLINE,
-    async ({ taskId, subTaskId, endDate: deadline }, callback) => {
+  socket.on(taskEvents.UPDATE_DEADLINE,async (payload, callback) => {
       try {
-        const numericSubTaskId = Number(subTaskId);
-        const deadlineDate = new Date(deadline);
+        const { taskId, subTaskId, endDate } = payload;
 
-        // 날짜 유효성 검사
-        if (isNaN(deadlineDate.getTime())) {
-          throw new Error("유효하지 않은 날짜 형식입니다.");
-        }
-
-        console.log(`🔄 [${socket.id}] 서브태스크 마감일 업데이트 시도:`, {
-          taskId,
-          subTaskId: numericSubTaskId,
-          deadline: deadlineDate.toISOString(),
+        console.log(`[SOCKET][subTask:deadline update] 요청 수신`, {taskId, subTaskId, endDate});
+        const inputData = taskHelper.buildUpdateSubTaskDeadlineParams({
+          userId: socket.user.id,
+          subTaskId,
+          endDate
         });
 
-        // 1. DB 업데이트
-        const updatedSubTask = await prisma.subTask.update({
-          where: { id: numericSubTaskId },
-          data: {
-            endDate: deadlineDate,
-            updatedAt: new Date(),
-          },
-        });
-
-        console.log(
-          `✅ [${socket.id}] 서브태스크 마감일 업데이트 성공:`,
-          updatedSubTask,
+        const updatedSubTask = await taskService.updateSubTaskDeadline(
+          inputData.subTaskId,
+          inputData.endDate,
+          inputData.userId
         );
 
-        // 2. 방에 있는 모든 클라이언트에게 마감일 업데이트 알림
+        // 브로드캐스트
         io.to(`task:${taskId}`).emit(taskEvents.DEADLINE_UPDATED, {
           subTaskId: numericSubTaskId,
           deadline: updatedSubTask.endDate?.toISOString(),
           updatedAt: updatedSubTask.updatedAt.toISOString(),
         });
 
-        // 3. 호출자에게 응답
-        respond(callback, {
-          success: true,
-          message: "마감일이 업데이트되었습니다.",
-          data: updatedSubTask,
-        });
-      } catch (error) {
-        const errorMessage =
-          error.message || "마감일 업데이트 중 오류가 발생했습니다.";
-        console.error(
-          `❌ [${socket.id}] 서브태스크 마감일 업데이트 실패: ${errorMessage}`,
-          { error },
-        );
-        respond(callback, {
-          success: false,
-          message: errorMessage,
-          error: errorMessage,
-          timestamp: new Date().toISOString(),
-        });
+        respond(callback, {success: true, data: updatedSubTask});
+      } catch (err) {
+        console.error("[SOCKET][subTask:deadline update] 실패", err);
+        callback?.({ success: false, reason: err.message });
       }
     },
   );
-  // 세부과제 담당자 설정 (assigneeId = User.id, HTTP와 동일하게 서비스에서 Member.id 매핑·알림)
-  socket.on(
-    taskEvents.SET_ASSIGNEE,
-    async ({ taskId, subTaskId, assigneeId }, callback) => {
+  // 세부과제 담당자 설정
+  socket.on(taskEvents.SET_ASSIGNEE, async (payload, callback) => {
       try {
-        const numericSubTaskId = Number(subTaskId);
-        const numericAssigneeUserId =
-          assigneeId != null && assigneeId !== "" ? Number(assigneeId) : null;
+        const { taskId, subTaskId, assigneeId } = payload;
+        console.log(`[SOCKET][subTask:assignee update] 요청 수신`, {taskId, subTaskId, assigneeId,});
 
-        console.log(`🔄 [${socket.id}] 세부과제 담당자 설정 시도:`, {
-          taskId,
-          subTaskId: numericSubTaskId,
-          assigneeId: numericAssigneeUserId,
+        const inputData = taskHelper.buildUpdateSubTaskAssigneeParams({
+          userId: socket.user.id,
+          subTaskId,
+          assigneeId,
         });
 
-        await taskService.setSubTaskAssignee(
-          numericSubTaskId,
-          numericAssigneeUserId,
-        );
-
-        const updatedSubTask = await prisma.subTask.findUnique({
-          where: { id: numericSubTaskId },
-          include: {
-            assignee: {
-              include: {
-                user: {
-                  select: { id: true, nickname: true, email: true },
-                },
-              },
-            },
-          },
-        });
-
-        console.log(
-          `✅ [${socket.id}] 세부과제 담당자 설정 성공:`,
-          updatedSubTask,
+        const updatedSubTask = await taskService.setSubTaskAssignee(
+          inputData.subTaskId,
+          inputData.assigneeId,
+          inputData.userId
         );
 
         io.to(`task:${taskId}`).emit(taskEvents.ASSIGNEE_UPDATED, {
-          subTaskId: numericSubTaskId,
-          assignee: updatedSubTask?.assignee ?? null,
-          updatedAt: updatedSubTask?.updatedAt?.toISOString() ?? null,
+          subTaskId: updatedSubTask.subTaskId,
+          assignee: updatedSubTask?.assigneeId, // 추후 service 로직에서 전체 조회 후 반환 필요
+          updatedAt: updatedSubTask.updatedAt?.toISOString()
         });
 
-        respond(callback, {
-          success: true,
-          message: "담당자가 업데이트되었습니다.",
-          data: updatedSubTask,
-        });
-      } catch (error) {
-        console.error(`❌ [${socket.id}] 세부과제 담당자 설정 실패:`, error);
-        respond(callback, {
-          success: false,
-          error: error.message,
-        });
+        respond(callback, {success: true, data: updatedSubTask});
+      } catch (err) {
+        console.error("[SOCKET][subTask:assignee update] 실패", err);
+        callback?.({ success: false, reason: err.message });
       }
     },
   );
   // 세부 과제 생성
   socket.on(taskEvents.CREATE_SUBTASK, async (payload, callback) => {
     try {
-      const { taskId, ...subtaskData } = payload;
-      console.log(`[SOCKET][subtask:create] 요청 수신`, { taskId });
+      const { taskId, body } = payload;
+      console.log(`[SOCKET][subtask:create] 요청 수신`);
+
+      const inputData = taskHelper.buildCreateSubTaskParams({
+        userId: socket.user.id,
+        taskId,
+        body
+      });
 
       const result = await taskService.createSingleSubTask(
-        socket.user.id,
-        Number(taskId),
-        subtaskData,
+        inputData.userId,
+        inputData.taskId,
+        inputData.dto
       );
 
       // 방 전체에 새로운 세부과제 정보 브로드캐스트

@@ -664,6 +664,7 @@ class TaskService {
         return {
           subTaskId: updatedTask.id,
           assigneeId: parsedAssigneeUserId,
+          updatedAt: updatedTask.updatedAt
         };
       });
     } catch (error) {
