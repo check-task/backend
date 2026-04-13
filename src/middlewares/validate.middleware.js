@@ -17,8 +17,8 @@ export const validate = (schema) => (req, res, next) => {
       new BadRequestError(
         "VALIDATION_ERROR",
         "요청값이 올바르지 않습니다.",
-        issues, // errorHandler의 data 필드로 내려감
-      ),
+        issues // errorHandler의 data 필드로 내려감
+      )
     );
   }
 

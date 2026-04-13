@@ -9,25 +9,17 @@ class CommentService {
       // 하위 업무 존재 여부 확인
       const subTask = await CommentRepository.findSubTaskById(subTaskId);
       if (!subTask) {
-        throw new NotFoundError(
-          "SUBTASK_NOT_FOUND",
-          "하위 업무를 찾을 수 없습니다.",
-        );
+        throw new NotFoundError("SUBTASK_NOT_FOUND", "하위 업무를 찾을 수 없습니다.");
       }
 
       // 사용자 존재 여부 확인
-      const user = await CommentRepository.findUserById(
-        createCommentDto.userId,
-      );
+      const user = await CommentRepository.findUserById(createCommentDto.userId);
       if (!user) {
         throw new NotFoundError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
       }
 
       // 댓글 생성
-      const comment = await CommentRepository.createComment(
-        createCommentDto,
-        subTaskId,
-      );
+      const comment = await CommentRepository.createComment(createCommentDto, subTaskId);
 
       // 응답 DTO 형태로 변환
       return CommentResponseDto.from(comment);
@@ -44,25 +36,16 @@ class CommentService {
       const comment = await CommentRepository.findCommentById(commentId);
 
       if (!comment) {
-        throw new NotFoundError(
-          "COMMENT_NOT_FOUND",
-          "댓글을 찾을 수 없습니다.",
-        );
+        throw new NotFoundError("COMMENT_NOT_FOUND", "댓글을 찾을 수 없습니다.");
       }
 
       // 댓글 작성자만 수정 가능
       if (comment.user.id !== userId) {
-        throw new ForbiddenError(
-          "PERMISSION_DENIED",
-          "댓글 수정 권한이 없습니다.",
-        );
+        throw new ForbiddenError("PERMISSION_DENIED", "댓글 수정 권한이 없습니다.");
       }
 
       // 댓글 수정
-      const updatedComment = await CommentRepository.updateComment(
-        commentId,
-        content,
-      );
+      const updatedComment = await CommentRepository.updateComment(commentId, content);
 
       // 응답 DTO 형태로 변환
       return CommentResponseDto.from(updatedComment);
@@ -79,10 +62,7 @@ class CommentService {
       const comment = await CommentRepository.findCommentById(commentId);
 
       if (!comment) {
-        throw new NotFoundError(
-          "COMMENT_NOT_FOUND",
-          "댓글을 찾을 수 없습니다.",
-        );
+        throw new NotFoundError("COMMENT_NOT_FOUND", "댓글을 찾을 수 없습니다.");
       }
 
       // 댓글 작성자만 삭제 가능

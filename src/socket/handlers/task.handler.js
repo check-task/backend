@@ -81,9 +81,7 @@ export const setupTaskHandlers = (io, socket) => {
   // 태스크 방 입장
   socket.on(taskEvents.JOIN_TASK, (taskId) => {
     socket.join(`task:${taskId}`);
-    console.log(
-      `📌 [${socket.user.id}] 사용자가 태스크 방에 입장했습니다. (Task ID: ${taskId})`,
-    );
+    console.log(`📌 [${socket.user.id}] 사용자가 태스크 방에 입장했습니다. (Task ID: ${taskId})`);
   });
 
   // 방 참여자 목록 확인 🐞 DEBUG용
@@ -109,69 +107,60 @@ export const setupTaskHandlers = (io, socket) => {
   });
 
   // 서브과제 상태 업데이트
-  socket.on(
-    taskEvents.UPDATE_SUBTASK,
-    async ({ taskId, subTaskId, status }, callback) => {
-      try {
-        const numericSubTaskId = Number(subTaskId);
-        const normalizedStatus = status.toUpperCase();
+  socket.on(taskEvents.UPDATE_SUBTASK, async ({ taskId, subTaskId, status }, callback) => {
+    try {
+      const numericSubTaskId = Number(subTaskId);
+      const normalizedStatus = status.toUpperCase();
 
-        console.log(`🔄 [${socket.user.id}] 서브태스크 상태 업데이트 시도:`, {
-          taskId,
-          subTaskId: numericSubTaskId,
+      console.log(`🔄 [${socket.user.id}] 서브태스크 상태 업데이트 시도:`, {
+        taskId,
+        subTaskId: numericSubTaskId,
+        status: normalizedStatus,
+      });
+
+      // 1. DB 업데이트
+      const updatedSubTask = await prisma.subTask.update({
+        where: { id: numericSubTaskId },
+        data: {
           status: normalizedStatus,
-        });
-
-        // 1. DB 업데이트
-        const updatedSubTask = await prisma.subTask.update({
-          where: { id: numericSubTaskId },
-          data: {
-            status: normalizedStatus,
-            updatedAt: new Date(),
-          },
-          include: {
-            assignee: {
-              select: {
-                id: true,
-                nickname: true,
-                email: true,
-              },
+          updatedAt: new Date(),
+        },
+        include: {
+          assignee: {
+            select: {
+              id: true,
+              nickname: true,
+              email: true,
             },
           },
-        });
+        },
+      });
 
-        console.log(
-          `✅ [${socket.id}] 서브태스크 상태 업데이트 성공:`,
-          updatedSubTask,
-        );
+      console.log(`✅ [${socket.id}] 서브태스크 상태 업데이트 성공:`, updatedSubTask);
 
-        // 2. 방에 있는 모든 클라이언트에게 상태 업데이트 알림
-        io.to(`task:${taskId}`).emit(taskEvents.SUBTASK_UPDATED, {
-          ...updatedSubTask,
-          updatedAt: updatedSubTask.updatedAt.toISOString(),
-        });
+      // 2. 방에 있는 모든 클라이언트에게 상태 업데이트 알림
+      io.to(`task:${taskId}`).emit(taskEvents.SUBTASK_UPDATED, {
+        ...updatedSubTask,
+        updatedAt: updatedSubTask.updatedAt.toISOString(),
+      });
 
-        // 3. 호출자에게 응답
-        respond(callback, {
-          success: true,
-          message: "상태가 업데이트되었습니다.",
-          data: updatedSubTask,
+      // 3. 호출자에게 응답
+      respond(callback, {
+        success: true,
+        message: "상태가 업데이트되었습니다.",
+        data: updatedSubTask,
+      });
+    } catch (error) {
+      console.error(`❌ [${socket.user.id}] 서브태스크 상태 업데이트 실패:`, error);
+      if (typeof callback === "function") {
+        callback({
+          success: false,
+          error: error.message,
+          timestamp: new Date().toISOString(),
         });
-      } catch (error) {
-        console.error(
-          `❌ [${socket.user.id}] 서브태스크 상태 업데이트 실패:`,
-          error,
-        );
-        if (typeof callback === "function") {
-          callback({
-            success: false,
-            error: error.message,
-            timestamp: new Date().toISOString(),
-          });
-        }
       }
-    },
-  );
+    }
+  });
   // 세부과제 마감일 업데이트
   socket.on(
     taskEvents.UPDATE_DEADLINE,
@@ -200,10 +189,7 @@ export const setupTaskHandlers = (io, socket) => {
           },
         });
 
-        console.log(
-          `✅ [${socket.id}] 서브태스크 마감일 업데이트 성공:`,
-          updatedSubTask,
-        );
+        console.log(`✅ [${socket.id}] 서브태스크 마감일 업데이트 성공:`, updatedSubTask);
 
         // 2. 방에 있는 모든 클라이언트에게 마감일 업데이트 알림
         io.to(`task:${taskId}`).emit(taskEvents.DEADLINE_UPDATED, {
@@ -219,12 +205,10 @@ export const setupTaskHandlers = (io, socket) => {
           data: updatedSubTask,
         });
       } catch (error) {
-        const errorMessage =
-          error.message || "마감일 업데이트 중 오류가 발생했습니다.";
-        console.error(
-          `❌ [${socket.id}] 서브태스크 마감일 업데이트 실패: ${errorMessage}`,
-          { error },
-        );
+        const errorMessage = error.message || "마감일 업데이트 중 오류가 발생했습니다.";
+        console.error(`❌ [${socket.id}] 서브태스크 마감일 업데이트 실패: ${errorMessage}`, {
+          error,
+        });
         respond(callback, {
           success: false,
           message: errorMessage,
@@ -232,67 +216,58 @@ export const setupTaskHandlers = (io, socket) => {
           timestamp: new Date().toISOString(),
         });
       }
-    },
+    }
   );
 
   // 세부과제 담당자 설정 (assigneeId = User.id, HTTP와 동일하게 서비스에서 Member.id 매핑·알림)
-  socket.on(
-    taskEvents.SET_ASSIGNEE,
-    async ({ taskId, subTaskId, assigneeId }, callback) => {
-      try {
-        const numericSubTaskId = Number(subTaskId);
-        const numericAssigneeUserId =
-          assigneeId != null && assigneeId !== "" ? Number(assigneeId) : null;
+  socket.on(taskEvents.SET_ASSIGNEE, async ({ taskId, subTaskId, assigneeId }, callback) => {
+    try {
+      const numericSubTaskId = Number(subTaskId);
+      const numericAssigneeUserId =
+        assigneeId != null && assigneeId !== "" ? Number(assigneeId) : null;
 
-        console.log(`🔄 [${socket.id}] 세부과제 담당자 설정 시도:`, {
-          taskId,
-          subTaskId: numericSubTaskId,
-          assigneeId: numericAssigneeUserId,
-        });
+      console.log(`🔄 [${socket.id}] 세부과제 담당자 설정 시도:`, {
+        taskId,
+        subTaskId: numericSubTaskId,
+        assigneeId: numericAssigneeUserId,
+      });
 
-        await taskService.setSubTaskAssignee(
-          numericSubTaskId,
-          numericAssigneeUserId,
-        );
+      await taskService.setSubTaskAssignee(numericSubTaskId, numericAssigneeUserId);
 
-        const updatedSubTask = await prisma.subTask.findUnique({
-          where: { id: numericSubTaskId },
-          include: {
-            assignee: {
-              include: {
-                user: {
-                  select: { id: true, nickname: true, email: true },
-                },
+      const updatedSubTask = await prisma.subTask.findUnique({
+        where: { id: numericSubTaskId },
+        include: {
+          assignee: {
+            include: {
+              user: {
+                select: { id: true, nickname: true, email: true },
               },
             },
           },
-        });
+        },
+      });
 
-        console.log(
-          `✅ [${socket.id}] 세부과제 담당자 설정 성공:`,
-          updatedSubTask,
-        );
+      console.log(`✅ [${socket.id}] 세부과제 담당자 설정 성공:`, updatedSubTask);
 
-        io.to(`task:${taskId}`).emit(taskEvents.ASSIGNEE_UPDATED, {
-          subTaskId: numericSubTaskId,
-          assignee: updatedSubTask?.assignee ?? null,
-          updatedAt: updatedSubTask?.updatedAt?.toISOString() ?? null,
-        });
+      io.to(`task:${taskId}`).emit(taskEvents.ASSIGNEE_UPDATED, {
+        subTaskId: numericSubTaskId,
+        assignee: updatedSubTask?.assignee ?? null,
+        updatedAt: updatedSubTask?.updatedAt?.toISOString() ?? null,
+      });
 
-        respond(callback, {
-          success: true,
-          message: "담당자가 업데이트되었습니다.",
-          data: updatedSubTask,
-        });
-      } catch (error) {
-        console.error(`❌ [${socket.id}] 세부과제 담당자 설정 실패:`, error);
-        respond(callback, {
-          success: false,
-          error: error.message,
-        });
-      }
-    },
-  );
+      respond(callback, {
+        success: true,
+        message: "담당자가 업데이트되었습니다.",
+        data: updatedSubTask,
+      });
+    } catch (error) {
+      console.error(`❌ [${socket.id}] 세부과제 담당자 설정 실패:`, error);
+      respond(callback, {
+        success: false,
+        error: error.message,
+      });
+    }
+  });
 
   //자료 생성 Socket
   socket.on(referenceEvents.CREATE_REFERENCE, async (payload, callback) => {
@@ -311,7 +286,7 @@ export const setupTaskHandlers = (io, socket) => {
           userId: socket.user.id,
           type,
           items: [item],
-        }),
+        })
       );
       //같은 task 방에 broadcast
       io.to(`task:${taskId}`).emit(referenceEvents.CREATED_REFERENCE, {
@@ -349,7 +324,7 @@ export const setupTaskHandlers = (io, socket) => {
           name,
           url,
           file_url,
-        }),
+        })
       );
       //같은 task 방에 broadcast
       io.to(`task:${taskId}`).emit(referenceEvents.UPDATED_REFERENCE, {
@@ -466,11 +441,7 @@ export const setupTaskHandlers = (io, socket) => {
 
       console.log(`[SOCKET][comment:update] 요청 수신`, { userId, commentId });
 
-      const updatedComment = await CommentService.updateComment(
-        Number(commentId),
-        userId,
-        content,
-      );
+      const updatedComment = await CommentService.updateComment(Number(commentId), userId, content);
 
       //나 제외하고 모두에게 보냄.
       io.to(`task:${taskId}`).emit(commentEvents.UPDATED_COMMENT, {
@@ -543,7 +514,7 @@ export const setupTaskHandlers = (io, socket) => {
       const result = await taskService.modifyMemberRole(
         Number(taskId),
         Number(userId), // 📍 userId로 전달
-        role,
+        role
       );
 
       // 같은 방 팀원들에게 알림
@@ -571,7 +542,7 @@ export const setupTaskHandlers = (io, socket) => {
       const result = await taskService.createSingleSubTask(
         socket.user.id,
         Number(taskId),
-        subtaskData,
+        subtaskData
       );
 
       // 방 전체에 새로운 세부과제 정보 브로드캐스트
@@ -587,148 +558,130 @@ export const setupTaskHandlers = (io, socket) => {
   // 커뮤니케이션
 
   // 커뮤니케이션 생성 Socket
-  socket.on(
-    communicationEvents.CREATE_COMMUNICATION,
-    async (payload, callback) => {
-      try {
-        const { taskId, name, url } = payload;
-        console.log(`[SOCKET][communication:create] 요청 수신`, {
-          socketId: socket.id,
-          taskId,
-          name,
-        });
+  socket.on(communicationEvents.CREATE_COMMUNICATION, async (payload, callback) => {
+    try {
+      const { taskId, name, url } = payload;
+      console.log(`[SOCKET][communication:create] 요청 수신`, {
+        socketId: socket.id,
+        taskId,
+        name,
+      });
 
-        const userId = socket.user.id;
-        console.log(`[SOCKET][communication:create] 인증 성공`, {
+      const userId = socket.user.id;
+      console.log(`[SOCKET][communication:create] 인증 성공`, {
+        userId,
+        taskId,
+      });
+
+      const data = await modalService.createCommunication(
+        new CreateCommunicationDto({
+          taskId: Number(taskId),
           userId,
-          taskId,
-        });
+          name,
+          url,
+        })
+      );
 
-        const data = await modalService.createCommunication(
-          new CreateCommunicationDto({
-            taskId: Number(taskId),
-            userId,
-            name,
-            url,
-          }),
-        );
-
-        // 같은 task 방에 broadcast (전체 리스트 전송)
-        io.to(`task:${taskId}`).emit(
-          communicationEvents.CREATED_COMMUNICATION,
-          {
-            taskId: Number(taskId),
-            communications: data,
-          },
-        );
-        console.log(`[SOCKET][communication:created] 브로드캐스트 완료`);
-        callback?.({ success: true });
-      } catch (err) {
-        console.error("communication:create 실패", err);
-        callback?.({
-          success: false,
-          errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
-          reason: err.reason ?? err.message,
-        });
-      }
-    },
-  );
+      // 같은 task 방에 broadcast (전체 리스트 전송)
+      io.to(`task:${taskId}`).emit(communicationEvents.CREATED_COMMUNICATION, {
+        taskId: Number(taskId),
+        communications: data,
+      });
+      console.log(`[SOCKET][communication:created] 브로드캐스트 완료`);
+      callback?.({ success: true });
+    } catch (err) {
+      console.error("communication:create 실패", err);
+      callback?.({
+        success: false,
+        errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
+        reason: err.reason ?? err.message,
+      });
+    }
+  });
 
   // 커뮤니케이션 수정
-  socket.on(
-    communicationEvents.UPDATE_COMMUNICATION,
-    async (payload, callback) => {
-      try {
-        const { taskId, communicationId, name, url } = payload;
-        console.log(`[SOCKET][communication:update] 요청 수신`, {
-          socketId: socket.id,
-          taskId,
-          communicationId,
-        });
+  socket.on(communicationEvents.UPDATE_COMMUNICATION, async (payload, callback) => {
+    try {
+      const { taskId, communicationId, name, url } = payload;
+      console.log(`[SOCKET][communication:update] 요청 수신`, {
+        socketId: socket.id,
+        taskId,
+        communicationId,
+      });
 
-        const userId = socket.user.id;
-        console.log(`[SOCKET][communication:update] 인증 성공`, {
-          userId,
-          taskId,
-        });
+      const userId = socket.user.id;
+      console.log(`[SOCKET][communication:update] 인증 성공`, {
+        userId,
+        taskId,
+      });
 
-        const data = await modalService.updateCommunication(
-          new UpdateCommunicationDto({
-            taskId: Number(taskId),
-            communicationId: Number(communicationId),
-            userId,
-            name,
-            url,
-          }),
-        );
-
-        // 같은 task 방에 broadcast (수정된 단일 객체 전송)
-        io.to(`task:${taskId}`).emit(
-          communicationEvents.UPDATED_COMMUNICATION,
-          {
-            taskId: Number(taskId),
-            communication: data,
-          },
-        );
-        console.log(`[SOCKET][communication:updated] 브로드캐스트 완료`);
-        callback?.({ success: true });
-      } catch (err) {
-        console.error("communication:update 실패", err);
-        callback?.({
-          success: false,
-          errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
-          reason: err.reason ?? err.message,
-        });
-      }
-    },
-  );
-
-  // 커뮤니케이션 삭제
-  socket.on(
-    communicationEvents.DELETE_COMMUNICATION,
-    async (payload, callback) => {
-      try {
-        const { taskId, communicationId } = payload;
-        console.log(`[SOCKET][communication:delete] 요청 수신`, {
-          socketId: socket.id,
-          taskId,
-          communicationId,
-        });
-
-        const userId = socket.user.id;
-        console.log(`[SOCKET][communication:delete] 인증 성공`, {
-          userId,
-          taskId,
-        });
-
-        await modalService.deleteCommunication({
+      const data = await modalService.updateCommunication(
+        new UpdateCommunicationDto({
           taskId: Number(taskId),
           communicationId: Number(communicationId),
           userId,
-        });
+          name,
+          url,
+        })
+      );
 
-        // 같은 task 방에 broadcast (삭제된 ID 전송)
-        io.to(`task:${taskId}`).emit(
-          communicationEvents.DELETED_COMMUNICATION,
-          {
-            taskId: Number(taskId),
-            communicationId: Number(communicationId),
-          },
-        );
-        console.log(`[SOCKET][communication:deleted] 브로드캐스트 완료`, {
-          taskId,
-        });
-        callback?.({ success: true });
-      } catch (err) {
-        console.error("communication:delete 실패", err);
-        callback?.({
-          success: false,
-          errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
-          reason: err.reason ?? err.message,
-        });
-      }
-    },
-  );
+      // 같은 task 방에 broadcast (수정된 단일 객체 전송)
+      io.to(`task:${taskId}`).emit(communicationEvents.UPDATED_COMMUNICATION, {
+        taskId: Number(taskId),
+        communication: data,
+      });
+      console.log(`[SOCKET][communication:updated] 브로드캐스트 완료`);
+      callback?.({ success: true });
+    } catch (err) {
+      console.error("communication:update 실패", err);
+      callback?.({
+        success: false,
+        errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
+        reason: err.reason ?? err.message,
+      });
+    }
+  });
+
+  // 커뮤니케이션 삭제
+  socket.on(communicationEvents.DELETE_COMMUNICATION, async (payload, callback) => {
+    try {
+      const { taskId, communicationId } = payload;
+      console.log(`[SOCKET][communication:delete] 요청 수신`, {
+        socketId: socket.id,
+        taskId,
+        communicationId,
+      });
+
+      const userId = socket.user.id;
+      console.log(`[SOCKET][communication:delete] 인증 성공`, {
+        userId,
+        taskId,
+      });
+
+      await modalService.deleteCommunication({
+        taskId: Number(taskId),
+        communicationId: Number(communicationId),
+        userId,
+      });
+
+      // 같은 task 방에 broadcast (삭제된 ID 전송)
+      io.to(`task:${taskId}`).emit(communicationEvents.DELETED_COMMUNICATION, {
+        taskId: Number(taskId),
+        communicationId: Number(communicationId),
+      });
+      console.log(`[SOCKET][communication:deleted] 브로드캐스트 완료`, {
+        taskId,
+      });
+      callback?.({ success: true });
+    } catch (err) {
+      console.error("communication:delete 실패", err);
+      callback?.({
+        success: false,
+        errorCode: err.errorCode ?? "INTERNAL_SERVER_ERROR",
+        reason: err.reason ?? err.message,
+      });
+    }
+  });
 
   // 회의록 생성
   socket.on(logEvents.CREATE_LOG, async (payload, callback) => {
@@ -757,7 +710,7 @@ export const setupTaskHandlers = (io, socket) => {
           agenda: agenda || null,
           conclusion: conclusion || null,
           discussion: discussion || null,
-        }),
+        })
       );
 
       io.to(`task:${taskId}`).emit(logEvents.CREATED_LOG, {
@@ -804,7 +757,7 @@ export const setupTaskHandlers = (io, socket) => {
           agenda: agenda || null,
           conclusion: conclusion || null,
           discussion: discussion || null,
-        }),
+        })
       );
 
       io.to(`task:${taskId}`).emit(logEvents.UPDATED_LOG, {

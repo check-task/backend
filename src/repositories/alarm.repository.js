@@ -1,16 +1,10 @@
 import prisma from "../db.config.js";
-import dayjs from "dayjs";
 import { calculateAlarmDate } from "../utils/calculateAlarmDate.js";
 
 class AlarmRepository {
   //유저의 알림 조회
   async findAlarmsByUserId(userId, options = {}) {
-    const {
-      cursor = null,
-      limit = 10,
-      orderBy = "alarmDate",
-      order = "desc",
-    } = options;
+    const { cursor = null, limit = 10, orderBy = "alarmDate", order = "desc" } = options;
 
     // 환경 타지 않도록 순수 Date 객체 사용 (현재 시간)
     const kstDate = new Date();
@@ -39,18 +33,10 @@ class AlarmRepository {
     // ✅ 조회된 알림 목록을 순회하며 진척도 실시간 반영
     return alarms.map((alarm) => {
       // 과제 알림이고(taskId 있음, subTaskId 없음), 관련 과제 정보가 있는 경우
-      if (
-        alarm.taskId &&
-        !alarm.subTaskId &&
-        alarm.task &&
-        alarm.task.subTasks
-      ) {
+      if (alarm.taskId && !alarm.subTaskId && alarm.task && alarm.task.subTasks) {
         const total = alarm.task.subTasks.length;
-        const completed = alarm.task.subTasks.filter(
-          (st) => st.status === "COMPLETED",
-        ).length;
-        const currentProgress =
-          total > 0 ? Math.round((completed / total) * 100) : 0;
+        const completed = alarm.task.subTasks.filter((st) => st.status === "COMPLETED").length;
+        const currentProgress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
         // 알림 내용 업데이트 (덮어쓰기)
         alarm.alarmContent = `'현재 ${currentProgress}%완성 중이에요. 빨리 끝내고 쉬어요!`;
@@ -59,7 +45,7 @@ class AlarmRepository {
       const taskType = alarm.task.type;
 
       // 응답 최적화를 위해 include 했던 task 객체는 제거하고 반환 (선택 사항)
-      const { task, ...alarmData } = alarm;
+      const { task: _task, ...alarmData } = alarm;
       return { ...alarmData, alarmContent: alarm.alarmContent, taskType };
     });
   }
@@ -76,12 +62,9 @@ class AlarmRepository {
       include: { subTasks: true },
     });
     const totalSubTasks = task?.subTasks?.length || 0;
-    const completedSubTasks =
-      task?.subTasks?.filter((st) => st.status === "COMPLETED").length || 0;
+    const completedSubTasks = task?.subTasks?.filter((st) => st.status === "COMPLETED").length || 0;
     const progressRate =
-      totalSubTasks > 0
-        ? Math.round((completedSubTasks / totalSubTasks) * 100)
-        : 0;
+      totalSubTasks > 0 ? Math.round((completedSubTasks / totalSubTasks) * 100) : 0;
 
     const deadlineAlarmHours = user.alarmSetting?.deadlineAlarm ?? 24;
 
@@ -98,14 +81,7 @@ class AlarmRepository {
   }
 
   //세부과제 알림 생성
-  async createSubTaskAlarm(
-    userId,
-    taskId,
-    subTaskId,
-    subTaskTitle,
-    alarmDate,
-    tx = prisma,
-  ) {
+  async createSubTaskAlarm(userId, taskId, subTaskId, subTaskTitle, alarmDate, tx = prisma) {
     const user = await tx.user.findUnique({
       where: { id: userId },
       select: { alarmSetting: true },
@@ -364,13 +340,7 @@ class AlarmRepository {
   }
 
   // 팀원 참여 알림 생성
-  async createMemberJoinAlarm(
-    userId,
-    taskId,
-    taskTitle,
-    memberName,
-    tx = prisma,
-  ) {
+  async createMemberJoinAlarm(userId, taskId, taskTitle, memberName, tx = prisma) {
     return await tx.userAlarm.create({
       data: {
         userId,

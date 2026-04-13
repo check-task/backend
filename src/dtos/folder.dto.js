@@ -36,7 +36,10 @@ export class FolderDto {
     // 제목이 존재하고, 공백이 아닐 때만 업데이트 목록에 추가
     if (body.folderTitle && body.folderTitle.trim() !== "") {
       if (body.folderTitle.trim().length > 11) {
-        throw new BadRequestError("INVALID_FOLDER_TITLE", "폴더 이름은 최대 11자까지만 가능합니다.");
+        throw new BadRequestError(
+          "INVALID_FOLDER_TITLE",
+          "폴더 이름은 최대 11자까지만 가능합니다."
+        );
       }
       updateData.folderTitle = body.folderTitle.trim();
     }
@@ -60,7 +63,7 @@ export class FolderDto {
       folderId: folder.id,
       userId: folder.userId,
       folderTitle: folder.folderTitle,
-      color: folder.color      
+      color: folder.color,
     };
   }
 }

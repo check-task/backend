@@ -1,5 +1,4 @@
 import taskService from "../services/task.service.js";
-import { uploadToS3 } from "../middlewares/upload.middleware.js";
 import { TaskRequestDTO, TaskResponseDTO } from "../dtos/task.dto.js";
 import taskRepository from "../repositories/task.repository.js";
 import { NotFoundError, BadRequestError } from "../errors/custom.error.js";
@@ -86,7 +85,7 @@ class TaskController {
     try {
       const { taskId } = req.params;
       const userId = req.user.id;
-      
+
       const task = await taskService.getTaskDetail(taskId, userId);
 
       res.status(200).json({
@@ -106,8 +105,7 @@ class TaskController {
       const queryParams = {
         type: req.query.type,
         sort: req.query.sort,
-        folderId:
-          req.query.folderId || req.query.folder_id || req.query.folderld,
+        folderId: req.query.folderId || req.query.folder_id || req.query.folderld,
         status: req.query.status,
       };
       const userId = req.user.id;
@@ -131,11 +129,7 @@ class TaskController {
       const { deadline } = req.body;
       const userId = req.user.id; // 유저 ID 추출
 
-      const updatedTask = await taskService.updateTaskDeadline(
-        userId,
-        taskId,
-        deadline,
-      );
+      const updatedTask = await taskService.updateTaskDeadline(userId, taskId, deadline);
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -216,11 +210,7 @@ class TaskController {
       const { status } = req.body;
       const userId = req.user.id;
 
-      const updatedTask = await taskService.updateSubTaskStatus(
-        subTaskId,
-        status,
-        userId,
-      );
+      const updatedTask = await taskService.updateSubTaskStatus(subTaskId, status, userId);
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -242,11 +232,7 @@ class TaskController {
       const { endDate } = req.body;
       const userId = req.user.id;
 
-      const updatedTask = await taskService.updateSubTaskDeadline(
-        subTaskId,
-        endDate,
-        userId,
-      );
+      const updatedTask = await taskService.updateSubTaskDeadline(subTaskId, endDate, userId);
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -268,11 +254,7 @@ class TaskController {
       const { assigneeId } = req.body;
       const userId = req.user.id;
 
-      const result = await taskService.setSubTaskAssignee(
-        subTaskId,
-        assigneeId,
-        userId,
-      );
+      const result = await taskService.setSubTaskAssignee(subTaskId, assigneeId, userId);
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -307,7 +289,7 @@ class TaskController {
       if (check.isValid) {
         result = {
           invite_code: check.invite_code,
-          invite_expired: check.invite_expired
+          invite_expired: check.invite_expired,
         };
       } else {
         result = await taskService.generateInviteCode(task, userId);
@@ -342,7 +324,7 @@ class TaskController {
           task_id: result.taskId,
           task_title: result.taskTitle,
           member_id: result.memberId,
-          folderId: result.folderId
+          folderId: result.folderId,
         },
       });
     } catch (error) {
@@ -357,11 +339,7 @@ class TaskController {
       const userId = req.user.id;
       const dto = TaskRequestDTO.toCreateSubTask(req.body);
 
-      const result = await taskService.createSingleSubTask(
-        userId,
-        taskId,
-        dto,
-      );
+      const result = await taskService.createSingleSubTask(userId, taskId, dto);
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -376,24 +354,24 @@ class TaskController {
       next(error);
     }
   }
-  
+
   // 세부 과제 수정
   async patchSubTask(req, res, next) {
     try {
       const userId = req.user.id;
       const { taskId } = req.params;
       const { subTasks } = req.body;
-      
+
       const dtoList = subTasks.map(({ subTaskId, ...rest }) => ({
         subTaskId: Number(subTaskId),
         ...TaskRequestDTO.toSubUpdate(rest),
       }));
 
-
-      const result = await taskService.updateSelectedSubTasks(  // 메서드 이름 수정
+      const result = await taskService.updateSelectedSubTasks(
+        // 메서드 이름 수정
         userId,
         Number(taskId),
-        dtoList 
+        dtoList
       );
 
       res.status(200).json({
@@ -412,18 +390,20 @@ class TaskController {
       const { taskId } = req.params;
       const userId = req.user.id;
       const { subTaskIds } = req.body;
-      if (!Array.isArray(subTaskIds)) { throw new Error("subTaskIds는 배열이어야 합니다."); }
-  
+      if (!Array.isArray(subTaskIds)) {
+        throw new Error("subTaskIds는 배열이어야 합니다.");
+      }
+
       const result = await taskService.deleteSelectedSubTasks(
         userId,
         Number(taskId),
         subTaskIds.map(Number)
       );
-  
+
       res.status(200).json({
         resultType: "SUCCESS",
         message: "선택한 세부 과제들이 삭제되었습니다.",
-        data: result
+        data: result,
       });
     } catch (error) {
       next(error);
@@ -435,16 +415,13 @@ class TaskController {
     try {
       const { taskId } = req.params;
       const userId = req.user.id;
-  
-      const result = await taskService.deleteAllSubTasks(
-        userId,
-        Number(taskId)
-      );
-  
+
+      const result = await taskService.deleteAllSubTasks(userId, Number(taskId));
+
       res.status(200).json({
         resultType: "SUCCESS",
         message: "선택한 과제에 대한 세부 과제가 삭제되었습니다.",
-        data: result
+        data: result,
       });
     } catch (error) {
       next(error);

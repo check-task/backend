@@ -5,10 +5,7 @@ class MemberService {
   async getTaskMembers(taskId) {
     // 1. taskId 유효성 검사
     if (isNaN(parseInt(taskId))) {
-      throw new NotFoundError(
-        "INVALID_TASK_ID",
-        "유효하지 않은 과제 ID입니다.",
-      );
+      throw new NotFoundError("INVALID_TASK_ID", "유효하지 않은 과제 ID입니다.");
     }
 
     // 2. 과제 존재 여부 확인
@@ -17,10 +14,7 @@ class MemberService {
     });
 
     if (!task) {
-      throw new NotFoundError(
-        "TASK_NOT_FOUND",
-        "해당하는 과제를 찾을 수 없습니다.",
-      );
+      throw new NotFoundError("TASK_NOT_FOUND", "해당하는 과제를 찾을 수 없습니다.");
     }
 
     // 3. 해당 taskId를 가진 모든 멤버를 조회

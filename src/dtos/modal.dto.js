@@ -1,4 +1,4 @@
-import { BadRequestError } from '../errors/custom.error.js';
+import { BadRequestError } from "../errors/custom.error.js";
 
 // 자료
 export class CreateReferenceDto {
@@ -13,32 +13,32 @@ export class CreateReferenceDto {
 
   validate() {
     if (!this.taskId || isNaN(this.taskId)) {
-      throw new BadRequestError('taskId가 올바르지 않습니다.');
+      throw new BadRequestError("taskId가 올바르지 않습니다.");
     }
 
     if (!this.userId) {
-      throw new BadRequestError('userId가 필요합니다.');
+      throw new BadRequestError("userId가 필요합니다.");
     }
 
-    if (!['url', 'file'].includes(this.type)) {
-      throw new BadRequestError('type이 올바르지 않습니다.');
+    if (!["url", "file"].includes(this.type)) {
+      throw new BadRequestError("type이 올바르지 않습니다.");
     }
 
     if (!Array.isArray(this.items) || this.items.length === 0) {
-      throw new BadRequestError('items는 필수입니다.');
+      throw new BadRequestError("items는 필수입니다.");
     }
 
     for (const item of this.items) {
       if (!item.name) {
-        throw new BadRequestError('name은 필수입니다.');
+        throw new BadRequestError("name은 필수입니다.");
       }
 
-      if (this.type === 'url' && !item.url) {
-        throw new BadRequestError('url은 필수입니다.');
+      if (this.type === "url" && !item.url) {
+        throw new BadRequestError("url은 필수입니다.");
       }
 
-      if (this.type === 'file' && !item.file_url) {
-        throw new BadRequestError('file_url은 필수입니다.');
+      if (this.type === "file" && !item.file_url) {
+        throw new BadRequestError("file_url은 필수입니다.");
       }
     }
   }
@@ -58,19 +58,19 @@ export class UpdateReferenceDto {
 
   validate() {
     if (!this.taskId || isNaN(this.taskId)) {
-      throw new BadRequestError('taskId가 올바르지 않습니다.');
+      throw new BadRequestError("taskId가 올바르지 않습니다.");
     }
 
     if (!this.referenceId || isNaN(this.referenceId)) {
-      throw new BadRequestError('referenceId가 올바르지 않습니다.');
+      throw new BadRequestError("referenceId가 올바르지 않습니다.");
     }
 
     if (!this.userId) {
-      throw new BadRequestError('userId가 필요합니다.');
+      throw new BadRequestError("userId가 필요합니다.");
     }
 
     if (!this.name && !this.url && !this.fileUrl) {
-      throw new BadRequestError('수정할 값이 없습니다.');
+      throw new BadRequestError("수정할 값이 없습니다.");
     }
   }
 }
@@ -88,16 +88,16 @@ export class CreateCommunicationDto {
 
   validate() {
     if (!this.taskId || isNaN(this.taskId)) {
-      throw new BadRequestError('taskId가 올바르지 않습니다.');
+      throw new BadRequestError("taskId가 올바르지 않습니다.");
     }
     if (!this.userId) {
-      throw new BadRequestError('userId가 필요합니다.');
+      throw new BadRequestError("userId가 필요합니다.");
     }
     if (!this.name) {
-      throw new BadRequestError('name은 필수입니다.');
+      throw new BadRequestError("name은 필수입니다.");
     }
     if (!this.url) {
-      throw new BadRequestError('url은 필수입니다.');
+      throw new BadRequestError("url은 필수입니다.");
     }
   }
 }
@@ -115,16 +115,16 @@ export class UpdateCommunicationDto {
 
   validate() {
     if (!this.taskId || isNaN(this.taskId)) {
-      throw new BadRequestError('taskId가 올바르지 않습니다.');
+      throw new BadRequestError("taskId가 올바르지 않습니다.");
     }
     if (!this.communicationId || isNaN(this.communicationId)) {
-      throw new BadRequestError('communicationId가 올바르지 않습니다.');
+      throw new BadRequestError("communicationId가 올바르지 않습니다.");
     }
     if (!this.userId) {
-      throw new BadRequestError('userId가 필요합니다.');
+      throw new BadRequestError("userId가 필요합니다.");
     }
     if (!this.name && !this.url) {
-      throw new BadRequestError('수정할 값이 없습니다.');
+      throw new BadRequestError("수정할 값이 없습니다.");
     }
   }
 }
@@ -144,13 +144,13 @@ export class CreateLogDto {
 
   validate() {
     if (!this.taskId || isNaN(this.taskId)) {
-      throw new BadRequestError('taskId가 올바르지 않습니다.');
+      throw new BadRequestError("taskId가 올바르지 않습니다.");
     }
     if (!this.userId) {
-      throw new BadRequestError('userId가 필요합니다.');
+      throw new BadRequestError("userId가 필요합니다.");
     }
     if (!this.date) {
-      throw new BadRequestError('회의 일자(date)가 필요합니다.');
+      throw new BadRequestError("회의 일자(date)가 필요합니다.");
     }
   }
 }
@@ -170,16 +170,16 @@ export class UpdateLogDto {
 
   validate() {
     if (!this.taskId || isNaN(this.taskId)) {
-      throw new BadRequestError('taskId가 올바르지 않습니다.');
+      throw new BadRequestError("taskId가 올바르지 않습니다.");
     }
     if (!this.logId || isNaN(this.logId)) {
-      throw new BadRequestError('logId가 올바르지 않습니다.');
+      throw new BadRequestError("logId가 올바르지 않습니다.");
     }
     if (!this.userId) {
-      throw new BadRequestError('userId가 필요합니다.');
+      throw new BadRequestError("userId가 필요합니다.");
     }
     if (!this.date && !this.agenda && !this.conclusion && !this.discussion) {
-      throw new BadRequestError('수정할 값이 없습니다.');
+      throw new BadRequestError("수정할 값이 없습니다.");
     }
   }
 }

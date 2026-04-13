@@ -10,14 +10,14 @@ import memberRouter from "./member.route.js";
 const router = express.Router();
 
 // 각 도메인별 라우터 등록
-router.use("/auth",kakaoAuthRouter)
+router.use("/auth", kakaoAuthRouter);
 router.use("/user/folder", folderRouter);
 router.use("/user", userRouter);
 router.use("/alarm", alarmRouter);
 router.use(commentRouter);
 router.use("/task", taskRouter);
 router.use("/reference", modalRouter);
-router.use("/task", memberRouter); 
+router.use("/task", memberRouter);
 
 // health check용 기본 라우트
 router.get("/health", (req, res) => {

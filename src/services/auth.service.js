@@ -1,18 +1,18 @@
 import { prisma } from "../db.config.js";
 import jwt from "jsonwebtoken";
-import { BadRequestError, InternalServerError, UnauthorizedError } from "../errors/custom.error.js"
+import { BadRequestError, InternalServerError, UnauthorizedError } from "../errors/custom.error.js";
 import crypto from "crypto";
 import { redis } from "../config/redis.config.js";
 import { folderRepository } from "../repositories/folder.repository.js";
 import axios from "axios";
 
 export class KakaoAuthService {
-  constructor(){
+  constructor() {
     this.secret = process.env.JWT_SECRET;
   }
 
   //Access Token 생성
-  generateAccessToken(user){
+  generateAccessToken(user) {
     return jwt.sign(
       {
         id: user.id,
@@ -21,38 +21,29 @@ export class KakaoAuthService {
       },
       this.secret,
       {
-        expiresIn: "1h"
+        expiresIn: "1h",
       }
     );
   }
 
   //Refresh Token 생성
-  generateRefreshToken(user){
+  generateRefreshToken(user) {
     const tokenId = crypto.randomUUID();
 
-    const refreshToken= jwt.sign(
-      { id: user.id, tokenId},
-      this.secret,
-      { expiresIn:"14d" }
-    );
+    const refreshToken = jwt.sign({ id: user.id, tokenId }, this.secret, { expiresIn: "14d" });
 
-    return { refreshToken, tokenId};
+    return { refreshToken, tokenId };
   }
   //Redis에 저장
-  async saveRefreshToken(tokenId, userId){
+  async saveRefreshToken(tokenId, userId) {
     const TTL = 60 * 60 * 24 * 14; //14일 설정
 
-    await redis.set(
-      `refresh_token:${tokenId}`,
-      userId,
-      "EX",
-      TTL
-    );
+    await redis.set(`refresh_token:${tokenId}`, userId, "EX", TTL);
   }
 
   //Refresh Token 검증 및 Access Token 재발급
-  async refreshAccessToken(refreshToken){
-    try{
+  async refreshAccessToken(refreshToken) {
+    try {
       const payload = jwt.verify(refreshToken, this.secret);
       const { id: userId, tokenId } = payload;
 
@@ -68,13 +59,13 @@ export class KakaoAuthService {
       }
 
       return this.generateAccessToken(user);
-    }catch(err){
+    } catch (_err) {
       throw new BadRequestError("REFRESH_TOKEN_EXPIRED", "Refresh Token이 만료되었습니다.");
     }
   }
 
   //카카오 로그인 처리
-  async handleKakaoLogin(profile, kakaoAccessToken){
+  async handleKakaoLogin(profile, kakaoAccessToken) {
     const kakaoAccount = profile?._json?.kakao_account ?? {};
     const profileInfo = kakaoAccount.profile ?? {};
 
@@ -102,7 +93,7 @@ export class KakaoAuthService {
     }
 
     const getAgreedAt = (tag) => {
-      const term = serviceTerm.find(t => t.tag === tag);
+      const term = serviceTerm.find((t) => t.tag === tag);
       return term ? new Date(term.agreed_at) : null;
     };
     const termsAgreedAt = getAgreedAt("termsAgreedAt");
@@ -112,15 +103,15 @@ export class KakaoAuthService {
 
     try {
       //기존 사용자 조회
-        let user = await prisma.user.findFirst({
-        where:{
+      let user = await prisma.user.findFirst({
+        where: {
           provider: "KAKAO",
           providerId: providerId,
         },
       });
 
       let isNewUser = false;
-      
+
       // 탈퇴 사용자 차단
       if (user && user.deletedAt) {
         const restoreToken = crypto.randomUUID();
@@ -142,7 +133,7 @@ export class KakaoAuthService {
       if (!user) {
         isNewUser = true;
         user = await prisma.user.create({
-          data:{
+          data: {
             nickname,
             phoneNum,
             email,
@@ -157,7 +148,7 @@ export class KakaoAuthService {
         // 지정안함 폴더 생성
         await folderRepository.addFolder(user.id, {
           folderTitle: "지정안함",
-          color: "#818892", 
+          color: "#818892",
         });
 
         await prisma.userAlarmSetting.create({
@@ -179,7 +170,6 @@ export class KakaoAuthService {
           },
           update: {}, // 재로그인 시 덮어쓰지 않게 설정
         });
-
       }
       // 토큰 생성
       const accessToken = this.generateAccessToken(user);
@@ -188,27 +178,27 @@ export class KakaoAuthService {
       // Refresh Token Redis에 저장
       await this.saveRefreshToken(tokenId, user.id);
 
-      return{
+      return {
         user,
         isNewUser,
         accessToken,
         refreshToken,
       };
-    } catch (error){
+    } catch (error) {
       console.error("ERROR:", error);
       throw new InternalServerError("INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다.");
     }
   }
 
   // 카카오 회원 탈퇴
-  async withdrawKakaoUser(user){
-    if(!user){
-      throw new UnauthorizedError("UNAUTHORIZED","인증 정보가 없습니다.");
+  async withdrawKakaoUser(user) {
+    if (!user) {
+      throw new UnauthorizedError("UNAUTHORIZED", "인증 정보가 없습니다.");
     }
     if (user.deletedAt) {
-      throw new BadRequestError("ALREADY_WITHDRAWN","이미 탈퇴 처리된 사용자입니다.");
+      throw new BadRequestError("ALREADY_WITHDRAWN", "이미 탈퇴 처리된 사용자입니다.");
     }
-    try{
+    try {
       // 카카오 연결 해제
       await axios.post(
         "https://kapi.kakao.com/v1/user/unlink",
@@ -217,21 +207,24 @@ export class KakaoAuthService {
       );
       await prisma.user.update({
         where: {
-          id: user.id
+          id: user.id,
         },
         data: {
-          deletedAt: new Date()
+          deletedAt: new Date(),
         },
       });
-    }catch (error){
+    } catch (error) {
       console.error("WITHDRAW ERROR:", error.response?.data ?? error.message);
-      throw new InternalServerError("USER_WITHDRAW_FAILED","회원 탈퇴 처리 중 오류가 발생했습니다.");
+      throw new InternalServerError(
+        "USER_WITHDRAW_FAILED",
+        "회원 탈퇴 처리 중 오류가 발생했습니다."
+      );
     }
   }
   async deleteExpiredUsers() {
     try {
       const DELETE_AFTER_DAYS = Number(process.env.DELETE_AFTER_DAYS || 7); //DB 삭제 기준 = 일주일
-      
+
       const deleteThresholdDate = new Date(Date.now() - DELETE_AFTER_DAYS * 24 * 60 * 60 * 1000);
 
       const users = await prisma.user.findMany({
@@ -244,8 +237,8 @@ export class KakaoAuthService {
       });
       console.log(`삭제 대상 유저 수: ${users.length}`);
       for (const user of users) {
-        const userId = user.id
-        
+        const userId = user.id;
+
         // Redis SCAN으로 Refresh Token 정리
         let cursor = "0";
         do {
@@ -267,13 +260,12 @@ export class KakaoAuthService {
           await tx.member.deleteMany({ where: { userId } });
           await tx.folder.deleteMany({ where: { userId } });
           // 나머지는 cascade 자동 처리
-          await tx.user.delete({where: { id: user.id }});
+          await tx.user.delete({ where: { id: user.id } });
         });
       }
-
     } catch (error) {
       console.error("USER CLEANUP ERROR:", error);
-      throw new InternalServerError("USER_CLEANUP_FAILED","유저 정리 중 오류 발생");
+      throw new InternalServerError("USER_CLEANUP_FAILED", "유저 정리 중 오류 발생");
     }
   }
 
@@ -284,7 +276,7 @@ export class KakaoAuthService {
       const { tokenId } = payload;
 
       await redis.del(`refresh_token:${tokenId}`);
-    } catch (err) {
+    } catch (_err) {
       // 이미 만료된 경우도 로그아웃은 성공 처리
     }
   }
@@ -318,7 +310,7 @@ export class KakaoAuthService {
       data: { deletedAt: null },
     });
 
-    // 1회성 토큰 삭제 
+    // 1회성 토큰 삭제
     await redis.del(`restore_token:${restoreToken}`);
 
     // 로그인 토큰 발급
@@ -334,4 +326,3 @@ export class KakaoAuthService {
     };
   }
 }
-

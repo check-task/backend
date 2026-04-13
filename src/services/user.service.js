@@ -9,10 +9,7 @@ class UserService {
     const user = await userRepository.getUserData(userId);
 
     if (!user) {
-      throw new NotFoundError(
-        "USER_NOT_FOUND",
-        "해당 사용자를 찾을 수 없습니다.",
-      );
+      throw new NotFoundError("USER_NOT_FOUND", "해당 사용자를 찾을 수 없습니다.");
     }
 
     // DTO 클래스 사용
@@ -22,18 +19,12 @@ class UserService {
   // 2. 프로필 수정
   async updateProfile(userId, body) {
     if (body.nickname && body.nickname.length > 100) {
-      throw new BadRequestError(
-        "INVALID_NICKNAME",
-        "닉네임은 최대 100자까지만 가능합니다.",
-      );
+      throw new BadRequestError("INVALID_NICKNAME", "닉네임은 최대 100자까지만 가능합니다.");
     }
 
     const isUserExist = await userRepository.getUserData(userId);
     if (!isUserExist) {
-      throw new NotFoundError(
-        "USER_NOT_FOUND",
-        "해당 사용자를 찾을 수 없습니다.",
-      );
+      throw new NotFoundError("USER_NOT_FOUND", "해당 사용자를 찾을 수 없습니다.");
     }
 
     if (isUserExist.deletedAt) {
@@ -42,9 +33,7 @@ class UserService {
 
     // DTO 클래스 사용
     const updateData = UserDto.bodyToProfileDto(body);
-    const fieldsToUpdate = Object.values(updateData).filter(
-      (v) => v !== undefined,
-    );
+    const fieldsToUpdate = Object.values(updateData).filter((v) => v !== undefined);
 
     if (fieldsToUpdate.length === 0) {
       return UserDto.responseFromUpdatedUser(isUserExist);

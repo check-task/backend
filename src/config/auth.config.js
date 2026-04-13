@@ -13,17 +13,14 @@ export const kakaoStrategy = new KakaoStrategy(
     clientSecret: process.env.PASSPORT_KAKAO_CLIENT_SECRET,
     callbackURL: process.env.KAKAO_CALLBACK_URL,
     //사업자 등록 후 "phone_number" 추가
-    scope: ["profile_nickname", "profile_image", "account_email",],
+    scope: ["profile_nickname", "profile_image", "account_email"],
   },
   //로그인 성공 후 실행되는 함수
   async (accessToken, refreshToken, profile, done) => {
-    try{
-      const result = await kakaoAuthService.handleKakaoLogin(
-        profile,
-        accessToken
-      );
+    try {
+      const result = await kakaoAuthService.handleKakaoLogin(profile, accessToken);
       return done(null, result);
-    }catch(err){
+    } catch (err) {
       return done(err);
     }
   }

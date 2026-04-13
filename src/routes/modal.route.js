@@ -66,12 +66,7 @@ router.delete(
 );
 
 // ─── 회의록 ───────────────────────────────────────────────────────
-router.post(
-  "/log/:taskId",
-  authenticate,
-  validate(createLogSchema),
-  modalController.createLog
-);
+router.post("/log/:taskId", authenticate, validate(createLogSchema), modalController.createLog);
 
 router.patch(
   "/log/:taskId/:logId",

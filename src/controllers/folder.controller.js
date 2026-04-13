@@ -26,11 +26,7 @@ class FolderController {
     try {
       const userId = req.user.id;
       const { folderId } = req.params;
-      const result = await folderService.updateFolder(
-        userId,
-        folderId,
-        req.body,
-      );
+      const result = await folderService.updateFolder(userId, folderId, req.body);
 
       res.status(200).json({
         resultType: "SUCCESS",

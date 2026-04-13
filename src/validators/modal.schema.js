@@ -32,8 +32,7 @@ export const updateReferenceSchema = z.object({
       file_url: z.string().trim().optional(),
     })
     .refine(
-      (data) =>
-        data.name !== undefined || data.url !== undefined || data.file_url !== undefined,
+      (data) => data.name !== undefined || data.url !== undefined || data.file_url !== undefined,
       { message: "수정할 값이 없습니다." }
     ),
 });

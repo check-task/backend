@@ -5,13 +5,8 @@ import {
   updateSubtaskAlarmStatusDto,
   updateTaskAlarmDto,
   updateTaskAlarmStatusDto,
-  updateAllAlarmReadResponseDto,
 } from "../dtos/alarm.dto.js";
-import {
-  NotFoundError,
-  ForbiddenError,
-  BadRequestError,
-} from "../errors/custom.error.js";
+import { NotFoundError, ForbiddenError, BadRequestError } from "../errors/custom.error.js";
 import prisma from "../db.config.js";
 import alarmRepository from "../repositories/alarm.repository.js";
 import { checkDeletedUser } from "../repositories/user.repository.js";
@@ -35,18 +30,14 @@ class AlarmService {
     const effectiveLimit = limit || 10;
     const hasNextPage = alarms.length > effectiveLimit;
     const data = hasNextPage ? alarms.slice(0, effectiveLimit) : alarms;
-    const nextCursor =
-      hasNextPage && data.length > 0 ? data[data.length - 1].id : null;
+    const nextCursor = hasNextPage && data.length > 0 ? data[data.length - 1].id : null;
 
     const user = await checkDeletedUser(userId);
     if (!user) {
       throw new NotFoundError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
     }
     if (user.deletedAt) {
-      throw new ForbiddenError(
-        "USER_DELETED",
-        "탈퇴한 유저는 알림을 조회할 수 없습니다.",
-      );
+      throw new ForbiddenError("USER_DELETED", "탈퇴한 유저는 알림을 조회할 수 없습니다.");
     }
 
     // DTO 변환
@@ -68,10 +59,7 @@ class AlarmService {
     const user = await checkDeletedUser(userId);
 
     if (user.deletedAt) {
-      throw new ForbiddenError(
-        "USER_DELETED",
-        "탈퇴한 유저는 알림을 삭제할 수 없습니다.",
-      );
+      throw new ForbiddenError("USER_DELETED", "탈퇴한 유저는 알림을 삭제할 수 없습니다.");
     }
 
     if (!userId) {
@@ -79,18 +67,12 @@ class AlarmService {
     }
 
     if (!alarm) {
-      throw new NotFoundError(
-        "ALARM_NOT_FOUND",
-        "요청하신 alarmID가 DB에 존재하지 않습니다.",
-      );
+      throw new NotFoundError("ALARM_NOT_FOUND", "요청하신 alarmID가 DB에 존재하지 않습니다.");
     }
 
     // 알림 소유자 확인 (본인의 알림인지)
     if (alarm.userId !== userId) {
-      throw new ForbiddenError(
-        "ALARM_ACCESS_DENIED",
-        "해당 알림에 접근할 권한이 없습니다.",
-      );
+      throw new ForbiddenError("ALARM_ACCESS_DENIED", "해당 알림에 접근할 권한이 없습니다.");
     }
 
     // 알림 삭제
@@ -113,21 +95,14 @@ class AlarmService {
   // 최종 마감 알림(deadlineAlarm) 수정
   async updateDeadline(userId, deadlineAlarm) {
     // 1. 설정값 업데이트
-    const updatedUser = await this.alarmRepository.updateDeadlineAlarm(
-      userId,
-      deadlineAlarm,
-    );
+    const updatedUser = await this.alarmRepository.updateDeadlineAlarm(userId, deadlineAlarm);
 
     // 2. 관련된 기존 알림들 업데이트 로직 추가
-    const pendingAlarms =
-      await this.alarmRepository.findPendingTaskAlarms(userId);
+    const pendingAlarms = await this.alarmRepository.findPendingTaskAlarms(userId);
 
     for (const alarm of pendingAlarms) {
       if (alarm.task && alarm.task.deadline) {
-        const newAlarmDate = calculateAlarmDate(
-          alarm.task.deadline,
-          deadlineAlarm,
-        );
+        const newAlarmDate = calculateAlarmDate(alarm.task.deadline, deadlineAlarm);
         const taskTitle = alarm.task.title ?? "";
         await this.alarmRepository.updateAlarm(alarm.id, {
           title: `'${taskTitle}'의 마감까지 ${deadlineAlarm}시간 남았어요!`,
@@ -144,21 +119,14 @@ class AlarmService {
   // 과제 알림(taskAlarm -> 세부과제용) 수정
   async updateTask(userId, taskAlarm) {
     // 1. 설정값 업데이트
-    const updatedUser = await this.alarmRepository.updateTaskAlarm(
-      userId,
-      taskAlarm,
-    );
+    const updatedUser = await this.alarmRepository.updateTaskAlarm(userId, taskAlarm);
 
     // 2. 관련된 기존 알림들 업데이트 로직 추가
-    const pendingAlarms =
-      await this.alarmRepository.findPendingSubTaskAlarms(userId);
+    const pendingAlarms = await this.alarmRepository.findPendingSubTaskAlarms(userId);
 
     for (const alarm of pendingAlarms) {
       if (alarm.subTask && alarm.subTask.endDate) {
-        const newAlarmDate = calculateAlarmDate(
-          alarm.subTask.endDate,
-          taskAlarm,
-        );
+        const newAlarmDate = calculateAlarmDate(alarm.subTask.endDate, taskAlarm);
         const subTaskTitle = alarm.subTask.title ?? "";
         await this.alarmRepository.updateAlarm(alarm.id, {
           title: `'${subTaskTitle}'의 마감까지 ${taskAlarm}시간 남았어요!`,
@@ -175,18 +143,12 @@ class AlarmService {
   // ✅ 과제 알림 여부 설정
   async updateTaskAlarmStatus(userId, taskId, isAlarm) {
     if (!taskId || isNaN(parseInt(taskId))) {
-      throw new BadRequestError(
-        "INVALID_PARAMS",
-        "params는 숫자로 보내야합니다.",
-      );
+      throw new BadRequestError("INVALID_PARAMS", "params는 숫자로 보내야합니다.");
     }
 
     // taskId가 유효한 숫자인지 확인
     if (!Number.isInteger(taskId) || taskId <= 0) {
-      throw new BadRequestError(
-        "INVALID_TASK_ID",
-        "유효하지 않은 과제 ID입니다.",
-      );
+      throw new BadRequestError("INVALID_TASK_ID", "유효하지 않은 과제 ID입니다.");
     }
     // 과제 존재 여부 및 소유권 확인
     const task = await prisma.task.findUnique({
@@ -203,30 +165,22 @@ class AlarmService {
     }
 
     // 개인 과제인 경우 본인만, 팀 과제인 경우 멤버만 수정 가능
-    const isOwner = task.members.some(
-      (m) => m.userId === userId && m.role === false,
-    );
+    const isOwner = task.members.some((m) => m.userId === userId && m.role === false);
     const isMember = task.members.some((m) => m.userId === userId);
 
     if (!isOwner && !isMember) {
-      throw new ForbiddenError(
-        "TASK_ACCESS_DENIED",
-        "해당 과제에 접근할 권한이 없습니다.",
-      );
+      throw new ForbiddenError("TASK_ACCESS_DENIED", "해당 과제에 접근할 권한이 없습니다.");
     }
 
     if (typeof isAlarm !== "boolean") {
       throw new BadRequestError(
         "INVALID_BODY",
-        "Body의 isAlarm 데이터는 boolean 형식으로 보내야합니다.",
+        "Body의 isAlarm 데이터는 boolean 형식으로 보내야합니다."
       );
     }
 
     // 과제 알림 여부 설정 (Repository 호출)
-    const updatedTask = await this.alarmRepository.updateTaskAlarmStatus(
-      taskId,
-      isAlarm,
-    );
+    const updatedTask = await this.alarmRepository.updateTaskAlarmStatus(taskId, isAlarm);
 
     // DTO 변환
     return updateTaskAlarmStatusDto(updatedTask);
@@ -236,10 +190,7 @@ class AlarmService {
   async updateSubtaskAlarmStatus(userId, subTaskId, isAlarm) {
     // subTaskId가 유효한 숫자인지 확인
     if (!Number.isInteger(subTaskId) || subTaskId <= 0) {
-      throw new BadRequestError(
-        "INVALID_PARAMETER",
-        "params의 subTaskId는 숫자로 보내야합니다.",
-      );
+      throw new BadRequestError("INVALID_PARAMETER", "params의 subTaskId는 숫자로 보내야합니다.");
     }
     const subTask = await prisma.subTask.findUnique({
       where: { id: subTaskId },
@@ -254,64 +205,45 @@ class AlarmService {
     });
     // 세부과제 존재 여부 확인
     if (!subTask) {
-      throw new NotFoundError(
-        "SUB_TASK_NOT_FOUND",
-        "요청하신 subTaskId가 DB에 존재하지 않습니다.",
-      );
+      throw new NotFoundError("SUB_TASK_NOT_FOUND", "요청하신 subTaskId가 DB에 존재하지 않습니다.");
     }
     // 해당 과제의 멤버인지 확인
     const task = subTask.task;
-    const isOwner = task.members.some(
-      (m) => m.userId === userId && m.role === false,
-    );
+    const isOwner = task.members.some((m) => m.userId === userId && m.role === false);
     const isMember = task.members.some((m) => m.userId === userId);
 
     if (!isOwner && !isMember) {
-      throw new ForbiddenError(
-        "SUBTASK_ACCESS_DENIED",
-        "해당 세부과제에 접근할 권한이 없습니다.",
-      );
+      throw new ForbiddenError("SUBTASK_ACCESS_DENIED", "해당 세부과제에 접근할 권한이 없습니다.");
     }
 
     if (typeof isAlarm !== "boolean") {
       throw new BadRequestError(
         "INVALID_BODY",
-        "Body의 isAlarm 데이터는 boolean 형식으로 보내야합니다.",
+        "Body의 isAlarm 데이터는 boolean 형식으로 보내야합니다."
       );
     }
-    const updatedSubTask = await this.alarmRepository.updateSubtaskAlarmStatus(
-      subTaskId,
-      isAlarm,
-    );
+    const updatedSubTask = await this.alarmRepository.updateSubtaskAlarmStatus(subTaskId, isAlarm);
 
     if (!updatedSubTask) {
-      throw new NotFoundError(
-        "SUBTASK_UPDATE_FAILED",
-        "세부과제 업데이트에 실패했습니다.",
-      );
+      throw new NotFoundError("SUBTASK_UPDATE_FAILED", "세부과제 업데이트에 실패했습니다.");
     }
 
     const notifyUserId =
       subTask.assignee?.userId ??
       (subTask.assigneeId != null
-        ? subTask.task.members.find((m) => m.id === subTask.assigneeId)
-            ?.userId
+        ? subTask.task.members.find((m) => m.id === subTask.assigneeId)?.userId
         : null);
 
     if (updatedSubTask.isAlarm === true) {
       if (!updatedSubTask.assigneeId || !notifyUserId) {
         throw new BadRequestError(
           "SUBTASK_NO_ASSIGNEE",
-          "담당자가 지정된 세부과제만 알림을 켤 수 있습니다.",
+          "담당자가 지정된 세부과제만 알림을 켤 수 있습니다."
         );
       }
 
-      const alarmHours =
-        subTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
-      const alarmDate = calculateAlarmDate(
-        updatedSubTask.endDate,
-        alarmHours,
-      );
+      const alarmHours = subTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
+      const alarmDate = calculateAlarmDate(updatedSubTask.endDate, alarmHours);
 
       const existingAlarm = await prisma.userAlarm.findFirst({
         where: { subTaskId: updatedSubTask.id },
@@ -328,22 +260,18 @@ class AlarmService {
         });
       } else {
         if (existingAlarm) {
-          await this.alarmRepository.deleteAlarmsBySubTaskIds([
-            updatedSubTask.id,
-          ]);
+          await this.alarmRepository.deleteAlarmsBySubTaskIds([updatedSubTask.id]);
         }
         await this.alarmRepository.createSubTaskAlarm(
           notifyUserId,
           updatedSubTask.taskId,
           updatedSubTask.id,
           updatedSubTask.title,
-          alarmDate,
+          alarmDate
         );
       }
     } else {
-      await this.alarmRepository.deleteAlarmsBySubTaskIds([
-        updatedSubTask.id,
-      ]);
+      await this.alarmRepository.deleteAlarmsBySubTaskIds([updatedSubTask.id]);
     }
 
     return updateSubtaskAlarmStatusDto(updatedSubTask);
@@ -359,23 +287,17 @@ class AlarmService {
     }
     // 알림 소유자 확인 (본인의 알림인지)
     if (alarm.userId !== userId) {
-      throw new ForbiddenError(
-        "ALARM_ACCESS_DENIED",
-        "해당 알림에 접근할 권한이 없습니다.",
-      );
+      throw new ForbiddenError("ALARM_ACCESS_DENIED", "해당 알림에 접근할 권한이 없습니다.");
     }
     if (typeof isRead !== "boolean") {
       throw new BadRequestError(
         "INVALID_BODY",
-        "Body의 isRead 데이터는 Boolean 형식으로 보내야합니다.",
+        "Body의 isRead 데이터는 Boolean 형식으로 보내야합니다."
       );
     }
 
     // 알림 읽음 처리 (Repository 호출)
-    const updatedAlarm = await this.alarmRepository.updateAlarmReadStatus(
-      alarmId,
-      isRead,
-    );
+    const updatedAlarm = await this.alarmRepository.updateAlarmReadStatus(alarmId, isRead);
     return updateAlarmReadStatusDto({ userId, ...updatedAlarm });
   }
 
@@ -389,10 +311,7 @@ class AlarmService {
       throw new NotFoundError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
     }
     if (user.deletedAt) {
-      throw new ForbiddenError(
-        "USER_DELETED",
-        "탈퇴한 유저는 알림을 읽을 수 없습니다.",
-      );
+      throw new ForbiddenError("USER_DELETED", "탈퇴한 유저는 알림을 읽을 수 없습니다.");
     }
 
     // return updateAllAlarmReadResponseDto(updatedAlarms);
@@ -404,10 +323,7 @@ class AlarmService {
     const user = await checkDeletedUser(userId);
 
     if (user.deletedAt) {
-      throw new ForbiddenError(
-        "USER_DELETED",
-        "탈퇴한 유저는 알림을 조회할 수 없습니다.",
-      );
+      throw new ForbiddenError("USER_DELETED", "탈퇴한 유저는 알림을 조회할 수 없습니다.");
     }
 
     if (!user) {

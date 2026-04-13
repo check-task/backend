@@ -8,11 +8,7 @@ class TaskUtils {
     const now = new Date();
     const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
     // 한국 날짜의 '0시 0분 0초'로 세팅
-    const today = new Date(
-      kstNow.getFullYear(),
-      kstNow.getMonth(),
-      kstNow.getDate(),
-    );
+    const today = new Date(kstNow.getFullYear(), kstNow.getMonth(), kstNow.getDate());
 
     // 마감일(UTC)을 한국 시간(+9)으로 변환
     const dDate = new Date(deadline);
@@ -21,7 +17,7 @@ class TaskUtils {
     const targetDay = new Date(
       kstDeadline.getFullYear(),
       kstDeadline.getMonth(),
-      kstDeadline.getDate(),
+      kstDeadline.getDate()
     );
 
     // 두 날짜의 차이 계산
@@ -65,7 +61,7 @@ export class TaskRequestDTO {
       data.folderId && data.folderId !== "null" && data.folderId !== ""
         ? Number(data.folderId)
         : null;
-  
+
     return {
       title: data.title,
       folderId: isNaN(parsedFolderId) ? null : parsedFolderId,
@@ -76,19 +72,19 @@ export class TaskRequestDTO {
         title: st.title,
         endDate: st.endDate ? new Date(st.endDate) : null,
       })),
-      references: (data.references || []).map(ref => ({
+      references: (data.references || []).map((ref) => ({
         name: ref.name,
         url: ref.url || null,
-        fileUrl: ref.fileUrl || null
+        fileUrl: ref.fileUrl || null,
       })),
-      communications: data.communications || []
+      communications: data.communications || [],
     };
   }
 
   // 과제 수정
   static toUpdate(data = {}) {
     const result = {};
-    
+
     if (!data) return result;
 
     if (data.title !== undefined) {
@@ -131,9 +127,7 @@ export class TaskRequestDTO {
       endDate: data.deadline ? new Date(data.deadline) : undefined,
       deadline: data.deadline,
       isAlarm: data.isAlarm === undefined ? true : Boolean(data.isAlarm),
-      ...(assigneeId !== undefined && !Number.isNaN(assigneeId)
-        ? { assigneeId }
-        : {}),
+      ...(assigneeId !== undefined && !Number.isNaN(assigneeId) ? { assigneeId } : {}),
     };
   }
 
@@ -144,8 +138,7 @@ export class TaskRequestDTO {
     if (data.title !== undefined) {
       result.title = data.title;
     }
-    const endDateRaw =
-      data.endDate !== undefined ? data.endDate : data.deadline;
+    const endDateRaw = data.endDate !== undefined ? data.endDate : data.deadline;
     if (endDateRaw !== undefined) {
       result.endDate = new Date(endDateRaw);
     }
@@ -165,12 +158,9 @@ export class TaskResponseDTO extends TaskUtils {
     const folder = myMember?.folder;
 
     const totalSubTasks = task.subTasks?.length || 0;
-    const completedSubTasks =
-      task.subTasks?.filter((st) => st.status === "COMPLETED").length || 0;
+    const completedSubTasks = task.subTasks?.filter((st) => st.status === "COMPLETED").length || 0;
     const progressRate =
-      totalSubTasks > 0
-        ? Math.round((completedSubTasks / totalSubTasks) * 100)
-        : 0;
+      totalSubTasks > 0 ? Math.round((completedSubTasks / totalSubTasks) * 100) : 0;
 
     return {
       taskId: task.id,
@@ -180,14 +170,14 @@ export class TaskResponseDTO extends TaskUtils {
       folderTitle: folder?.folderTitle || "지정안함",
       status: task.status || "PENDING",
       type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
-      deadline: task.deadline ? task.deadline.toISOString().split('.')[0] : null,
+      deadline: task.deadline ? task.deadline.toISOString().split(".")[0] : null,
       dDay: this.calculateDDay(task.deadline),
       progressRate: progressRate,
       subTasks:
         task.subTasks?.map((st) => ({
           subTaskId: st.id,
           title: st.title,
-          deadline: st.endDate ? st.endDate.toISOString().split('.')[0] : null,
+          deadline: st.endDate ? st.endDate.toISOString().split(".")[0] : null,
           status: st.status === "COMPLETED" ? "COMPLETED" : "PENDING",
           isAlarm: st.isAlarm || false,
           commentCount: st._count?.comments || 0,
@@ -225,7 +215,7 @@ export class TaskResponseDTO extends TaskUtils {
         status: task.status || "PENDING",
         title: task.title,
         type: task.type === "TEAM" ? "TEAM" : "PERSONAL",
-        deadline: task.deadline ? task.deadline.toISOString().split('.')[0] : null,
+        deadline: task.deadline ? task.deadline.toISOString().split(".")[0] : null,
         dDay: this.calculateDDay(task.deadline),
         progressRate: task.progress || 0,
       });
@@ -239,7 +229,7 @@ export class TaskResponseDTO extends TaskUtils {
               taskId: task.id,
               title: st.title,
               status: st.status || "PENDING",
-              deadline: st.endDate ? st.endDate.toISOString().split('.')[0] : null,
+              deadline: st.endDate ? st.endDate.toISOString().split(".")[0] : null,
             });
           }
         });
@@ -263,7 +253,7 @@ export class TaskResponseDTO extends TaskUtils {
         return {
           taskId: task.id,
           title: task.title,
-          deadline: task.deadline ? task.deadline.toISOString().split('.')[0] : null,
+          deadline: task.deadline ? task.deadline.toISOString().split(".")[0] : null,
           type: task.type === "PERSONAL" ? "개인" : "팀",
           status: task.status === "COMPLETED" ? "완료" : "미완료",
           folderId: folder?.id || null,

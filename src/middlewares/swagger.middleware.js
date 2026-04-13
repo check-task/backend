@@ -1,6 +1,6 @@
 import swaggerAutogen from "swagger-autogen";
 
-export const swaggerHandler = async (req, res, next) => {
+export const swaggerHandler = async (req, res, _next) => {
   // #swagger.ignore = true
   const options = {
     openapi: "3.0.0",

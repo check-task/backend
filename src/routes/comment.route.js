@@ -20,7 +20,7 @@ router.post(
   "/task/subtask/:subTaskId/comments",
   authenticate,
   validate(createCommentSchema),
-  createCommentController,
+  createCommentController
 );
 
 // 댓글 수정 API
@@ -28,7 +28,7 @@ router.patch(
   "/task/comment/:commentId",
   authenticate,
   validate(updateCommentSchema),
-  updateCommentController,
+  updateCommentController
 );
 
 // 댓글 삭제 API
@@ -36,7 +36,7 @@ router.delete(
   "/task/comment/:commentId",
   authenticate,
   validate(deleteCommentSchema),
-  deleteCommentController,
+  deleteCommentController
 );
 
 export default router;

@@ -22,22 +22,22 @@ console.log(" INDEX.JS LOADED");
 const app = express();
 
 //HTTPS 프록시 환경에서 secure 쿠키 정상 동작을 위해 설정(PC + 모바일)
-app.set("trust proxy", 1)
+app.set("trust proxy", 1);
 // 3. HTTP 서버 및 소켓 서버 생성
 const httpServer = createServer(app);
 
 // Socket.IO 서버 초기화
 const io = setupSocket(httpServer);
-app.set('io', io);  // Make io accessible in routes
+app.set("io", io); // Make io accessible in routes
 
 // HTTP 서버 이벤트 리스너 추가
-httpServer.on('error', (error) => {
-  console.error('❌ HTTP 서버 오류:', error);
+httpServer.on("error", (error) => {
+  console.error("❌ HTTP 서버 오류:", error);
 });
 
-httpServer.on('listening', () => {
+httpServer.on("listening", () => {
   const addr = httpServer.address();
-  const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
+  const bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
   console.log(`🌐 HTTP 서버가 ${bind}에서 실행 중입니다.`);
 });
 
@@ -60,9 +60,7 @@ app.get("/", (req, res) => {
 });
 
 //swagger
-const swaggerDocument = YAML.load(
-  path.join(process.cwd(), "src/swagger/swagger.yml")
-);
+const swaggerDocument = YAML.load(path.join(process.cwd(), "src/swagger/swagger.yml"));
 
 // 서버 URL을 동적으로 설정
 const serverPort = process.env.PORT;
@@ -90,23 +88,25 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     // DB 연결 테스트 & 커넥션 풀 초기화
-    console.log('🔌 데이터베이스에 연결 중...');
+    console.log("🔌 데이터베이스에 연결 중...");
     await prisma.$connect();
     console.log("✅ Database connected successfully");
 
     // 서버 시작
     const PORT = process.env.PORT;
-    const HOST = '0.0.0.0';
+    const HOST = "0.0.0.0";
 
     httpServer.listen(PORT, HOST, () => {
-      const serverUrl = `http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`;
-      console.log('\n🚀 ===== 서버 시작 =====');
+      const serverUrl = `http://${HOST === "0.0.0.0" ? "localhost" : HOST}:${PORT}`;
+      console.log("\n🚀 ===== 서버 시작 =====");
       console.log(`   - 서버 주소: ${serverUrl}`);
       console.log(`   - 서버 시간: ${new Date().toISOString()}`);
       console.log(`   - Node.js 버전: ${process.version}`);
       console.log(`   - 플랫폼: ${process.platform} ${process.arch}`);
-      console.log(`   - 메모리 사용량: ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`);
-      console.log('==========================\n');
+      console.log(
+        `   - 메모리 사용량: ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`
+      );
+      console.log("==========================\n");
     });
   } catch (err) {
     console.error("❌ Failed to connect to the database:", err);

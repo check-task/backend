@@ -12,26 +12,23 @@ const jwtOptions = {
 };
 
 //jwt 인증 핵심 로직
-export const jwtStrategy = new JwtStrategy(
-  jwtOptions,
-  async (payload, done) => {
-    try {
-      const user = await prisma.user.findUnique({
-        where: {
-          provider_providerId:{
-            provider: payload.provider,
-            providerId: payload.providerId,
-          },
+export const jwtStrategy = new JwtStrategy(jwtOptions, async (payload, done) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        provider_providerId: {
+          provider: payload.provider,
+          providerId: payload.providerId,
         },
-      });
+      },
+    });
 
-      if (!user || user.deletedAt) {
-        return done(null, false);
-      }
-
-      return done(null, user);
-    } catch (err) {
-      return done(err, false);
+    if (!user || user.deletedAt) {
+      return done(null, false);
     }
+
+    return done(null, user);
+  } catch (err) {
+    return done(err, false);
   }
-);
+});

@@ -18,11 +18,11 @@ class TaskRepository {
       include: {
         members: {
           where: { userId: userId },
-          include: { folder: true }
-        }
+          include: { folder: true },
+        },
       },
       orderBy: {
-        deadline: 'desc',
+        deadline: "desc",
       },
     });
   }
@@ -79,32 +79,32 @@ class TaskRepository {
       include: {
         members: {
           where: { userId: parseInt(userId) },
-          include: { folder: true }
+          include: { folder: true },
         },
         subTasks: {
           include: {
             comments: {
               include: {
-                user: { select: { nickname: true, profileImage: true } }
+                user: { select: { nickname: true, profileImage: true } },
               },
-              orderBy: { createdAt: 'asc' } // 오래된 순으로 정렬
+              orderBy: { createdAt: "asc" }, // 오래된 순으로 정렬
             },
             assignee: {
               include: {
-                user: { select: { id: true, nickname: true, profileImage: true } }
-              }
+                user: { select: { id: true, nickname: true, profileImage: true } },
+              },
             },
             _count: {
               select: {
-                comments: true
-              }
-            }
-          }
+                comments: true,
+              },
+            },
+          },
         },
         references: true,
         logs: true,
-        communications: true
-      }
+        communications: true,
+      },
     });
   }
 
@@ -117,31 +117,30 @@ class TaskRepository {
         members: {
           some: {
             userId: userId,
-            ...(folderId ? {
-              OR: [
-                { folderId: parseInt(folderId) },
-                { folderId: null }
-              ]
-            } : {})
-          }
+            ...(folderId
+              ? {
+                  OR: [{ folderId: parseInt(folderId) }, { folderId: null }],
+                }
+              : {}),
+          },
         },
         ...(type ? { type: type === "TEAM" ? "TEAM" : "PERSONAL" } : {}),
       },
       include: {
         members: {
           where: { userId: userId },
-          include: { folder: true }
+          include: { folder: true },
         },
         subTasks: true,
         priorities: {
-          where: { userId: userId }
-        }
-      }
+          where: { userId: userId },
+        },
+      },
     };
 
-    if (status === 'PROGRESS') {
+    if (status === "PROGRESS") {
       query.where.deadline = {
-        gte: now
+        gte: now,
       };
     }
 
@@ -152,35 +151,35 @@ class TaskRepository {
     //   query.where.folderId = parseInt(folderId);
     // }
 
-    if (sort === 'DEADLINE') {
-      query.orderBy = { deadline: 'asc' };
+    if (sort === "DEADLINE") {
+      query.orderBy = { deadline: "asc" };
     }
 
     const tasks = await prisma.task.findMany(query);
 
-    const processedTasks = tasks.map(task => {
+    const processedTasks = tasks.map((task) => {
       const myMemberInfo = task.members[0]; // 내 멤버 정보
       const folder = myMemberInfo?.folder || null;
 
       // 진행률 계산
       const total = task.subTasks.length;
-      const completed = task.subTasks.filter(st => st.status === 'COMPLETED').length;
+      const completed = task.subTasks.filter((st) => st.status === "COMPLETED").length;
       const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
 
       const myRank = task.priorities[0]?.rank ?? 999;
 
-      return { 
-        ...task, 
-        folder, 
+      return {
+        ...task,
+        folder,
         folderId: folder?.id || null, // folderId를 명시적으로 추가
-        progress, 
-        myRank 
+        progress,
+        myRank,
       };
     });
 
-    if (!sort || sort === 'PRIORITY') {
+    if (!sort || sort === "PRIORITY") {
       return processedTasks.sort((a, b) => a.myRank - b.myRank);
-    } else if (sort === 'PROGRESSRATE') {
+    } else if (sort === "PROGRESSRATE") {
       return processedTasks.sort((a, b) => b.progress - a.progress);
     }
 
@@ -190,7 +189,7 @@ class TaskRepository {
   async updateTaskDeadline(taskId, deadline, tx = prisma) {
     return await tx.task.update({
       where: { id: taskId },
-      data: { deadline }
+      data: { deadline },
     });
   }
 
@@ -200,17 +199,17 @@ class TaskRepository {
       where: {
         userId_taskId: {
           userId: userId,
-          taskId: taskId
-        }
+          taskId: taskId,
+        },
       },
       update: {
-        rank: rank
+        rank: rank,
       },
       create: {
         userId: userId,
         taskId: taskId,
-        rank: rank
-      }
+        rank: rank,
+      },
     });
   }
 
@@ -221,7 +220,7 @@ class TaskRepository {
         userId,
         taskId,
         role: role ? true : false, // true: member, false: owner
-        folderId: folderId || null
+        folderId: folderId || null,
       },
     });
   }
@@ -231,10 +230,10 @@ class TaskRepository {
     return await tx.member.updateMany({
       where: {
         taskId: parseInt(taskId),
-        userId: { not: parseInt(userId) }, 
+        userId: { not: parseInt(userId) },
       },
       data: {
-        role: true, 
+        role: true,
       },
     });
   }
@@ -243,7 +242,7 @@ class TaskRepository {
   async updateMemberRole(memberId, dbRoleValue, tx) {
     return await tx.member.update({
       where: { id: memberId },
-      data: { role: dbRoleValue }, 
+      data: { role: dbRoleValue },
     });
   }
 
@@ -252,14 +251,14 @@ class TaskRepository {
     return await prisma.member.findFirst({
       where: {
         taskId: parseInt(taskId),
-        userId: parseInt(userId) 
+        userId: parseInt(userId),
       },
       select: {
         id: true,
         userId: true,
         taskId: true,
         role: true,
-      }
+      },
     });
   }
 
@@ -277,11 +276,11 @@ class TaskRepository {
   async findSubTaskById(id, tx) {
     return await tx.subTask.findUnique({
       where: { id },
-      include: { assignee: true }
+      include: { assignee: true },
     });
   }
 
-  // 세부 과제 생성 
+  // 세부 과제 생성
   async createSubTask(data, tx = prisma) {
     return await tx.subTask.create({
       data,
@@ -290,12 +289,12 @@ class TaskRepository {
           include: {
             user: {
               include: {
-                alarmSetting: true
-              }
-            }
-          }
-        }
-      }
+                alarmSetting: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -309,46 +308,46 @@ class TaskRepository {
           include: {
             user: {
               include: {
-                alarmSetting: true
-              }
-            }
-          }
-        }
-      }
+                alarmSetting: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
-  
+
   // 세부 과제 알림 찾기
   async findAlarmBySubTaskId(subTaskId, tx) {
     return await tx.userAlarm.findFirst({
-      where: { subTaskId }
+      where: { subTaskId },
     });
   }
-  
+
   // 세부 과제 알림 추가
   async createAlarm(data, tx) {
     return await tx.userAlarm.create({ data });
   }
-  
+
   // 세부 과제 알림 업데이트
   async updateAlarm(id, data, tx) {
     return await tx.userAlarm.update({
       where: { id },
-      data
+      data,
     });
   }
-  
+
   // 세부 과제 알림 삭제
   async deleteAlarm(id, tx) {
     return await tx.userAlarm.delete({
-      where: { id }
+      where: { id },
     });
   }
 
   // 세부 과제 추가
   async addSubTasks(taskId, subTasks, tx) {
     return await tx.subTask.createMany({
-      data: subTasks.map(st => ({ ...st, taskId }))
+      data: subTasks.map((st) => ({ ...st, taskId })),
     });
   }
 
@@ -356,15 +355,15 @@ class TaskRepository {
   async deleteSubTasksByIds(subTaskIds, tx = prisma) {
     return await tx.subTask.deleteMany({
       where: {
-        id: { in: subTaskIds }
-      }
+        id: { in: subTaskIds },
+      },
     });
   }
 
   // 세부 과제 전체 삭제
   async deleteAllSubTasksByTaskId(taskId, tx = prisma) {
     return await tx.subTask.deleteMany({
-      where: { taskId }
+      where: { taskId },
     });
   }
 
@@ -372,32 +371,32 @@ class TaskRepository {
   async findSubTaskIdsByTaskId(taskId, tx = prisma) {
     return await tx.subTask.findMany({
       where: { taskId },
-      select: { id: true }
+      select: { id: true },
     });
   }
 
   // 자료 추가
   async addReferences(taskId, refs, tx) {
     return await tx.reference.createMany({
-      data: refs.map(r => ({ ...r, taskId }))
+      data: refs.map((r) => ({ ...r, taskId })),
     });
   }
 
   // 커뮤니케이션 추가
   async addCommunications(taskId, comms, tx = prisma) {
-  return await tx.communication.createMany({
-    data: comms.map(c => ({
-      taskId,
-      name: c.name,
-      url: c.url
-    }))
-  });
-}
+    return await tx.communication.createMany({
+      data: comms.map((c) => ({
+        taskId,
+        name: c.name,
+        url: c.url,
+      })),
+    });
+  }
 
   // 과제 삭제
   async deleteTask(id) {
     return await prisma.task.delete({
-      where: { id }
+      where: { id },
     });
   }
 
@@ -411,34 +410,33 @@ class TaskRepository {
       where: { id: taskId },
       data: {
         inviteCode,
-        inviteExpiredAt: expiredAt
+        inviteExpiredAt: expiredAt,
       },
       select: {
         inviteCode: true,
-        inviteExpiredAt: true
-      }
+        inviteExpiredAt: true,
+      },
     });
   }
-
 
   // 멤버 삭제
   async deleteMember(memberId) {
     const deleted = await prisma.member.delete({
       where: {
-        id: memberId
+        id: memberId,
       },
     });
     return deleted ? true : false;
   }
-  
-  async findMaxRank(userId, tx= prisma) {
+
+  async findMaxRank(userId, tx = prisma) {
     const result = await tx.taskPriority.aggregate({
       _max: {
-        rank: true
+        rank: true,
       },
       where: {
-        userId: userId
-      }
+        userId: userId,
+      },
     });
 
     return result._max.rank || 0;
@@ -449,7 +447,7 @@ class TaskRepository {
     return await prisma.task.findFirst({
       where: {
         inviteCode: inviteCode,
-        type: 'TEAM',
+        type: "TEAM",
       },
     });
   }

@@ -1,5 +1,5 @@
 // 알람 목록 응답 DTO (커서 기반 페이징)
-export const alarmListResponseDto = (alarms, hasNextPage = false) => {
+export const alarmListResponseDto = (alarms, _hasNextPage = false) => {
   return {
     alarmList: alarms.map((alarm) => ({
       alarmId: alarm.id, // 알람 ID

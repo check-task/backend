@@ -15,10 +15,9 @@ class UserRepository {
   async updateProfile(userId, data) {
     const { deadlineAlarm, taskAlarm, ...userFields } = data;
     const cleanUser = Object.fromEntries(
-      Object.entries(userFields).filter(([, v]) => v !== undefined),
+      Object.entries(userFields).filter(([, v]) => v !== undefined)
     );
-    const hasAlarmUpdate =
-      deadlineAlarm !== undefined || taskAlarm !== undefined;
+    const hasAlarmUpdate = deadlineAlarm !== undefined || taskAlarm !== undefined;
 
     if (Object.keys(cleanUser).length > 0) {
       await prisma.user.update({

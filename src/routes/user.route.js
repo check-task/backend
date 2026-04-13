@@ -14,7 +14,7 @@ userRouter.patch(
   authenticate,
   upload.single("image"),
   validate(updateProfileSchema),
-  userController.updateProfile,
+  userController.updateProfile
 );
 
 export default userRouter;

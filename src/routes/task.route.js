@@ -32,7 +32,13 @@ const router = express.Router();
 router.get("/completed", authenticate, taskController.getCompletedTasks);
 
 // POST /api/v1/task -- 과제 생성
-router.post("/", authenticate, upload.array('files'), validate(createTaskSchema), taskController.createTask);
+router.post(
+  "/",
+  authenticate,
+  upload.array("files"),
+  validate(createTaskSchema),
+  taskController.createTask
+);
 
 // PATCH /api/v1/task/priority -- 우선 순위 변경
 router.patch(
@@ -73,23 +79,13 @@ router.patch(
 router.get("/", authenticate, validate(getTasksSchema), taskController.getTasks);
 
 // PATCH /api/v1/task/:taskId -- 과제 수정 (validate)
-router.patch( "/:taskId", authenticate, validate(updateTaskSchema), taskController.updateTask);
+router.patch("/:taskId", authenticate, validate(updateTaskSchema), taskController.updateTask);
 
 // DELETE /api/v1/task/:taskId -- 과제 삭제
-router.delete(
-  "/:taskId",
-  authenticate,
-  validate(taskIdParamSchema),
-  taskController.deleteTask
-);
+router.delete("/:taskId", authenticate, validate(taskIdParamSchema), taskController.deleteTask);
 
 // GET /api/v1/task/:taskId -- 과제 세부 사항 조회
-router.get(
-  "/:taskId",
-  authenticate,
-  validate(taskIdParamSchema),
-  taskController.getTaskDetail
-);
+router.get("/:taskId", authenticate, validate(taskIdParamSchema), taskController.getTaskDetail);
 
 // PATCH /api/v1/task/:taskId/member/:userId -- 팀원 정보 수정
 router.patch(

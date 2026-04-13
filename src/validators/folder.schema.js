@@ -21,19 +21,12 @@ export const updateFolderSchema = z.object({
   }),
   body: z
     .object({
-      folderTitle: z
-        .string()
-        .trim()
-        .min(1, "폴더 이름은 필수입니다.")
-        .optional(),
+      folderTitle: z.string().trim().min(1, "폴더 이름은 필수입니다.").optional(),
       color: hexColor.optional(),
     })
-    .refine(
-      (data) => data.folderTitle !== undefined || data.color !== undefined,
-      {
-        message: "folderTitle 또는 color 중 하나는 필수입니다.",
-      },
-    ),
+    .refine((data) => data.folderTitle !== undefined || data.color !== undefined, {
+      message: "folderTitle 또는 color 중 하나는 필수입니다.",
+    }),
 });
 
 // ─── 폴더 삭제 ────────────────────────────────────────────────────

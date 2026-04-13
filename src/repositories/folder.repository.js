@@ -54,7 +54,7 @@ class FolderRepository {
         userId: true,
         folderTitle: true,
         color: true,
-      }
+      },
     });
     return newFolder;
   }
@@ -67,14 +67,14 @@ class FolderRepository {
         userId: userId,
       },
       data: {
-        ...data 
+        ...data,
       },
       select: {
         id: true,
         userId: true,
         folderTitle: true,
         color: true,
-      }
+      },
     });
     return updatedFolder;
   }

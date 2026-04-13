@@ -13,7 +13,7 @@ class AlarmController {
       req.query.cursor,
       req.query.limit,
       req.query.orderBy,
-      req.query.order,
+      req.query.order
     );
 
     return res.success(result, "알림 목록 조회 성공");
@@ -43,15 +43,9 @@ class AlarmController {
     const userId = req.user.id;
     const { deadlineAlarm } = req.body;
 
-    const result = await this.alarmService.updateDeadline(
-      userId,
-      deadlineAlarm,
-    );
+    const result = await this.alarmService.updateDeadline(userId, deadlineAlarm);
 
-    return res.success(
-      result,
-      "최종 마감 시간의 알림 전송 시간을 변경했습니다.",
-    );
+    return res.success(result, "최종 마감 시간의 알림 전송 시간을 변경했습니다.");
   };
 
   // Task 마감 알림 수정
@@ -61,10 +55,7 @@ class AlarmController {
 
     const result = await this.alarmService.updateTask(userId, taskAlarm);
 
-    return res.success(
-      result,
-      "과제 마감 시간의 알림 전송 시간을 변경했습니다.",
-    );
+    return res.success(result, "과제 마감 시간의 알림 전송 시간을 변경했습니다.");
   };
 
   // 과제 알림 여부 설정
@@ -73,11 +64,7 @@ class AlarmController {
     const { taskId } = req.params;
     const { isAlarm } = req.body;
 
-    const result = await this.alarmService.updateTaskAlarmStatus(
-      userId,
-      taskId,
-      isAlarm,
-    );
+    const result = await this.alarmService.updateTaskAlarmStatus(userId, taskId, isAlarm);
 
     return res.success(result, "과제에 대한 알림 여부를 변경하였습니다..");
   };
@@ -88,11 +75,7 @@ class AlarmController {
     const { subtaskId } = req.params;
     const { isAlarm } = req.body;
 
-    const result = await this.alarmService.updateSubtaskAlarmStatus(
-      userId,
-      subtaskId,
-      isAlarm,
-    );
+    const result = await this.alarmService.updateSubtaskAlarmStatus(userId, subtaskId, isAlarm);
 
     return res.success(result, "세부과제에 대한 알림 여부를 변경하였습니다..");
   };
@@ -103,11 +86,7 @@ class AlarmController {
     const { alarmId } = req.params;
     const { isRead } = req.body;
 
-    const result = await this.alarmService.updateAlarmReadStatus(
-      userId,
-      alarmId,
-      isRead,
-    );
+    const result = await this.alarmService.updateAlarmReadStatus(userId, alarmId, isRead);
 
     return res.success(result, "알림 읽음 처리 성공");
   };

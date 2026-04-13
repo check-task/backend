@@ -2,18 +2,6 @@ import { z } from "zod";
 import { idParam } from "./common.schema.js";
 
 // multipart/form-data 에서 JSON 문자열 → 배열 자동 변환
-const jsonArray = (inner) =>
-  z.preprocess((v) => {
-    if (typeof v === "string") {
-      try {
-        return JSON.parse(v);
-      } catch {
-        return v;
-      }
-    }
-    return v;
-  }, inner);
-
 const subTaskSchema = z.object({
   title: z.string().trim().min(1, "세부 과제 제목은 필수입니다."),
   endDate: z.string().optional(),
@@ -31,15 +19,25 @@ export const createTaskSchema = z.object({
     deadline: z.string().optional(),
     type: z.enum(["TEAM", "PERSONAL"]).default("PERSONAL"),
     subTasks: z.array(subTaskSchema).optional().default([]),
-    references: z.array(z.object({
-      name: z.string(),
-      url: z.string().url().optional(),
-      fileUrl: z.string().url().optional().nullable(),
-    })).optional().default([]),
-    communications: z.array(z.object({
-      name: z.string().min(1, "링크 이름은 필수입니다."),
-      url: z.string().url("올바른 URL 형식이어야 합니다.")
-    })).optional().default([])
+    references: z
+      .array(
+        z.object({
+          name: z.string(),
+          url: z.string().url().optional(),
+          fileUrl: z.string().url().optional().nullable(),
+        })
+      )
+      .optional()
+      .default([]),
+    communications: z
+      .array(
+        z.object({
+          name: z.string().min(1, "링크 이름은 필수입니다."),
+          url: z.string().url("올바른 URL 형식이어야 합니다."),
+        })
+      )
+      .optional()
+      .default([]),
   }),
 });
 
@@ -65,10 +63,11 @@ export const updateTaskSchema = z.object({
   params: z.object({
     taskId: idParam,
   }),
-  body: z.object({
+  body: z
+    .object({
       title: z.string().trim().optional(),
       folderId: z.number().int().positive().optional().nullable(),
-      deadline: z.string().optional()
+      deadline: z.string().optional(),
     })
     .optional(),
 });
@@ -93,7 +92,7 @@ export const updateTaskPrioritiesSchema = z.object({
         z.object({
           taskId: z.coerce.number().int().positive(),
           rank: z.number().int().min(1),
-        }),
+        })
       )
       .min(1, "orderedTasks는 최소 1개 이상이어야 합니다."),
   }),
@@ -165,10 +164,13 @@ export const setSubTaskAssigneeSchema = z.object({
   }),
   body: z.object({
     assigneeId: z.preprocess(
-      (val) => val === "" || val === null ? null : val,
+      (val) => (val === "" || val === null ? null : val),
       z.union([
         z.null(),
-        z.coerce.number().int().positive("담당자는 해당 과제 멤버의 User.id(양의 정수)여야 합니다.")
+        z.coerce
+          .number()
+          .int()
+          .positive("담당자는 해당 과제 멤버의 User.id(양의 정수)여야 합니다."),
       ])
     ),
   }),
@@ -194,16 +196,18 @@ export const patchSubTaskSchema = z.object({
     taskId: idParam,
   }),
   body: z.object({
-    subTasks: z.array(
-      z.object({
-        subTaskId: z.union([z.string().regex(/^\d+$/), z.number()]),
-        title: z.string().optional(),
-        deadline: z.string().optional(),
-        endDate: z.string().optional(),
-        isAlarm: z.boolean().optional(),
-        status: z.enum(["COMPLETED", "PENDING"]).optional(),
-      })
-    ).min(1, "수정할 세부 과제를 최소 1개 이상 선택해야 합니다."),
+    subTasks: z
+      .array(
+        z.object({
+          subTaskId: z.union([z.string().regex(/^\d+$/), z.number()]),
+          title: z.string().optional(),
+          deadline: z.string().optional(),
+          endDate: z.string().optional(),
+          isAlarm: z.boolean().optional(),
+          status: z.enum(["COMPLETED", "PENDING"]).optional(),
+        })
+      )
+      .min(1, "수정할 세부 과제를 최소 1개 이상 선택해야 합니다."),
   }),
 });
 

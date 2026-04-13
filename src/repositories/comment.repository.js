@@ -1,4 +1,4 @@
-import { prisma } from '../db.config.js';
+import { prisma } from "../db.config.js";
 
 // 댓글 관련 데이터베이스 접근 로직
 export class CommentRepository {
@@ -6,11 +6,11 @@ export class CommentRepository {
   static async findSubTaskById(subTaskId) {
     try {
       return await prisma.subTask.findUnique({
-        where: { id: parseInt(subTaskId) }
+        where: { id: parseInt(subTaskId) },
       });
     } catch (error) {
-      console.error('Error finding subTask:', error);
-      throw new Error('서버 오류가 발생했습니다.');
+      console.error("Error finding subTask:", error);
+      throw new Error("서버 오류가 발생했습니다.", { cause: error });
     }
   }
 
@@ -18,11 +18,11 @@ export class CommentRepository {
   static async findUserById(userId) {
     try {
       return await prisma.user.findUnique({
-        where: { id: userId }
+        where: { id: userId },
       });
     } catch (error) {
-      console.error('Error finding user:', error);
-      throw new Error('서버 오류가 발생했습니다.');
+      console.error("Error finding user:", error);
+      throw new Error("서버 오류가 발생했습니다.", { cause: error });
     }
   }
 
@@ -33,7 +33,7 @@ export class CommentRepository {
         data: {
           content: createCommentDto.content,
           subTask: { connect: { id: parseInt(subTaskId) } },
-          user: { connect: { id: createCommentDto.userId } }
+          user: { connect: { id: createCommentDto.userId } },
         },
         select: {
           id: true,
@@ -42,20 +42,20 @@ export class CommentRepository {
           user: {
             select: {
               id: true,
-              nickname: true
-            }
+              nickname: true,
+            },
           },
           subTask: {
             select: {
               id: true,
-              title: true
-            }
-          }
-        }
+              title: true,
+            },
+          },
+        },
       });
     } catch (error) {
-      console.error('Error creating comment:', error);
-      throw new Error('댓글 생성 중 오류가 발생했습니다.');
+      console.error("Error creating comment:", error);
+      throw new Error("댓글 생성 중 오류가 발생했습니다.", { cause: error });
     }
   }
 
@@ -68,20 +68,20 @@ export class CommentRepository {
           user: {
             select: {
               id: true,
-              nickname: true
-            }
+              nickname: true,
+            },
           },
           subTask: {
             select: {
               id: true,
-              title: true
-            }
-          }
-        }
+              title: true,
+            },
+          },
+        },
       });
     } catch (error) {
-      console.error('Error finding comment:', error);
-      throw new Error('댓글 조회 중 오류가 발생했습니다.');
+      console.error("Error finding comment:", error);
+      throw new Error("댓글 조회 중 오류가 발생했습니다.", { cause: error });
     }
   }
 
@@ -95,20 +95,20 @@ export class CommentRepository {
           user: {
             select: {
               id: true,
-              nickname: true
-            }
+              nickname: true,
+            },
           },
           subTask: {
             select: {
               id: true,
-              title: true
-            }
-          }
-        }
+              title: true,
+            },
+          },
+        },
       });
     } catch (error) {
-      console.error('Error updating comment:', error);
-      throw new Error('댓글 수정 중 오류가 발생했습니다.');
+      console.error("Error updating comment:", error);
+      throw new Error("댓글 수정 중 오류가 발생했습니다.", { cause: error });
     }
   }
 
@@ -116,11 +116,11 @@ export class CommentRepository {
   static async deleteComment(commentId) {
     try {
       return await prisma.comment.delete({
-        where: { id: parseInt(commentId) }
+        where: { id: parseInt(commentId) },
       });
     } catch (error) {
-      console.error('Error deleting comment:', error);
-      throw new Error('댓글 삭제 중 오류가 발생했습니다.');
+      console.error("Error deleting comment:", error);
+      throw new Error("댓글 삭제 중 오류가 발생했습니다.", { cause: error });
     }
   }
 }

@@ -3,8 +3,8 @@ import prisma from "../db.config.js";
 class ModalRepository {
   async memberCheck(userId, taskId) {
     return prisma.member.findFirst({
-      where: { userId, taskId }
-    })
+      where: { userId, taskId },
+    });
   }
 
   async findTaskById(taskId) {
@@ -17,13 +17,13 @@ class ModalRepository {
   async createRefMany(data) {
     return prisma.reference.createMany({
       data,
-    })
+    });
   }
 
   async isTask(taskId) {
     return prisma.task.findFirst({
-      where: { id: taskId }
-    })
+      where: { id: taskId },
+    });
   }
 
   async findRefByTaskId(taskId) {
@@ -33,8 +33,8 @@ class ModalRepository {
         id: true,
         name: true,
         url: true,
-        fileUrl: true
-      }
+        fileUrl: true,
+      },
     });
   }
 
@@ -46,8 +46,8 @@ class ModalRepository {
         name: true,
         url: true,
         fileUrl: true,
-        updatedAt: true
-      }
+        updatedAt: true,
+      },
     });
   }
 
@@ -61,7 +61,7 @@ class ModalRepository {
   async deleteRef(referenceId) {
     return prisma.reference.delete({
       where: { id: referenceId },
-      select: { id: referenceId }
+      select: { id: referenceId },
     });
   }
 
@@ -77,7 +77,7 @@ class ModalRepository {
         id: true,
         name: true,
         url: true,
-      }
+      },
     });
   }
 
@@ -88,8 +88,8 @@ class ModalRepository {
         id: true,
         name: true,
         url: true,
-        updatedAt: true
-      }
+        updatedAt: true,
+      },
     });
   }
 
@@ -109,14 +109,14 @@ class ModalRepository {
   async findLogByTaskId(taskId) {
     return prisma.log.findMany({
       where: { taskId },
-      orderBy: { id: 'desc' },
+      orderBy: { id: "desc" },
       select: {
         id: true,
         date: true,
         agenda: true,
         conclusion: true,
         discussion: true,
-      }
+      },
     });
   }
 
@@ -129,7 +129,7 @@ class ModalRepository {
         agenda: true,
         conclusion: true,
         discussion: true,
-      }
+      },
     });
   }
 
