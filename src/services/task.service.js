@@ -283,7 +283,7 @@ class TaskService {
       delete updateData.folderId;
     }
 
-    const updatedTask = await tx.task.updateTask(taskId, updateData);
+    const updatedTask = await taskRepository.updateTask(taskId, updateData);
     return { taskId: updatedTask.id };
   }
 

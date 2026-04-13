@@ -1,5 +1,5 @@
-import { BadRequestError } from "../errors/custom.error";
-import { TaskRequestDTO } from "../dtos/task.dto";
+import { BadRequestError } from "../errors/custom.error.js";
+import { TaskRequestDTO } from "../dtos/task.dto.js";
 
 class TaskHandler {
   buildUpdateTaskParams({ userId, taskId, body, files }) {
