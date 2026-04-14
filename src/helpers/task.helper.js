@@ -2,14 +2,13 @@ import { BadRequestError } from "../errors/custom.error.js";
 import { TaskRequestDTO } from "../dtos/task.dto.js";
 
 class TaskHandler {
-  buildUpdateTaskParams({ userId, taskId, body, files }) {
+  buildUpdateTaskParams({ userId, taskId, body }) {
     if (!body || Object.keys(body).length === 0) {throw new BadRequestError( "DATA_NOT_PROVIDED", "수정할 데이터가 전달되지 않았습니다.");}
         
     return {
       taskId: Number(taskId),
       userId,
       taskRequest: TaskRequestDTO.toUpdate(body),
-      files,
     };
   }
 

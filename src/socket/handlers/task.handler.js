@@ -1,5 +1,5 @@
-import prisma from "../../db.config.js";
 import modalService from "../../services/modal.service.js";
+// 모달 헬퍼 등록
 import {
   CreateReferenceDto,
   UpdateReferenceDto,
@@ -9,6 +9,7 @@ import {
   UpdateLogDto,
 } from "../../dtos/modal.dto.js";
 import CommentService from "../../services/comment.service.js";
+import commentHelper from "../../helpers/comment.helper.js";
 import taskService from "../../services/task.service.js";
 import taskHelper from "../../helpers/task.helper.js";
 
@@ -92,9 +93,7 @@ export const setupTaskHandlers = (io, socket) => {
   // 태스크 방 입장
   socket.on(taskEvents.JOIN_TASK, (taskId) => {
     socket.join(`task:${taskId}`);
-    console.log(
-      `📌 [${socket.user.id}] 사용자가 태스크 방에 입장했습니다. (Task ID: ${taskId})`,
-    );
+    console.log(`📌 [${socket.user.id}] 사용자가 태스크 방에 입장했습니다. (Task ID: ${taskId})`);
   });
 
   // 방 참여자 목록 확인 🐞 DEBUG용
@@ -138,7 +137,7 @@ export const setupTaskHandlers = (io, socket) => {
       );
 
       // 브로드캐스트
-      const updatedTask = await taskService.getTaskDetail(inputData.taskId);
+      const updatedTask = await taskService.getTaskDetail(inputData.taskId, inputData.userId);
       io.to(`task:${taskId}`).emit(taskEvents.TASK_UPDATED, updatedTask);
 
       respond(callback, {success: true, data: result});
@@ -354,79 +353,53 @@ export const setupTaskHandlers = (io, socket) => {
   socket.on(commentEvents.CREATE_COMMENT, async (payload, callback) => {
     try {
       const { taskId, subTaskId, content } = payload;
-      const userId = socket.user.id;
+      console.log(`[SOCKET][subtask:deletedAll] 요청 수신`);
 
-      //로그 확인----
-      const numericTaskId = Number(taskId);
-      const numericSubTaskId = Number(subTaskId);
-      const roomName = `task:${numericTaskId}`;
-
-      console.log("===================================");
-      console.log("[comment:create 요청 수신]");
-      console.log("userId:", userId);
-      console.log("taskId:", numericTaskId);
-      console.log("subTaskId:", numericSubTaskId);
-      console.log("===================================");
-      //------
-      console.log(`[SOCKET][comment:create] 요청 수신`, {
-        userId,
-        taskId,
+      const inputData = commentHelper.buildUpdateTaskParams({
+        userId: socket.user.id,
         subTaskId,
-        content,
+        content
       });
 
-      // Service 호출
-      const newComment = await CommentService.createComment(Number(subTaskId), {
-        userId: userId,
-        content: content,
-      });
+      const result = await CommentService.createComment(
+        inputData.subTaskId, {userId: inputData.userId, content: inputData.content}
+      );
 
-      const clients = io.sockets.adapter.rooms.get(roomName);
-      console.log("[emit 정보]");
-      console.log("taskId:", roomName);
-      console.log("인원:", clients ? clients.size : 0);
-      console.log("commentId:", newComment.id);
-      console.log("===================================");
-
-      // 같은 Task 방에 있는 사람들에게 알림
-      io.to(`task:${taskId}`).emit(commentEvents.CREATED_COMMENT, {
-        taskId: Number(taskId),
-        subTaskId: Number(subTaskId),
-        comment: newComment,
-      });
+      io.to(`task:${taskId}`).emit(commentEvents.CREATED_COMMENT,
+        { taskId: Number(taskId), subTaskId: Number(subTaskId), comment: result }
+      );
 
       console.log(`[SOCKET][comment:created] 브로드캐스트 완료`);
-      callback?.({ success: true, data: newComment });
+      respond(callback, {success: true, data: result});
+
     } catch (err) {
       console.error(`[SOCKET][comment:create] 실패`, err);
-      callback?.({
-        success: false,
-        message: err.message || "댓글 생성 실패",
-      });
+      callback?.({ success: false, reason: err.message });
     }
   });
   // 댓글 수정
   socket.on(commentEvents.UPDATE_COMMENT, async (payload, callback) => {
     try {
       const { taskId, subTaskId, commentId, content } = payload;
-      const userId = socket.user.id;
+      console.log(`[SOCKET][comment:update] 요청 수신`);
 
-      console.log(`[SOCKET][comment:update] 요청 수신`, { userId, commentId });
+      const input = commentHelper.buildUpdateCommentParams({
+        userId: socket.user.id,
+        ...payload,
+      });
 
       const updatedComment = await CommentService.updateComment(
-        Number(commentId),
-        userId,
-        content,
+        input.commentId,
+        input.userId,
+        input.content
       );
 
-      //나 제외하고 모두에게 보냄.
-      io.to(`task:${taskId}`).emit(commentEvents.UPDATED_COMMENT, {
-        taskId: Number(taskId),
-        subTaskId: Number(subTaskId),
+      io.to(`task:${input.taskId}`).emit(commentEvents.UPDATED_COMMENT, {
+        taskId: input.taskId,
+        subTaskId: input.subTaskId,
         comment: updatedComment,
       });
-      console.log(`[SOCKET][comment:updated] 브로드캐스트 완료`);
-      callback?.({ success: true, data: updatedComment });
+      respond(callback, {success: true, data: updatedComment});
     } catch (err) {
       console.error(`[SOCKET][comment:update] 실패`, err);
       callback?.({ success: false, message: err.message });
@@ -440,7 +413,7 @@ export const setupTaskHandlers = (io, socket) => {
 
       console.log(`[SOCKET][comment:delete] 요청 수신`, { userId, commentId });
 
-      await CommentService.deleteComment(Number(commentId), userId);
+      const deleteComment = await CommentService.deleteComment(Number(commentId), userId);
 
       io.to(`task:${taskId}`).emit(commentEvents.DELETED_COMMENT, {
         taskId: Number(taskId),
@@ -448,7 +421,7 @@ export const setupTaskHandlers = (io, socket) => {
         commentId: Number(commentId),
       });
 
-      callback?.({ success: true });
+      respond(callback, {success: true, data: deleteComment});
     } catch (err) {
       console.error(`[SOCKET][comment:delete] 실패`, err);
       callback?.({ success: false, message: err.message });
