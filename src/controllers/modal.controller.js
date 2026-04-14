@@ -7,7 +7,6 @@ import {
   UpdateLogDto,
 } from "../dtos/modal.dto.js";
 import { NotFoundError, BadRequestError } from "../errors/custom.error.js";
-import { uploadToS3 } from "../middlewares/upload.middleware.js";
 import modalService from "../services/modal.service.js";
 
 class ModalController {
@@ -18,16 +17,15 @@ class ModalController {
       let items;
 
       if (type === "file") {
-        if (!req.file) {
+        if (!req.body.file_url) {
           throw new NotFoundError("업로드된 파일이 없습니다.");
         }
 
-        const fileUrl = await uploadToS3(req.file);
-
         items = [
           {
-            name: req.body.name ?? req.file.originalname,
-            file_url: fileUrl,
+            name: req.body.name ?? req.body.file_name,
+            file_name: req.body.file_name ?? null,
+            file_url: req.body.file_url,
           },
         ];
       }
