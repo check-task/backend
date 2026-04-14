@@ -100,6 +100,18 @@ class TaskHandler {
       taskId: Number(taskId)
     }
   }
+
+  buildUpdateMemberRoleParams({ taskId, userId, role }) {
+    if (!taskId) { throw new BadRequestError("INVALID_TASK_ID", "taskId가 필요합니다."); }
+    if (!userId) { throw new BadRequestError("INVALID_USER_ID", "userId가 필요합니다.");}
+    if (role === undefined || role === null) { throw new BadRequestError("INVALID_ROLE", "role이 필요합니다."); }
+
+    return {
+      taskId: Number(taskId),
+      userId: Number(userId),
+      role: Number(role),
+    };
+  }
 }
 
 export default new TaskHandler();

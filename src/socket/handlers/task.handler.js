@@ -25,8 +25,8 @@ export const taskEvents = {
   UPDATE_SUBTASKS: "subtask:update", // 선택 세부 과제 수정
   DELETED_SUBTASKS: "subtask:delete", // 선택 세부 과제 삭제
   DELETED_ALL_SUBTASKS: "subtask:deleteAll", // 전체 세부 과제 삭제
-
   UPDATE_MEMBER: "member:update", // 멤버 역할 변경
+
   //서버 -> 클라이언트로 결과
   TASK_UPDATED: "task:updated", // 메인 과제 수정 완료
   SUBTASK_STATUS_UPDATED: "subtaskStatusUpdated", //세부과제 상태 업데이트 완료
@@ -36,9 +36,7 @@ export const taskEvents = {
   SUBTASKS_UPDATE: "subtask:updated", // 선택 세부 과제 수정
   SUBTASKS_DELETE: "subtask:deleted", // 선택 세부 과제 삭제
   ALL_SUBTASKS_DELETE: "subtask:deletedAll", // 전체 세부 과제 삭제
-
   MEMBER_UPDATED: "member:updated", // 멤버 역할 변경
-
 };
 
 //댓글 API 관련 SOCKET
@@ -437,29 +435,26 @@ export const setupTaskHandlers = (io, socket) => {
     try {
       // 📍 memberId 대신 userId를 받도록 수정
       const { taskId, userId, role } = payload;
-      console.log(`[SOCKET][member:update] 요청 수신`, {
-        taskId,
-        userId,
-        role,
+      console.log(`[SOCKET][member:update] 요청 수신`);
+
+      const input = taskHelper.buildUpdateMemberRoleParams({
+        ...payload,
       });
 
-      // 우리가 아까 고친 서비스 함수 호출
       const result = await taskService.modifyMemberRole(
-        Number(taskId),
-        Number(userId), // 📍 userId로 전달
-        role,
+        input.taskId,
+        input.userId,
+        input.role
       );
 
-      // 같은 방 팀원들에게 알림
-      io.to(`task:${taskId}`).emit(taskEvents.MEMBER_UPDATED, {
+      io.to(`task:${input.taskId}`).emit(taskEvents.MEMBER_UPDATED, {
         memberId: result.id,
         userId: result.userId,
         taskId: result.taskId,
-        // 📍 0(Owner) 또는 1(Member) 매핑 적용
-        role: result.role ? 0 : 1,
+        role: result.role ? 1 : 0,
       });
 
-      callback?.({ success: true, data: result });
+      respond(callback, { success: true, data: result });
     } catch (err) {
       console.error("member:update 실패", err);
       callback?.({ success: false, reason: err.message });
