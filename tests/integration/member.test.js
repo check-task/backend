@@ -180,16 +180,29 @@ describe("DELETE /api/v1/task/:taskId/members — 팀원 삭제", () => {
     expect(res.status).toBe(401);
   });
 
-  it("404: 해당 과제의 멤버가 아닐 때 NotFoundError", async () => {
+  it("404: 과제가 존재하지 않을 때 NotFoundError", async () => {
     const { NotFoundError } = await import("../../src/errors/custom.error.js");
     memberService.deleteMember.mockRejectedValue(
-      new NotFoundError("해당 과제의 멤버가 아닙니다.")
+      new NotFoundError("삭제하려는 과제가 존재하지 않습니다.")
+    );
+
+    const res = await supertest(app)
+      .delete("/api/v1/task/9999/members")
+      .set("Authorization", AUTH);
+
+    expect(res.status).toBe(404);
+  });
+
+  it("403: 해당 과제의 멤버가 아닐 때 ForbiddenError", async () => {
+    const { ForbiddenError } = await import("../../src/errors/custom.error.js");
+    memberService.deleteMember.mockRejectedValue(
+      new ForbiddenError("FORBIDDEN", "해당 과제의 멤버가 아닙니다.")
     );
 
     const res = await supertest(app)
       .delete("/api/v1/task/1/members")
       .set("Authorization", AUTH);
 
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(403);
   });
 });

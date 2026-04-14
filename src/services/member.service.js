@@ -1,5 +1,5 @@
 import { prisma } from "../db.config.js";
-import { NotFoundError } from "../errors/custom.error.js";
+import { NotFoundError, ForbiddenError } from "../errors/custom.error.js";
 import taskRepository from "../repositories/task.repository.js";
 import alarmRepository from "../repositories/alarm.repository.js";
 
@@ -52,8 +52,14 @@ class MemberService {
   }
 
   async deleteMember(taskId, requestingUserId) {
+  // 과제 존재 여부 확인
+    const currentTask = await taskRepository.findTaskById(taskId);
+    if (!currentTask) {
+      throw new NotFoundError("삭제하려는 과제가 존재하지 않습니다.");
+    }
+
     const requestingMember = await taskRepository.findMemberInTask(taskId, requestingUserId);
-    if (!requestingMember) throw new NotFoundError("해당 과제의 멤버가 아닙니다.");
+    if (!requestingMember) throw new ForbiddenError("FORBIDDEN", "해당 과제의 멤버가 아닙니다.");
 
     // 팀장이면 과제 전체 삭제
     if (requestingMember.role === false) {
