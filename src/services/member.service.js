@@ -1,5 +1,7 @@
 import { prisma } from "../db.config.js";
 import { NotFoundError } from "../errors/custom.error.js";
+import taskRepository from "../repositories/task.repository.js";
+import alarmRepository from "../repositories/alarm.repository.js";
 
 class MemberService {
   async getTaskMembers(taskId) {
@@ -47,6 +49,37 @@ class MemberService {
       nickname: m.user.nickname,
       role: m.role === 0 || m.role === false ? "owner" : "member", // 0: owner, 1: member
     }));
+  }
+
+  async deleteMember(taskId, requestingUserId) {
+    const requestingMember = await taskRepository.findMemberInTask(taskId, requestingUserId);
+    if (!requestingMember) throw new NotFoundError("해당 과제의 멤버가 아닙니다.");
+
+    // 팀장이면 과제 전체 삭제
+    if (requestingMember.role === false) {
+      await taskRepository.deleteTask(parseInt(taskId));
+      return { deleted: "task", taskId: parseInt(taskId) };
+    }
+
+    // 팀원이면 본인 멤버만 삭제
+    return await prisma.$transaction(async (tx) => {
+      await alarmRepository.deleteAlarmsByUserIdAndTaskId(
+        requestingMember.userId,
+        parseInt(taskId),
+        tx,
+      );
+      await tx.subTask.updateMany({
+        where: { assigneeId: requestingMember.id },
+        data: { assigneeId: null },
+      });
+      await tx.member.delete({ where: { id: requestingMember.id } });
+      return {
+        deleted: "member",
+        memberId: requestingMember.id,
+        userId: requestingMember.userId,
+        taskId: requestingMember.taskId,
+      };
+    });
   }
 }
 
