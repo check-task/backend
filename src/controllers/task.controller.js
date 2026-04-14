@@ -29,7 +29,15 @@ class TaskController {
       const taskRequest = TaskRequestDTO.toCreate(req.body);
       console.log(taskRequest);
 
-      const result = await taskService.registerTask(userId, taskRequest, req.files);
+      const uploadedFiles = await Promise.all(
+        (req.files || []).map(async (file) => {
+          const originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
+          const location = await uploadToS3({ ...file, originalname });
+          return { originalname, location };
+        })
+      );
+
+      const result = await taskService.registerTask(userId, taskRequest, uploadedFiles);
 
       res.status(201).json({
         resultType: "SUCCESS",
@@ -46,13 +54,20 @@ class TaskController {
     try {
       const userId = req.user.id;
       const { taskId } = req.params;
-
+      
       if (!req.body || Object.keys(req.body).length === 0) {
         throw new BadRequestError("DATA_NOT_PROVIDED", "수정할 데이터가 전달되지 않았습니다.");
       }
 
       const taskRequest = TaskRequestDTO.toUpdate(req.body);
-      const result = await taskService.modifyTask(parseInt(taskId), userId, taskRequest, req.files);
+
+      const uploadedFiles = await Promise.all(
+        (req.files || []).map(async (file) => {
+          const originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
+          const location = await uploadToS3({ ...file, originalname });
+          return { originalname, location };
+        }))
+      const result = await taskService.modifyTask(parseInt(taskId), userId, taskRequest, uploadedFiles);
 
       res.status(200).json({
         resultType: "SUCCESS",
