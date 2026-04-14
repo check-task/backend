@@ -14,8 +14,8 @@ class ModalRepository {
   }
 
   // 자료
-  async createRefMany(data) {
-    return prisma.reference.createMany({
+  async createRefMany(data, tx = prisma) {
+    return tx.reference.createMany({
       data,
     })
   }
