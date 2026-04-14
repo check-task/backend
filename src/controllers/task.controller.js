@@ -64,23 +64,6 @@ class TaskController {
     }
   }
 
-  // 과제 삭제
-  async deleteTask(req, res, next) {
-    try {
-      const { taskId } = req.params;
-      const userId = req.user.id;
-      await taskService.removeTask(taskId, userId);
-
-      res.status(200).json({
-        resultType: "SUCCESS",
-        message: "과제가 성공적으로 삭제되었습니다.",
-        data: null,
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
   // 과제 세부 사항 조회
   async getTaskDetail(req, res, next) {
     try {
