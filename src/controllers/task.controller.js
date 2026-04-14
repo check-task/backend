@@ -29,15 +29,7 @@ class TaskController {
       const taskRequest = TaskRequestDTO.toCreate(req.body);
       console.log(taskRequest);
 
-      const uploadedFiles = await Promise.all(
-        (req.files || []).map(async (file) => {
-          const originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
-          const location = await uploadToS3({ ...file, originalname });
-          return { originalname, location };
-        })
-      );
-
-      const result = await taskService.registerTask(userId, taskRequest, uploadedFiles);
+      const result = await taskService.registerTask(userId, taskRequest, req.files);
 
       res.status(201).json({
         resultType: "SUCCESS",
@@ -60,14 +52,7 @@ class TaskController {
       }
 
       const taskRequest = TaskRequestDTO.toUpdate(req.body);
-
-      const uploadedFiles = await Promise.all(
-        (req.files || []).map(async (file) => {
-          const originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
-          const location = await uploadToS3({ ...file, originalname });
-          return { originalname, location };
-        }))
-      const result = await taskService.modifyTask(parseInt(taskId), userId, taskRequest, uploadedFiles);
+      const result = await taskService.registerTask(userId, taskRequest, req.files);
 
       res.status(200).json({
         resultType: "SUCCESS",
