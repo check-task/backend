@@ -1083,6 +1083,10 @@ paths:
                       url:
                         type: string
                         example: "https://notion.so/project/12345"
+                      fileName:
+                        type: string
+                        description: "파일명"
+                        example: "첨부자료1.pdf"
                       fileUrl:
                         type: string
                         description: "업로드된 파일 경로"
@@ -3985,6 +3989,10 @@ paths:
                           type: string
                           nullable: true
                           example: "https://example.com"
+                        file_name:
+                          type: string
+                          nullable: true
+                          example: "과제 첨부자료1.pdf"
                         file_url:
                           type: string
                           nullable: true
@@ -4099,6 +4107,10 @@ paths:
                         type: string
                         nullable: true
                         example: "https://updated-example.com"
+                      file_name:
+                        type: string
+                        nullable: true
+                        example: "첨부자료 수정1.pdf"
                       file_url:
                         type: string
                         nullable: true
