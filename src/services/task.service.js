@@ -350,24 +350,6 @@ class TaskService {
     });
   }
 
-  // 과제 삭제
-  async removeTask(taskId, userId) {
-    // 과제 존재 여부 확인
-    const currentTask = await taskRepository.findTaskById(taskId);
-    if (!currentTask) {
-      throw new NotFoundError("삭제하려는 과제가 존재하지 않습니다.");
-    }
-
-    // 본인이 멤버인지 확인
-    const member = await taskRepository.findMemberInTask(taskId, userId);
-    if (!member) {
-      throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제를 삭제할 권한이 없습니다.");
-    }
-
-    // 과제 삭제 실행
-    return await taskRepository.deleteTask(taskId);
-  }
-
   // 과제 세부 사항 조회
   async getTaskDetail(taskId, userId) {
     const taskDetail = await taskRepository.findTaskDetail(taskId, userId);

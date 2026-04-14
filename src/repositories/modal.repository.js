@@ -32,6 +32,7 @@ class ModalRepository {
       select: {
         id: true,
         name: true,
+        fileName: true,
         url: true,
         fileUrl: true
       }
@@ -44,6 +45,7 @@ class ModalRepository {
       select: {
         id: true,
         name: true,
+        fileName: true,
         url: true,
         fileUrl: true,
         updatedAt: true

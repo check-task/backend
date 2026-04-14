@@ -175,7 +175,7 @@ model UserAlarm {
 model Folder {
   id          Int      @id @default(autoincrement()) @map("folder_id")
   userId      Int      @map("user_id")
-  folderTitle String   @map("folder_title") @db.VarChar(100)
+  folderTitle String   @map("folder_title") @db.VarChar(20)
   color       String   @db.VarChar(7)
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
 
@@ -190,7 +190,7 @@ model Folder {
 // 과제 (Task)
 model Task {
   id              Int        @id @default(autoincrement()) @map("task_id")
-  title           String     @db.VarChar(100)
+  title           String     @db.VarChar(20)
   deadline        DateTime   @db.Timestamp
   type            TaskType // Team, Personal
   status          TaskStatus // PENDING, PROGRESS, COMPLETED
@@ -274,6 +274,7 @@ model Reference {
   id        Int       @id @default(autoincrement()) @map("data_id")
   taskId    Int       @map("task_id") // 과제 id
   name      String    @db.VarChar(50) // 자료 이름
+  fileName  String?   @map("file_name") @db.VarChar(255) //자료 파일명
   url       String?   @db.VarChar(255) // 자료 링크
   fileUrl   String?   @map("file_url") @db.VarChar(255) // 자료 파일 url
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp // 자료 생성 일자

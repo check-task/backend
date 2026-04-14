@@ -16,6 +16,7 @@ class ModalService {
     const data = items.map(item => ({
       taskId,
       name: item.name,
+      fileName: type === 'file' ? item.file_name : null,
       url: type === 'url' ? item.url : null,
       fileUrl: type === 'file' ? item.file_url : null,
     }))
@@ -26,7 +27,7 @@ class ModalService {
   }
 
   async updateReference(dto) {
-    const { taskId, referenceId, userId, name, url, fileUrl } = dto;
+    const { taskId, referenceId, userId, name, url, fileUrl, fileName } = dto;
 
     const task = await modalRepository.isTask(taskId);
     if (!task) throw new NotFoundError('taskId가 존재하지 않습니다.');
@@ -39,10 +40,10 @@ class ModalService {
       throw new NotFoundError('자료가 존재하지 않습니다.');
     }
 
-    modalRepository.updateRef(referenceId, {
+    await modalRepository.updateRef(referenceId, {
       ...(name && { name }),
-      ...(url && { url, fileUrl: null }),
-      ...(fileUrl && { fileUrl, url: null }),
+      ...(url && { url, fileUrl: null, fileName: null }),
+      ...(fileUrl && { fileUrl, url: null, fileName }),
     });
 
     const updatedReference = await modalRepository.findReferenceById(referenceId);

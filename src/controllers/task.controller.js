@@ -46,35 +46,18 @@ class TaskController {
     try {
       const userId = req.user.id;
       const { taskId } = req.params;
-
+      
       if (!req.body || Object.keys(req.body).length === 0) {
         throw new BadRequestError("DATA_NOT_PROVIDED", "수정할 데이터가 전달되지 않았습니다.");
       }
 
       const taskRequest = TaskRequestDTO.toUpdate(req.body);
-      const result = await taskService.modifyTask(parseInt(taskId), userId, taskRequest);
+      const result = await taskService.registerTask(userId, taskRequest, req.files);
 
       res.status(200).json({
         resultType: "SUCCESS",
         message: "과제가 성공적으로 수정되었습니다.",
         data: result,
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  // 과제 삭제
-  async deleteTask(req, res, next) {
-    try {
-      const { taskId } = req.params;
-      const userId = req.user.id;
-      await taskService.removeTask(taskId, userId);
-
-      res.status(200).json({
-        resultType: "SUCCESS",
-        message: "과제가 성공적으로 삭제되었습니다.",
-        data: null,
       });
     } catch (error) {
       next(error);

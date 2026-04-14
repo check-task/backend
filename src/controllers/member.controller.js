@@ -1,5 +1,22 @@
 import memberService from "../services/member.service.js";
 
+export const deleteMember = async (req, res, next) => {
+  try {
+    const { taskId } = req.params;
+    const requestingUserId = req.user.id;
+
+    const result = await memberService.deleteMember(taskId, requestingUserId);
+
+    return res.status(200).json({
+      resultType: "SUCCESS",
+      message: "멤버가 삭제되었습니다.",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getTaskMembers = async (req, res, next) => {
   try {
     const { taskId } = req.params;
