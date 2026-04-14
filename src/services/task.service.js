@@ -10,6 +10,7 @@ import { TaskResponseDTO } from "../dtos/task.dto.js";
 import { prisma } from "../db.config.js";
 import { calculateAlarmDate } from "../utils/calculateAlarmDate.js";
 import alarmRepository from "../repositories/alarm.repository.js";
+import { CommentRepository } from "../repositories/comment.repository.js";
 
 class TaskService {
   // 완료 과제 조회
@@ -241,7 +242,7 @@ class TaskService {
   }
 
   // 과제 수정
-  async modifyTask(taskId, userId, updateData, files = []) {
+  async modifyTask(taskId, userId, updateData) {
     // 과제 존재 여부 확인
     const currentTask = await taskRepository.findTaskById(taskId);
     if (!currentTask) throw new NotFoundError("수정하려는 과제가 존재하지 않습니다.");
@@ -281,50 +282,10 @@ class TaskService {
       });
 
       delete updateData.folderId;
-
-      console.log("폴더 업데이트 성공")
-      console.log(updateData)
     }
 
-    return await prisma.$transaction(async (tx) => {
-      const referenceData = [];
-
-      // JSON 문자열로 들어온 링크 데이터 취합
-      if (updateData.references && Array.isArray(updateData.references)) {
-        updateData.references.forEach(ref => {
-          referenceData.push({
-            taskId: Number(taskId),
-            name: ref.name,
-            url: ref.url || null,
-            fileUrl: ref.fileUrl || null
-          });
-        });
-        delete updateData.references; // Task 테이블 데이터에서는 삭제
-      }
-
-      // 업로드된 파일 정보 취합
-      if (files && files.length > 0) {
-        files.forEach(file => {
-          referenceData.push({
-            taskId: Number(taskId),
-            name: file.originalname,
-            fileUrl: file.location || file.path
-          });
-        });
-      }
-
-      // DB에 한꺼번에 저장
-      if (referenceData.length > 0) {
-        await tx.reference.createMany({ data: referenceData });
-      }
-
-      const updatedTask = await tx.task.update({
-        where: { id: Number(taskId) },
-        data: updateData
-      });
-
-      return { taskId: updatedTask.id };
-    });
+    const updatedTask = await taskRepository.updateTask(taskId, updateData);
+    return { taskId: updatedTask.id };
   }
 
   // Task 마감일 변경 서비스
@@ -683,9 +644,12 @@ class TaskService {
 
         console.log("Updated task:", updatedTask);
 
+        const assigneeUser = await CommentRepository.findUserById(userId);
+
         return {
           subTaskId: updatedTask.id,
-          assigneeId: parsedAssigneeUserId,
+          assignee: assigneeUser,
+          updatedAt: updatedTask.updatedAt
         };
       });
     } catch (error) {
@@ -1105,6 +1069,7 @@ class TaskService {
           subTaskId: updatedSubTask.id,
           title: updatedSubTask.title,
           deadline: updatedSubTask.endDate,
+          isAlarm: updatedSubTask.isAlarm
         });
       }
     return results; 
@@ -1155,9 +1120,9 @@ class TaskService {
       await alarmRepository.deleteAlarmsBySubTaskIds(subTaskIds, tx);
 
       // 세부 과제 삭제
-      const result = await taskRepository.deleteAllSubTasksByTaskId(taskId, tx);
+      await taskRepository.deleteAllSubTasksByTaskId(taskId, tx);
 
-      return { deletedCount: result.count };
+      return { deleted: subTaskIds };
     });
   }
 }
