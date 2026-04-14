@@ -78,6 +78,7 @@ export class TaskRequestDTO {
       })),
       references: (data.references || []).map(ref => ({
         name: ref.name,
+        fileName: ref.fileName || null,
         url: ref.url || null,
         fileUrl: ref.fileUrl || null
       })),
