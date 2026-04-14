@@ -80,7 +80,7 @@ class TaskService {
   }
 
   // 과제 생성
-  async registerTask(userId, data) {
+  async registerTask(userId, data, files = []) {
     const { subTasks, references, communications, folderId, ...taskData } = data;
 
     if (!taskData.title) throw new BadRequestError("TASK_TITLE_REQUIRED", "과제명은 필수입니다.");
@@ -231,6 +231,16 @@ class TaskService {
         await taskRepository.addReferences(newTask.id, references, tx);
       }
 
+      if (files && files.length > 0) {
+        const fileReferences = files.map(file => ({
+          taskId: newTask.id,
+          name: file.originalname,
+          fileName: file.originalname,
+          fileUrl: file.location,
+        }));
+        await taskRepository.addReferences(newTask.id, fileReferences, tx);
+      }
+
       if (communications && communications.length > 0) {
         // 레포지토리에 addCommunications 함수가 있다면 호출
         await taskRepository.addCommunications(newTask.id, communications, tx);
@@ -295,6 +305,7 @@ class TaskService {
           referenceData.push({
             taskId: Number(taskId),
             name: ref.name,
+            fileName: ref.fileName || null,
             url: ref.url || null,
             fileUrl: ref.fileUrl || null
           });
@@ -308,6 +319,7 @@ class TaskService {
           referenceData.push({
             taskId: Number(taskId),
             name: file.originalname,
+            fileName: file.originalname,
             fileUrl: file.location || file.path
           });
         });
