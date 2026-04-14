@@ -7,6 +7,7 @@ import {
 } from "../errors/custom.error.js";
 import { userRepository } from "../repositories/user.repository.js";
 import { TaskResponseDTO } from "../dtos/task.dto.js";
+import modalRepository from "../repositories/modal.repository.js";
 import { prisma } from "../db.config.js";
 import { calculateAlarmDate } from "../utils/calculateAlarmDate.js";
 import alarmRepository from "../repositories/alarm.repository.js";
@@ -81,7 +82,7 @@ class TaskService {
   }
 
   // 과제 생성
-  async registerTask(userId, data) {
+  async registerTask(userId, data, files = []) {
     const { subTasks, references, communications, folderId, ...taskData } = data;
 
     if (!taskData.title) throw new BadRequestError("TASK_TITLE_REQUIRED", "과제명은 필수입니다.");
@@ -229,9 +230,23 @@ class TaskService {
       }
 
       if (references && references.length > 0) {
-        await taskRepository.addReferences(newTask.id, references, tx);
+        const refData = references.map(ref => ({
+          ...ref,
+          taskId: newTask.id,
+        }));
+        await modalRepository.createRefMany(refData, tx);
       }
 
+      if (files && files.length > 0) {
+        const fileRefs = files.map(file => ({
+          taskId: newTask.id,
+          name: file.originalname,
+          fileName: file.originalname,
+          fileUrl: file.location,
+        }));
+        await modalRepository.createRefMany(fileRefs, tx);
+      }
+      
       if (communications && communications.length > 0) {
         // 레포지토리에 addCommunications 함수가 있다면 호출
         await taskRepository.addCommunications(newTask.id, communications, tx);
