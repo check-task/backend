@@ -13,7 +13,7 @@ class TaskHandler {
     };
   }
 
-  buildUpdateSubTaskParams({ userId, subTaskId, status }) {
+  buildUpdateSubTaskStatusParams({ userId, subTaskId, status }) {
     if (!subTaskId) {throw new BadRequestError("INVALID_SUBTASK_ID", "서브태스크 ID가 필요합니다.")}
     if (!status) {throw new BadRequestError("INVALID_STATUS", "상태 값이 필요합니다.");}
 
@@ -56,19 +56,50 @@ class TaskHandler {
   }
 
   buildCreateSubTaskParams({ userId, taskId, body }) {
-    if (!taskId) {
-      throw new BadRequestError("INVALID_TASK_ID", "과제 ID가 필요합니다.");
-    }
-  
-    if (!body || Object.keys(body).length === 0) {
-      throw new BadRequestError("DATA_NOT_PROVIDED", "생성할 데이터가 없습니다.");
-    }
+    if (!taskId) {throw new BadRequestError("INVALID_TASK_ID", "과제 ID가 필요합니다.");}
+    if (!body || Object.keys(body).length === 0) {throw new BadRequestError("DATA_NOT_PROVIDED", "생성할 데이터가 없습니다.");}
   
     return {
       userId,
       taskId: Number(taskId),
       dto: TaskRequestDTO.toCreateSubTask(body),
     };
+  }
+
+  buildUpdateSubTaskParams({ userId, taskId, subTasks }) {
+    if (!taskId) {throw new BadRequestError("INVALID_TASK_ID", "과제 ID가 필요합니다.");}
+    if (!subTasks || Object.keys(subTasks).length === 0) {throw new BadRequestError("DATA_NOT_PROVIDED", "수정할 데이터가 없습니다.");}
+
+    const dtoList = subTasks.map(({ subTaskId, ...rest }) => ({
+      subTaskId: Number(subTaskId),
+      ...TaskRequestDTO.toSubUpdate(rest),
+    }));
+
+    return {
+      userId,
+      taskId: Number(taskId),
+      dtoList
+    };
+  }
+
+  buildDeleteSubTaskParams({ userId, taskId, subTaskIds }) {
+    if (!taskId) {throw new BadRequestError("INVALID_TASK_ID", "과제 ID가 필요합니다.");}
+    if (!subTaskIds || Object.keys(subTaskIds).length === 0) {throw new BadRequestError("DATA_NOT_PROVIDED", "수정할 데이터가 없습니다.");}
+
+    return {
+      userId,
+      taskId: Number(taskId),
+      subTaskIds: subTaskIds.map(Number)
+    }
+  }
+
+  buildAllDeleteSubTaskParams({ userId, taskId }) {
+    if (!taskId) {throw new BadRequestError("INVALID_TASK_ID", "과제 ID가 필요합니다.");}
+
+    return {
+      userId,
+      taskId: Number(taskId)
+    }
   }
 }
 

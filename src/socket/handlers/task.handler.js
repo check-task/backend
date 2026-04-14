@@ -17,20 +17,27 @@ export const taskEvents = {
   JOIN_TASK: "joinTaskRoom", //태스크 방 입장
   //클라이언트 -> 서버로 명령
   UPDATE_TASK: "task:update", // 메인 과제 수정
-
-  UPDATE_SUBTASK: "updateSubtaskStatus", //세부과제 상태 업데이트
+  UPDATE_SUBTASK_STATUS: "updateSubtaskStatus", //세부과제 상태 업데이트
   UPDATE_DEADLINE: "updateDeadline", //세부과제 마감일 업데이트
   SET_ASSIGNEE: "setSubTaskAssignee", //세부과제 담당자 설정
-  UPDATE_MEMBER: "member:update", // 멤버 역할 변경
   CREATE_SUBTASK: "subtask:create", // 단일 세부 과제 생성
+  UPDATE_SUBTASKS: "subtask:update", // 선택 세부 과제 수정
+  DELETED_SUBTASKS: "subtask:delete", // 선택 세부 과제 삭제
+  DELETED_ALL_SUBTASKS: "subtask:deleteAll", // 전체 세부 과제 삭제
+
+  UPDATE_MEMBER: "member:update", // 멤버 역할 변경
   //서버 -> 클라이언트로 결과
   TASK_UPDATED: "task:updated", // 메인 과제 수정 완료
-
-  SUBTASK_UPDATED: "subtaskStatusUpdated", //세부과제 상태 업데이트 완료
+  SUBTASK_STATUS_UPDATED: "subtaskStatusUpdated", //세부과제 상태 업데이트 완료
   DEADLINE_UPDATED: "deadlineUpdated", //세부과제 마감일 업데이트 완료
   ASSIGNEE_UPDATED: "subtaskAssigneeUpdated", //세부과제 담당자 업데이트
-  MEMBER_UPDATED: "member:updated", // 멤버 역할 변경
   SUBTASK_CREATED: "subtask:created", // 단일 세부 과제 생성
+  SUBTASKS_UPDATE: "subtask:updated", // 선택 세부 과제 수정
+  SUBTASKS_DELETE: "subtask:deleted", // 선택 세부 과제 삭제
+  ALL_SUBTASKS_DELETE: "subtask:deletedAll", // 전체 세부 과제 삭제
+
+  MEMBER_UPDATED: "member:updated", // 멤버 역할 변경
+
 };
 
 //댓글 API 관련 SOCKET
@@ -134,7 +141,7 @@ export const setupTaskHandlers = (io, socket) => {
       const updatedTask = await taskService.getTaskDetail(inputData.taskId);
       io.to(`task:${taskId}`).emit(taskEvents.TASK_UPDATED, updatedTask);
 
-      callback?.({ success: true, data: result });
+      respond(callback, {success: true, data: result});
     } catch (err) {
       console.error("[SOCKET][task:update] 실패", err);
       callback?.({ success: false, reason: err.message });
@@ -142,12 +149,12 @@ export const setupTaskHandlers = (io, socket) => {
   });
 
   // 세부과제 상태 업데이트
-  socket.on(taskEvents.UPDATE_SUBTASK, async (payload, callback) => {
+  socket.on(taskEvents.UPDATE_SUBTASK_STATUS, async (payload, callback) => {
       try {
         const { taskId, subTaskId, status } = payload;
         console.log(`[SOCKET][subTask:update] 요청 수신`, { taskId, subTaskId, status });
 
-        const inputData = taskHelper.buildUpdateSubTaskParams({
+        const inputData = taskHelper.buildUpdateSubTaskStatusParams({
           userId: socket.user.id,
           subTaskId,
           status,
@@ -160,7 +167,7 @@ export const setupTaskHandlers = (io, socket) => {
         );
 
         // 브로드캐스트
-        io.to(`task:${taskId}`).emit(taskEvents.SUBTASK_UPDATED, {
+        io.to(`task:${taskId}`).emit(taskEvents.SUBTASK_STATUS_UPDATED, {
           ...updatedSubTask,
           updatedAt: updatedSubTask.updatedAt.toISOString(),
         });
@@ -235,6 +242,7 @@ export const setupTaskHandlers = (io, socket) => {
       }
     },
   );
+
   // 세부 과제 생성
   socket.on(taskEvents.CREATE_SUBTASK, async (payload, callback) => {
     try {
@@ -256,16 +264,91 @@ export const setupTaskHandlers = (io, socket) => {
       // 방 전체에 새로운 세부과제 정보 브로드캐스트
       io.to(`task:${taskId}`).emit(taskEvents.SUBTASK_CREATED, result);
 
-      callback?.({ success: true, data: result });
+      respond(callback, {success: true, data: result});
     } catch (err) {
       console.error("subtask:create 실패", err);
       callback?.({ success: false, reason: err.message });
     }
   });
   // 세부 과제 수정
-  // 세부 과제 삭제
-  // 세부 과제 담당자 설정
+  socket.on(taskEvents.UPDATE_SUBTASKS, async (payload, callback) => {
+    try {
+      const { taskId, subTasks } = payload;
+      console.log(`[SOCKET][subtask:update] 요청 수신`);
 
+      const inputData = taskHelper.buildUpdateSubTaskParams({
+        userId: socket.user.id,
+        taskId,
+        subTasks
+      });
+
+      const result = await taskService.updateSelectedSubTasks(
+        inputData.userId,
+        inputData.taskId,
+        inputData.dtoList
+      );
+
+      // 브로드캐스트
+      io.to(`task:${taskId}`).emit(taskEvents.SUBTASKS_UPDATE, result);
+
+      respond(callback, {success: true, data: result});
+    } catch (err) {
+      console.error("subtask:update 실패", err);
+      callback?.({ success: false, reason: err.message });
+    }
+  })
+  // 세부 과제 선택 삭제
+  socket.on(taskEvents.DELETED_SUBTASKS, async (payload, callback) => {
+    try {
+      const { taskId, subTaskIds } = payload;
+      console.log(`[SOCKET][subtask:delete] 요청 수신`);
+
+      const inputData = taskHelper.buildDeleteSubTaskParams({
+        userId: socket.user.id,
+        taskId,
+        subTaskIds
+      });
+
+      const result = await taskService.deleteSelectedSubTasks(
+        inputData.userId,
+        inputData.taskId,
+        inputData.subTaskIds
+      );
+
+      // 브로드캐스트
+      io.to(`task:${taskId}`).emit(taskEvents.SUBTASKS_DELETE, result);
+
+      respond(callback, {success: true, data: result});
+    } catch (err) {
+      console.error("subtask:delete 실패", err);
+      callback?.({ success: false, reason: err.message });
+    }
+  })
+  // 세부 과제 전체 삭제
+  socket.on(taskEvents.DELETED_ALL_SUBTASKS, async (payload, callback) => {
+    try {
+      const { taskId } = payload;
+      console.log(`[SOCKET][subtask:deletedAll] 요청 수신`);
+
+      const inputData = taskHelper.buildAllDeleteSubTaskParams({
+        userId: socket.user.id,
+        taskId
+      });
+
+      const result = await taskService.deleteAllSubTasks(
+        inputData.userId,
+        inputData.taskId
+      );
+
+      // 브로드캐스트
+      io.to(`task:${taskId}`).emit(taskEvents.ALL_SUBTASKS_DELETE, result);
+
+      respond(callback, {success: true, data: result});
+    } catch (err) {
+      console.error("subtask:deletedAll 실패", err);
+      callback?.({ success: false, reason: err.message });
+    }
+  })
 
   // 댓글 생성
   socket.on(commentEvents.CREATE_COMMENT, async (payload, callback) => {
@@ -791,8 +874,7 @@ export const setupTaskHandlers = (io, socket) => {
 function respond(callback, data) {
   if (typeof callback === "function") {
     callback({
-      ...data,
-      timestamp: new Date().toISOString(),
+      ...data
     });
   }
 }
