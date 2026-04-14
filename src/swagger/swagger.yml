@@ -1083,10 +1083,6 @@ paths:
                       url:
                         type: string
                         example: "https://notion.so/project/12345"
-                      fileName:
-                        type: string
-                        description: "파일명"
-                        example: "첨부자료1.pdf"
                       fileUrl:
                         type: string
                         description: "업로드된 파일 경로"
