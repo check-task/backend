@@ -45,11 +45,12 @@ export class CreateReferenceDto {
 }
 
 export class UpdateReferenceDto {
-  constructor({ taskId, referenceId, userId, name, url, file_url }) {
+  constructor({ taskId, referenceId, userId, name, url, file_url, file_name }) {
     this.taskId = taskId;
     this.referenceId = referenceId;
     this.userId = userId;
     this.name = name;
+    this.fileName = file_name ?? null;
     this.url = url;
     this.fileUrl = file_url;
 
