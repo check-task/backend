@@ -133,7 +133,7 @@ describe("GET /api/v1/task/:taskId/members — 팀원 목록 조회", () => {
 });
 
 // ─── 팀원 삭제 ────────────────────────────────────────────────────────
-describe("DELETE /api/v1/task/:taskId/members — 팀원 삭제", () => {
+describe("DELETE /api/v1/task/:taskId — 팀원 삭제", () => {
   it("200: 팀원이 탈퇴하면 멤버만 삭제", async () => {
     memberService.deleteMember.mockResolvedValue({
       deleted: "member",
@@ -143,7 +143,7 @@ describe("DELETE /api/v1/task/:taskId/members — 팀원 삭제", () => {
     });
 
     const res = await supertest(app)
-      .delete("/api/v1/task/1/members")
+      .delete("/api/v1/task/1")
       .set("Authorization", AUTH);
 
     expect(res.status).toBe(200);
@@ -158,7 +158,7 @@ describe("DELETE /api/v1/task/:taskId/members — 팀원 삭제", () => {
     });
 
     const res = await supertest(app)
-      .delete("/api/v1/task/1/members")
+      .delete("/api/v1/task/1")
       .set("Authorization", AUTH);
 
     expect(res.status).toBe(200);
@@ -167,7 +167,7 @@ describe("DELETE /api/v1/task/:taskId/members — 팀원 삭제", () => {
 
   it("400: taskId가 0이면 VALIDATION_ERROR", async () => {
     const res = await supertest(app)
-      .delete("/api/v1/task/0/members")
+      .delete("/api/v1/task/0")
       .set("Authorization", AUTH);
 
     expect(res.status).toBe(400);
@@ -175,7 +175,7 @@ describe("DELETE /api/v1/task/:taskId/members — 팀원 삭제", () => {
   });
 
   it("401: 토큰 없음", async () => {
-    const res = await supertest(app).delete("/api/v1/task/1/members");
+    const res = await supertest(app).delete("/api/v1/task/1");
 
     expect(res.status).toBe(401);
   });
@@ -187,7 +187,7 @@ describe("DELETE /api/v1/task/:taskId/members — 팀원 삭제", () => {
     );
 
     const res = await supertest(app)
-      .delete("/api/v1/task/9999/members")
+      .delete("/api/v1/task/9999")
       .set("Authorization", AUTH);
 
     expect(res.status).toBe(404);
@@ -200,7 +200,7 @@ describe("DELETE /api/v1/task/:taskId/members — 팀원 삭제", () => {
     );
 
     const res = await supertest(app)
-      .delete("/api/v1/task/1/members")
+      .delete("/api/v1/task/1")
       .set("Authorization", AUTH);
 
     expect(res.status).toBe(403);
