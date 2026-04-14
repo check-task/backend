@@ -380,7 +380,6 @@ export const setupTaskHandlers = (io, socket) => {
   // 댓글 수정
   socket.on(commentEvents.UPDATE_COMMENT, async (payload, callback) => {
     try {
-      const { taskId, subTaskId, commentId, content } = payload;
       console.log(`[SOCKET][comment:update] 요청 수신`);
 
       const input = commentHelper.buildUpdateCommentParams({
@@ -408,20 +407,25 @@ export const setupTaskHandlers = (io, socket) => {
   // 댓글 삭제
   socket.on(commentEvents.DELETE_COMMENT, async (payload, callback) => {
     try {
-      const { taskId, subTaskId, commentId } = payload;
-      const userId = socket.user.id;
+      console.log(`[SOCKET][comment:delete] 요청 수신`);
 
-      console.log(`[SOCKET][comment:delete] 요청 수신`, { userId, commentId });
-
-      const deleteComment = await CommentService.deleteComment(Number(commentId), userId);
-
-      io.to(`task:${taskId}`).emit(commentEvents.DELETED_COMMENT, {
-        taskId: Number(taskId),
-        subTaskId: Number(subTaskId),
-        commentId: Number(commentId),
+      const input = commentHelper.buildDeleteCommentParams({
+        userId: socket.user.id,
+        ...payload,
       });
 
-      respond(callback, {success: true, data: deleteComment});
+      const deleteComment = await CommentService.deleteComment(
+        input.commentId,
+        input.userId
+      );
+
+      io.to(`task:${input.taskId}`).emit(commentEvents.DELETED_COMMENT, {
+        taskId: input.taskId,
+        subTaskId: input.subTaskId,
+        commentId: input.commentId,
+      });
+
+      respond(callback, { success: true, data: deleteComment });
     } catch (err) {
       console.error(`[SOCKET][comment:delete] 실패`, err);
       callback?.({ success: false, message: err.message });

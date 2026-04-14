@@ -26,7 +26,18 @@ class CommentHandler {
     };
   }
 
-
+  buildDeleteCommentParams({ userId, taskId, subTaskId, commentId }) {
+    if (!commentId) {
+      throw new BadRequestError("INVALID_COMMENT_ID", "댓글 ID가 필요합니다.");
+    }
+  
+    return {
+      userId,
+      taskId: Number(taskId),
+      subTaskId: Number(subTaskId),
+      commentId: Number(commentId),
+    };
+  }
 }
 
 export default new CommentHandler();
