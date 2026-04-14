@@ -22,8 +22,7 @@ class ModalService {
 
     await modalRepository.createRefMany(data);
 
-    const references = await modalRepository.findRefByTaskId(taskId);
-    return references;
+    return data;
   }
 
   async updateReference(dto) {
@@ -75,8 +74,8 @@ class ModalService {
     const member = await modalRepository.memberCheck(userId, taskId);
     if (!member) throw new UnauthorizedError('권한이 없습니다.');
 
-    await modalRepository.createCommu({ taskId, name, url });
-    return modalRepository.findCommuByTaskId(taskId);
+    const comuId = await modalRepository.createCommu({ taskId, name, url });
+    return modalRepository.findCommuById(comuId.id);
   }
 
   async updateCommunication(dto) {
@@ -116,8 +115,8 @@ class ModalService {
     const member = await modalRepository.memberCheck(userId, taskId);
     if (!member) throw new UnauthorizedError('권한이 없습니다.');
 
-    await modalRepository.createLog({ taskId, date, agenda, conclusion, discussion });
-    return modalRepository.findLogByTaskId(taskId);
+    const logId = await modalRepository.createLog({ taskId, date, agenda, conclusion, discussion });
+    return modalRepository.findLogById(logId.id);
   }
 
   async updateLog(dto) {

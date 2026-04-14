@@ -3,8 +3,7 @@ import { TaskRequestDTO } from "../dtos/task.dto.js";
 
 class CommentHandler {
   buildUpdateTaskParams({ userId, subTaskId, content }) {
-    if (!taskId) { throw new BadRequestError("INVALID_TASK_ID", "과제 ID가 필요합니다."); }
-    if (!content || Object.keys(body).length === 0) { throw new BadRequestError( "DATA_NOT_PROVIDED", "수정할 데이터가 전달되지 않았습니다."); }
+    if (!content || Object.keys(content).length === 0) { throw new BadRequestError( "DATA_NOT_PROVIDED", "수정할 데이터가 전달되지 않았습니다."); }
         
     return {
       subTaskId: Number(subTaskId),

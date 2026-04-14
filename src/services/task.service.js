@@ -10,6 +10,7 @@ import { TaskResponseDTO } from "../dtos/task.dto.js";
 import { prisma } from "../db.config.js";
 import { calculateAlarmDate } from "../utils/calculateAlarmDate.js";
 import alarmRepository from "../repositories/alarm.repository.js";
+import { CommentRepository } from "../repositories/comment.repository.js";
 
 class TaskService {
   // 완료 과제 조회
@@ -661,9 +662,11 @@ class TaskService {
 
         console.log("Updated task:", updatedTask);
 
+        const assigneeUser = await CommentRepository.findUserById(userId);
+
         return {
           subTaskId: updatedTask.id,
-          assigneeId: parsedAssigneeUserId,
+          assignee: assigneeUser,
           updatedAt: updatedTask.updatedAt
         };
       });
@@ -1084,6 +1087,7 @@ class TaskService {
           subTaskId: updatedSubTask.id,
           title: updatedSubTask.title,
           deadline: updatedSubTask.endDate,
+          isAlarm: updatedSubTask.isAlarm
         });
       }
     return results; 
@@ -1134,9 +1138,9 @@ class TaskService {
       await alarmRepository.deleteAlarmsBySubTaskIds(subTaskIds, tx);
 
       // 세부 과제 삭제
-      const result = await taskRepository.deleteAllSubTasksByTaskId(taskId, tx);
+      await taskRepository.deleteAllSubTasksByTaskId(taskId, tx);
 
-      return { deletedCount: result.count };
+      return { deleted: subTaskIds };
     });
   }
 }

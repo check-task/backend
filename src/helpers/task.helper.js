@@ -32,8 +32,8 @@ class TaskHandler {
   
     return {
       subTaskId: Number(subTaskId),
-      userId,
       endDate: deadlineDate,
+      userId,
     };
   }
 
@@ -54,22 +54,22 @@ class TaskHandler {
     };
   }
 
-  buildCreateSubTaskParams({ userId, taskId, body }) {
+  buildCreateSubTaskParams({ userId, taskId, data }) {
     if (!taskId) {throw new BadRequestError("INVALID_TASK_ID", "과제 ID가 필요합니다.");}
-    if (!body || Object.keys(body).length === 0) {throw new BadRequestError("DATA_NOT_PROVIDED", "생성할 데이터가 없습니다.");}
+    if (!data || Object.keys(data).length === 0) {throw new BadRequestError("DATA_NOT_PROVIDED", "생성할 데이터가 없습니다.");}
   
     return {
       userId,
       taskId: Number(taskId),
-      dto: TaskRequestDTO.toCreateSubTask(body),
+      dto: TaskRequestDTO.toCreateSubTask(data),
     };
   }
 
-  buildUpdateSubTaskParams({ userId, taskId, subTasks }) {
+  buildUpdateSubTaskParams({ userId, taskId, data }) {
     if (!taskId) {throw new BadRequestError("INVALID_TASK_ID", "과제 ID가 필요합니다.");}
-    if (!subTasks || Object.keys(subTasks).length === 0) {throw new BadRequestError("DATA_NOT_PROVIDED", "수정할 데이터가 없습니다.");}
+    if (!data || Object.keys(data).length === 0) {throw new BadRequestError("DATA_NOT_PROVIDED", "수정할 데이터가 없습니다.");}
 
-    const dtoList = subTasks.map(({ subTaskId, ...rest }) => ({
+    const dtoList = data.map(({ subTaskId, ...rest }) => ({
       subTaskId: Number(subTaskId),
       ...TaskRequestDTO.toSubUpdate(rest),
     }));
