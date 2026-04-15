@@ -47,6 +47,14 @@ enum DeviceType {
   APP_ANDROID
 }
 
+enum AlarmType {
+  TASK //과제
+  SUBTASK //세부과제
+  MEMBER //맴버
+  NOTIFICATION //공지
+  OTHER //기타
+}
+
 model TaskPriority {
   id        Int       @id @default(autoincrement()) @map("priority_id")
   userId    Int       @map("user_id")
@@ -155,6 +163,8 @@ model UserAlarm {
   taskId    Int? @map("task_id") // 과제 id 과제 알람일 수도 있고 아닐 수도 있으니 nullable 고려
   subTaskId Int? @map("sub_task_id") // 세부과제 id 세부과제알람일 수도 있고 아닐 수도 있으니 nullable 고려
 
+  //알람 정보
+  type         AlarmType? @map("type") //알람 타입 (과제, 세부과제, 맴버, 공지, 기타) nullable 고려 -> 추후 not null로 바꿀 예정.
   title        String  @db.VarChar(50) //알람 제목
   alarmContent String  @map("alarm_content") @db.VarChar(50) //알람 내용
   isRead       Boolean @default(false) @map("is_read") // 0: off, 1: on
