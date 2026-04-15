@@ -181,7 +181,7 @@ class TaskRepository {
     if (!sort || sort === 'PRIORITY') {
       return processedTasks.sort((a, b) => a.myRank - b.myRank);
     } else if (sort === 'PROGRESSRATE') {
-      return processedTasks.sort((a, b) => b.progress - a.progress);
+      return processedTasks.sort((a, b) => a.progress - b.progress); 
     }
 
     return processedTasks;
