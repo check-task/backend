@@ -9,7 +9,7 @@
 ALTER TABLE "Folder" ALTER COLUMN "folder_title" SET DATA TYPE VARCHAR(10);
 
 -- AlterTable
-ALTER TABLE "Reference" ADD COLUMN     "file_name" VARCHAR(255);
+ALTER TABLE "Reference" ADD COLUMN IF NOT EXISTS "file_name" VARCHAR(255);
 
 -- AlterTable
 ALTER TABLE "Task" ALTER COLUMN "title" SET DATA TYPE VARCHAR(10);
