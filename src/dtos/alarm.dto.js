@@ -3,6 +3,7 @@ export const alarmListResponseDto = (alarms, hasNextPage = false) => {
   return {
     alarmList: alarms.map((alarm) => ({
       alarmId: alarm.id, // 알람 ID
+      type: alarm.type, // 알람 타입 (TASK, SUBTASK, MEMBER, NOTIFICATION, OTHER)
       title: alarm.title, // 알람 제목
       alarmContent: alarm.alarmContent, // 알람 내용
       isRead: alarm.isRead, // 0: off, 1: on

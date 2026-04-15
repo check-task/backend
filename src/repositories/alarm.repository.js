@@ -11,6 +11,7 @@ class AlarmRepository {
       limit = 10,
       orderBy = "alarmDate",
       order = "desc",
+      type = null,
     } = options;
 
     // 환경 타지 않도록 순수 Date 객체 사용 (현재 시간)
@@ -21,6 +22,7 @@ class AlarmRepository {
       alarmDate: {
         lte: kstDate, // 미래 알림 제외
       },
+      ...(type && { type }),
     };
 
     const alarms = await prisma.userAlarm.findMany({

@@ -3,6 +3,7 @@ import { prisma } from "../src/db.config.js";
 import dayjs from "dayjs";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
+import { AlarmType } from "../src/constants/alarmType.js";
 
 dotenv.config();
 
