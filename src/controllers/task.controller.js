@@ -52,7 +52,14 @@ class TaskController {
       }
 
       const taskRequest = TaskRequestDTO.toUpdate(req.body);
-      const result = await taskService.registerTask(userId, taskRequest, req.files);
+      const uploadedFiles = await Promise.all(
+        (req.files || []).map(async (file) => {
+          const originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
+          const location = await uploadToS3({ ...file, originalname });
+          return { originalname, location };
+        })
+      );
+      const result = await taskService.modifyTask(parseInt(taskId), userId, taskRequest, uploadedFiles);
 
       res.status(200).json({
         resultType: "SUCCESS",
