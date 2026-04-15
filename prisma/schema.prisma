@@ -175,7 +175,7 @@ model UserAlarm {
 model Folder {
   id          Int      @id @default(autoincrement()) @map("folder_id")
   userId      Int      @map("user_id")
-  folderTitle String   @map("folder_title") @db.VarChar(20)
+  folderTitle String   @map("folder_title") @db.VarChar(10)
   color       String   @db.VarChar(7)
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
 
@@ -190,7 +190,7 @@ model Folder {
 // 과제 (Task)
 model Task {
   id              Int        @id @default(autoincrement()) @map("task_id")
-  title           String     @db.VarChar(20)
+  title           String     @db.VarChar(10)
   deadline        DateTime   @db.Timestamp
   type            TaskType // Team, Personal
   status          TaskStatus // PENDING, PROGRESS, COMPLETED
