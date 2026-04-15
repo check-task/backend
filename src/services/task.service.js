@@ -33,7 +33,7 @@ class TaskService {
     const tasks = await taskRepository.findAllTasks({
       userId,
       type,
-      folderId, 
+      folderId,
       sort,
       status,
     });
@@ -82,16 +82,21 @@ class TaskService {
 
   // 과제 생성
   async registerTask(userId, data) {
-    const { subTasks, references, communications, folderId, ...taskData } = data;
+    const { subTasks, references, communications, folderId, ...taskData } =
+      data;
 
-    if (!taskData.title) throw new BadRequestError("TASK_TITLE_REQUIRED", "과제명은 필수입니다.");
+    if (!taskData.title)
+      throw new BadRequestError("TASK_TITLE_REQUIRED", "과제명은 필수입니다.");
 
     // 저장할 폴더 ID 결정 로직
     let targetFolderId = null;
 
     // folderId가 아예 없거나, null이거나, 빈 문자열인 경우 모두 "지정안함"으로 처리
     if (!data.folderId || data.folderId === "null") {
-      const defaultFolder = await taskRepository.findFolderByUserIdAndName(userId, "지정안함");
+      const defaultFolder = await taskRepository.findFolderByUserIdAndName(
+        userId,
+        "지정안함",
+      );
       if (!defaultFolder) throw new Error("기본 폴더가 존재하지 않습니다.");
       targetFolderId = defaultFolder.id;
     } else {
@@ -100,7 +105,8 @@ class TaskService {
 
       const folderCheck = await taskRepository.findFolderById(targetFolderId);
       if (!folderCheck) throw new Error("폴더가 존재하지 않습니다.");
-      if (folderCheck.userId !== userId) throw new Error("본인 폴더가 아닙니다.");
+      if (folderCheck.userId !== userId)
+        throw new Error("본인 폴더가 아닙니다.");
     }
 
     // 트랜잭션 시작
@@ -184,7 +190,12 @@ class TaskService {
 
         const resolvedSubRows = subTasks.map((st) => {
           const endDate = st.endDate;
-          if (!(endDate instanceof Date) || isNaN(endDate.getTime())) {throw new BadRequestError("SUBTASK_END_DATE_REQUIRED", "세부 과제 마감일이 필요합니다.",);}
+          if (!(endDate instanceof Date) || isNaN(endDate.getTime())) {
+            throw new BadRequestError(
+              "SUBTASK_END_DATE_REQUIRED",
+              "세부 과제 마감일이 필요합니다.",
+            );
+          }
 
           return {
             title: st.title,
@@ -250,7 +261,10 @@ class TaskService {
     // 본인이 멤버인지 확인
     const member = await taskRepository.findMemberInTask(taskId, userId);
     if (!member) {
-      throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제를 수정할 권한이 없습니다.");
+      throw new ForbiddenError(
+        "FORBIDDEN_TASK",
+        "해당 과제를 수정할 권한이 없습니다.",
+      );
     }
 
     // PERSONAL 과제의 경우, 소유자만 수정 가능
@@ -270,16 +284,21 @@ class TaskService {
       let targetFolderId;
 
       if (updateData.folderId === null) {
-        const defaultFolder = await taskRepository.findFolderByUserIdAndName(userId, "지정안함");
+        const defaultFolder = await taskRepository.findFolderByUserIdAndName(
+          userId,
+          "지정안함",
+        );
         if (!defaultFolder) throw new Error("기본 폴더가 존재하지 않습니다.");
         targetFolderId = defaultFolder.id;
       } else {
         targetFolderId = Number(updateData.folderId);
-        if (isNaN(targetFolderId)) throw new Error("folderId는 숫자여야 합니다.");
+        if (isNaN(targetFolderId))
+          throw new Error("folderId는 숫자여야 합니다.");
 
         const folderCheck = await taskRepository.findFolderById(targetFolderId);
         if (!folderCheck) throw new Error("폴더가 존재하지 않습니다.");
-        if (folderCheck.userId !== userId) throw new Error("본인 폴더가 아닙니다.");
+        if (folderCheck.userId !== userId)
+          throw new Error("본인 폴더가 아닙니다.");
       }
 
       // 폴더 업데이트
@@ -369,7 +388,10 @@ class TaskService {
     // 본인이 멤버인지 확인
     const member = await taskRepository.findMemberInTask(taskId, userId);
     if (!member) {
-      throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
+      throw new ForbiddenError(
+        "FORBIDDEN_TASK",
+        "해당 과제에 접근할 권한이 없습니다.",
+      );
     }
 
     return taskDetail;
@@ -381,7 +403,10 @@ class TaskService {
     for (const item of orderedTasks) {
       const member = await taskRepository.findMemberInTask(item.taskId, userId);
       if (!member) {
-        throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
+        throw new ForbiddenError(
+          "FORBIDDEN_TASK",
+          "해당 과제에 접근할 권한이 없습니다.",
+        );
       }
     }
 
@@ -413,9 +438,15 @@ class TaskService {
       }
 
       // 본인이 멤버인지 확인
-      const member = await taskRepository.findMemberInTask(existingTask.taskId, userId);
+      const member = await taskRepository.findMemberInTask(
+        existingTask.taskId,
+        userId,
+      );
       if (!member) {
-        throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
+        throw new ForbiddenError(
+          "FORBIDDEN_TASK",
+          "해당 과제에 접근할 권한이 없습니다.",
+        );
       }
 
       // 상태 업데이트(프리지마 모델명은 대소문자 구분!)
@@ -457,9 +488,15 @@ class TaskService {
       }
 
       // 본인이 멤버인지 확인
-      const member = await taskRepository.findMemberInTask(existingTask.taskId, userId);
+      const member = await taskRepository.findMemberInTask(
+        existingTask.taskId,
+        userId,
+      );
       if (!member) {
-        throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
+        throw new ForbiddenError(
+          "FORBIDDEN_TASK",
+          "해당 과제에 접근할 권한이 없습니다.",
+        );
       }
 
       const newDeadline = new Date(deadline);
@@ -548,9 +585,15 @@ class TaskService {
       }
 
       // 본인이 멤버인지 확인
-      const member = await taskRepository.findMemberInTask(existingTask.taskId, userId);
+      const member = await taskRepository.findMemberInTask(
+        existingTask.taskId,
+        userId,
+      );
       if (!member) {
-        throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
+        throw new ForbiddenError(
+          "FORBIDDEN_TASK",
+          "해당 과제에 접근할 권한이 없습니다.",
+        );
       }
 
       const task = existingTask.task;
@@ -657,7 +700,7 @@ class TaskService {
         return {
           subTaskId: updatedTask.id,
           assignee: assigneeUser,
-          updatedAt: updatedTask.updatedAt
+          updatedAt: updatedTask.updatedAt,
         };
       });
     } catch (error) {
@@ -750,11 +793,17 @@ class TaskService {
     let targetFolderId = folderId;
 
     if (!targetFolderId) {
-      const defaultFolder = await taskRepository.findFolderByUserIdAndName(userId, "지정안함");
-      
+      const defaultFolder = await taskRepository.findFolderByUserIdAndName(
+        userId,
+        "지정안함",
+      );
+
       // "지정안함" 폴더조차 없는 경우에 대한 방어 로직
       if (!defaultFolder) {
-        throw new NotFoundError("DEFAULT_FOLDER_NOT_FOUND", "기본 폴더(지정안함)를 찾을 수 없습니다. 폴더를 먼저 생성해주세요.");
+        throw new NotFoundError(
+          "DEFAULT_FOLDER_NOT_FOUND",
+          "기본 폴더(지정안함)를 찾을 수 없습니다. 폴더를 먼저 생성해주세요.",
+        );
       }
       targetFolderId = defaultFolder.id;
     }
@@ -918,7 +967,10 @@ class TaskService {
     // 본인이 멤버인지 확인
     const member = await taskRepository.findMemberInTask(taskId, userId);
     if (!member) {
-      throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
+      throw new ForbiddenError(
+        "FORBIDDEN_TASK",
+        "해당 과제에 접근할 권한이 없습니다.",
+      );
     }
 
     // PERSONAL 과제의 경우, 소유자만 생성 가능
@@ -1039,12 +1091,11 @@ class TaskService {
           throw new NotFoundError("세부 과제가 존재하지 않습니다.");
         }
 
-
         // 세부 과제 수정
         const updatedSubTask = await taskRepository.updateSubTask(
-          subTaskId, 
-          updateData, 
-          tx
+          subTaskId,
+          updateData,
+          tx,
         );
 
         // 기존 알람 찾기
@@ -1093,10 +1144,10 @@ class TaskService {
           subTaskId: updatedSubTask.id,
           title: updatedSubTask.title,
           deadline: updatedSubTask.endDate,
-          isAlarm: updatedSubTask.isAlarm
+          isAlarm: updatedSubTask.isAlarm,
         });
       }
-    return results; 
+      return results;
     });
   }
 

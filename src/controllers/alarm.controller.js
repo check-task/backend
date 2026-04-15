@@ -14,6 +14,7 @@ class AlarmController {
       req.query.limit,
       req.query.orderBy,
       req.query.order,
+      req.query.type,
     );
 
     return res.success(result, "알림 목록 조회 성공");
