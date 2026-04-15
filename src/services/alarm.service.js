@@ -16,19 +16,21 @@ import prisma from "../db.config.js";
 import alarmRepository from "../repositories/alarm.repository.js";
 import { checkDeletedUser } from "../repositories/user.repository.js";
 import { calculateAlarmDate } from "../utils/calculateAlarmDate.js";
+import { AlarmType } from "../constants/alarmType.js";
 
 class AlarmService {
   constructor() {
     this.alarmRepository = alarmRepository;
   }
 
-  async getAlarms(userId, cursor, limit, orderBy, order) {
+  async getAlarms(userId, cursor, limit, orderBy, order, type) {
     // 알람 조회
     const alarms = await this.alarmRepository.findAlarmsByUserId(userId, {
       cursor,
       limit,
       orderBy,
       order,
+      type,
     });
 
     // 페이징 로직
@@ -314,7 +316,7 @@ class AlarmService {
       );
 
       const existingAlarm = await prisma.userAlarm.findFirst({
-        where: { subTaskId: updatedSubTask.id },
+        where: { subTaskId: updatedSubTask.id, type: AlarmType.SUBTASK },
       });
 
       const alarmContent = `'현재 ${subTask?.status === "COMPLETED" ? "완료" : "진행 중"} 상태에요. 빨리 끝내고 쉬어요!`;
