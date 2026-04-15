@@ -1,6 +1,7 @@
 import prisma from "../db.config.js";
 import dayjs from "dayjs";
 import { calculateAlarmDate } from "../utils/calculateAlarmDate.js";
+import { AlarmType } from "../constants/alarmType.js";
 
 class AlarmRepository {
   //유저의 알림 조회
@@ -24,7 +25,7 @@ class AlarmRepository {
 
     const alarms = await prisma.userAlarm.findMany({
       where,
-      // ✅ 과제와 세부과제 정보를 함께 조회 (진척도 계산용)
+      // 과제와 세부과제 정보를 함께 조회 (진척도 계산용)
       include: {
         task: {
           include: { subTasks: true },
@@ -36,7 +37,7 @@ class AlarmRepository {
       take: limit + 1,
     });
 
-    // ✅ 조회된 알림 목록을 순회하며 진척도 실시간 반영
+    // 조회된 알림 목록을 순회하며 진척도 실시간 반영
     return alarms.map((alarm) => {
       // 과제 알림이고(taskId 있음, subTaskId 없음), 관련 과제 정보가 있는 경우
       if (
@@ -89,6 +90,7 @@ class AlarmRepository {
       data: {
         userId,
         taskId,
+        type: AlarmType.TASK,
         title: `'${taskTitle}'의 마감까지 ${deadlineAlarmHours}시간 남았어요!`,
         alarmContent: `'현재 ${progressRate}%완성 중이에요. 빨리 끝내고 쉬어요!`,
         alarmDate,
@@ -122,6 +124,7 @@ class AlarmRepository {
         userId,
         taskId,
         subTaskId,
+        type: AlarmType.SUBTASK,
         title: `'${subTaskTitle}'의 마감까지 ${taskAlarm}시간 남았어요!`,
         alarmContent: `'현재 ${subTask?.status === "COMPLETED" ? "완료" : "진행 중"} 상태에요. 빨리 끝내고 쉬어요!`,
         alarmDate,
@@ -382,6 +385,7 @@ class AlarmRepository {
       data: {
         userId,
         taskId,
+        type: AlarmType.MEMBER,
         title: `새로운 팀원이 참여했어요!`,
         alarmContent: `${memberName}님이 '${taskTitle}'에 참여했습니다.`,
         alarmDate: new Date(Date.now() + 9 * 60 * 60 * 1000), // 현재 시간으로 즉시 알림
