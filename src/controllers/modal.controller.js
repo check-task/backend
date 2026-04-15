@@ -22,12 +22,13 @@ class ModalController {
           throw new NotFoundError("업로드된 파일이 없습니다.");
         }
 
-        const fileUrl = await uploadToS3(req.file);
-
+        const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+        const file_url = await uploadToS3({ ...req.file, originalname: originalName });
         items = [
           {
-            name: req.body.name ?? req.file.originalname,
-            file_url: fileUrl,
+            name: req.body.name ?? originalName,
+            file_name: originalName,
+            file_url,
           },
         ];
       }
@@ -61,11 +62,21 @@ class ModalController {
 
   async updateReference(req, res, next) {
     try {
+      //S3 업로드 후 URL을 전달하도록 변경
+      let fileUrl = req.body.file_url ?? undefined;
+      let fileName = req.body.file_name ?? undefined;
+      
+      if (req.file) {
+        fileUrl = await uploadToS3(req.file);
+        fileName = req.file.originalname;
+      }
       const dto = new UpdateReferenceDto({
         taskId: req.params.taskId,
         referenceId: req.params.referenceId,
         userId: req.user.id,
         ...req.body,
+        file_url: fileUrl,
+        file_name: fileName,
       });
 
       const data = await modalService.updateReference(dto);

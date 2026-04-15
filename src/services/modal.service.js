@@ -16,18 +16,18 @@ class ModalService {
     const data = items.map(item => ({
       taskId,
       name: item.name,
+      fileName: type === 'file' ? item.file_name : null,
       url: type === 'url' ? item.url : null,
       fileUrl: type === 'file' ? item.file_url : null,
     }))
 
     await modalRepository.createRefMany(data);
 
-    const references = await modalRepository.findRefByTaskId(taskId);
-    return references;
+    return data;
   }
 
   async updateReference(dto) {
-    const { taskId, referenceId, userId, name, url, fileUrl } = dto;
+    const { taskId, referenceId, userId, name, url, fileUrl, fileName } = dto;
 
     const task = await modalRepository.isTask(taskId);
     if (!task) throw new NotFoundError('taskId가 존재하지 않습니다.');
@@ -40,10 +40,10 @@ class ModalService {
       throw new NotFoundError('자료가 존재하지 않습니다.');
     }
 
-    modalRepository.updateRef(referenceId, {
+    await modalRepository.updateRef(referenceId, {
       ...(name && { name }),
-      ...(url && { url, fileUrl: null }),
-      ...(fileUrl && { fileUrl, url: null }),
+      ...(url && { url, fileUrl: null, fileName: null }),
+      ...(fileUrl && { fileUrl, url: null, fileName }),
     });
 
     const updatedReference = await modalRepository.findReferenceById(referenceId);
@@ -75,8 +75,8 @@ class ModalService {
     const member = await modalRepository.memberCheck(userId, taskId);
     if (!member) throw new UnauthorizedError('권한이 없습니다.');
 
-    await modalRepository.createCommu({ taskId, name, url });
-    return modalRepository.findCommuByTaskId(taskId);
+    const comuId = await modalRepository.createCommu({ taskId, name, url });
+    return modalRepository.findCommuById(comuId.id);
   }
 
   async updateCommunication(dto) {
@@ -116,8 +116,8 @@ class ModalService {
     const member = await modalRepository.memberCheck(userId, taskId);
     if (!member) throw new UnauthorizedError('권한이 없습니다.');
 
-    await modalRepository.createLog({ taskId, date, agenda, conclusion, discussion });
-    return modalRepository.findLogByTaskId(taskId);
+    const logId = await modalRepository.createLog({ taskId, date, agenda, conclusion, discussion });
+    return modalRepository.findLogById(logId.id);
   }
 
   async updateLog(dto) {

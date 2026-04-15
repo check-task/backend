@@ -16,6 +16,8 @@ export const createReferenceSchema = z.object({
     .object({
       name: z.string().trim().optional(),
       url: z.string().trim().optional(),
+      file_url: z.string().trim().optional(),
+      file_name: z.string().trim().optional(),
     })
     .optional(),
 });
@@ -29,6 +31,7 @@ export const updateReferenceSchema = z.object({
     .object({
       name: z.string().trim().optional(),
       url: z.string().trim().optional(),
+      file_name: z.string().trim().optional(),
       file_url: z.string().trim().optional(),
     })
     .refine(

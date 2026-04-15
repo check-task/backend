@@ -7,3 +7,10 @@ export const getTaskMembersSchema = z.object({
     taskId: idParam,
   }),
 });
+
+// ─── 팀원 삭제 ───────────────────────────────────────────────────
+export const deleteMemberSchema = z.object({
+  params: z.object({
+    taskId: idParam,
+  }),
+});

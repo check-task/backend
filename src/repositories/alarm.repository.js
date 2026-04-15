@@ -270,6 +270,13 @@ class AlarmRepository {
     });
   }
 
+  // 멤버 삭제 시 해당 유저의 특정 과제 알림 삭제
+  async deleteAlarmsByUserIdAndTaskId(userId, taskId, tx = prisma) {
+    return await tx.userAlarm.deleteMany({
+      where: { userId, taskId },
+    });
+  }
+
   //안읽음 알림 여부
   async countUnreadAlarms(userId) {
     const kstDate = new Date();
