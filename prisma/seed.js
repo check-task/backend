@@ -125,7 +125,7 @@ async function main() {
   const personalTasks = await Promise.all([
     prisma.task.create({
       data: {
-        title: "포트폴리오 웹사이트 제작",
+        title: "포트폴리오",
         deadline: now.add(7, "day").toDate(),
         type: "PERSONAL",
         status: "PROGRESS",
