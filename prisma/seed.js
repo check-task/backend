@@ -80,38 +80,62 @@ async function main() {
 
   console.log(`✅ ${users.length}명의 유저 생성 완료`);
 
-  // 2. Folder
+  // 2. Folder (모든 유저는 "지정안함" 폴더를 기본으로 가짐)
   console.log("📁 폴더 생성 중...");
-  const folders = await Promise.all([
-    prisma.folder.create({
+  const defaultFolders = await Promise.all(
+    users.map((user) =>
+      prisma.folder.create({
+        data: {
+          userId: user.id,
+          folderTitle: "지정안함",
+          color: "#CCCCCC",
+        },
+      }),
+    ),
+  );
+
+  const folders = [
+    ...defaultFolders,
+    await prisma.folder.create({
       data: {
         userId: users[0].id,
         folderTitle: "개인 프로젝트",
         color: "#FF5733",
       },
     }),
-    prisma.folder.create({
+    await prisma.folder.create({
       data: {
         userId: users[0].id,
         folderTitle: "업무",
         color: "#33C3F0",
       },
     }),
-    prisma.folder.create({
+    await prisma.folder.create({
       data: {
         userId: users[1].id,
         folderTitle: "학습",
         color: "#28A745",
       },
     }),
-    prisma.folder.create({
+    await prisma.folder.create({
       data: {
         userId: users[2].id,
         folderTitle: "개인",
         color: "#FFC107",
       },
     }),
-  ]);
+  ];
+
+  // 인덱스 정리: defaultFolders[0~2] = 지정안함(유저별), folders[3~6] = 일반 폴더
+  const [
+    defaultU0,
+    defaultU1,
+    defaultU2,
+    folderU0a,
+    folderU0b,
+    folderU1,
+    folderU2,
+  ] = folders;
 
   console.log(`✅ ${folders.length}개의 폴더 생성 완료`);
 
@@ -179,7 +203,7 @@ async function main() {
       userId: users[0].id,
       taskId: personalTasks[0].id,
       role: false,
-      folderId: folders[0].id,
+      folderId: folderU0a.id,
       ...memTime,
     },
   });
@@ -188,7 +212,7 @@ async function main() {
       userId: users[0].id,
       taskId: personalTasks[1].id,
       role: false,
-      folderId: folders[0].id,
+      folderId: folderU0a.id,
       ...memTime,
     },
   });
@@ -197,7 +221,7 @@ async function main() {
       userId: users[1].id,
       taskId: personalTasks[2].id,
       role: false,
-      folderId: folders[2].id,
+      folderId: folderU1.id,
       ...memTime,
     },
   });
@@ -206,7 +230,7 @@ async function main() {
       userId: users[1].id,
       taskId: teamTask.id,
       role: false,
-      folderId: folders[2].id,
+      folderId: folderU1.id,
       ...memTime,
     },
   });
@@ -215,7 +239,7 @@ async function main() {
       userId: users[0].id,
       taskId: teamTask.id,
       role: true,
-      folderId: folders[0].id,
+      folderId: folderU0b.id,
       ...memTime,
     },
   });
@@ -224,7 +248,7 @@ async function main() {
       userId: users[2].id,
       taskId: teamTask.id,
       role: true,
-      folderId: folders[3].id,
+      folderId: folderU2.id,
       ...memTime,
     },
   });
@@ -389,6 +413,7 @@ async function main() {
       data: {
         userId: users[0].id,
         taskId: personalTasks[0].id,
+        type: AlarmType.TASK,
         title: "과제 마감 임박",
         alarmContent: "포트폴리오 과제 D-3입니다",
         isRead: true,
@@ -401,6 +426,7 @@ async function main() {
         userId: users[0].id,
         taskId: personalTasks[0].id,
         subTaskId: subTasks[0].id,
+        type: AlarmType.SUBTASK,
         title: "세부과제 마감 알림",
         alarmContent: "디자인 완료 마감 임박",
         isRead: false,
@@ -415,6 +441,7 @@ async function main() {
       data: {
         userId: users[0].id,
         taskId: personalTasks[1].id,
+        type: AlarmType.TASK,
         title: "과제 생성 알림",
         alarmContent: "독서 과제가 생성되었습니다",
         isRead: false,
@@ -427,6 +454,7 @@ async function main() {
         userId: users[1].id,
         taskId: teamTask.id,
         subTaskId: subTasks[4].id,
+        type: AlarmType.SUBTASK,
         title: "세부과제 할당",
         alarmContent: "DB 설계가 할당되었습니다",
         isRead: false,
@@ -439,6 +467,7 @@ async function main() {
         userId: users[2].id,
         taskId: teamTask.id,
         subTaskId: subTasks[5].id,
+        type: AlarmType.SUBTASK,
         title: "세부과제 할당",
         alarmContent: "API 개발이 할당되었습니다",
         isRead: false,
@@ -451,6 +480,7 @@ async function main() {
         userId: users[0].id,
         taskId: personalTasks[0].id,
         subTaskId: subTasks[1].id,
+        type: AlarmType.SUBTASK,
         title: "세부과제 마감 알림",
         alarmContent: "프론트 개발 마감 임박",
         isRead: false,
@@ -462,6 +492,7 @@ async function main() {
       data: {
         userId: users[1].id,
         taskId: personalTasks[2].id,
+        type: AlarmType.TASK,
         title: "과제 마감 알림",
         alarmContent: "회의 자료 준비 마감 임박",
         isRead: false,
@@ -476,7 +507,9 @@ async function main() {
   console.log("\n✨ 시드 데이터 생성 완료!");
   console.log("\n📊 생성된 데이터:");
   console.log(`  - 유저: ${users.length}명`);
-  console.log(`  - 폴더: ${folders.length}개`);
+  console.log(
+    `  - 폴더: ${folders.length}개 (지정안함 ${defaultFolders.length}개 포함)`,
+  );
   console.log(
     `  - 과제: ${personalTasks.length + 1}개 (개인 ${personalTasks.length}개, 팀 1개)`,
   );
