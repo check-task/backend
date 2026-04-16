@@ -202,7 +202,7 @@ class TaskService {
             endDate,
             status: st.status ?? "PENDING",
             isAlarm: st.isAlarm !== false,
-            assigneeId: null,
+            assigneeId: memberData.id,
           };
         });
 
@@ -256,7 +256,11 @@ class TaskService {
   async modifyTask(taskId, userId, updateData) {
     // 과제 존재 여부 확인
     const currentTask = await taskRepository.findTaskById(taskId);
-    if (!currentTask) throw new NotFoundError("TASK_NOT_FOUND", "수정하려는 과제가 존재하지 않습니다.");
+    if (!currentTask)
+      throw new NotFoundError(
+        "TASK_NOT_FOUND",
+        "수정하려는 과제가 존재하지 않습니다.",
+      );
 
     // 본인이 멤버인지 확인
     const member = await taskRepository.findMemberInTask(taskId, userId);
@@ -334,7 +338,10 @@ class TaskService {
     });
 
     if (!member) {
-      throw new ForbiddenError("FORBIDDEN_TASK", "과제 마감일을 수정할 권한이 없습니다.");
+      throw new ForbiddenError(
+        "FORBIDDEN_TASK",
+        "과제 마감일을 수정할 권한이 없습니다.",
+      );
     }
 
     // 3. 날짜 형식 유효성 검사
@@ -962,7 +969,8 @@ class TaskService {
   // 단일 세부 과제 생성 서비스
   async createSingleSubTask(userId, taskId, createData) {
     const parentTask = await taskRepository.findTaskById(taskId);
-    if (!parentTask) throw new NotFoundError("TASK_NOT_FOUND", "존재하지 않는 과제입니다.");
+    if (!parentTask)
+      throw new NotFoundError("TASK_NOT_FOUND", "존재하지 않는 과제입니다.");
 
     // 본인이 멤버인지 확인
     const member = await taskRepository.findMemberInTask(taskId, userId);
@@ -986,7 +994,10 @@ class TaskService {
       endDateRaw instanceof Date
         ? endDateRaw
         : endDateRaw
-          ? new Date(endDateRaw)
+          ? calculateAlarmDate(
+              endDateRaw,
+              member?.user?.alarmSetting?.taskAlarm,
+            )
           : null;
     if (!endDate || Number.isNaN(endDate.getTime())) {
       throw new BadRequestError(
@@ -1065,12 +1076,16 @@ class TaskService {
   async updateSelectedSubTasks(userId, taskId, subTaskUpdates) {
     // 부모 과제 존재 여부 확인
     const parentTask = await taskRepository.findTaskById(taskId);
-    if (!parentTask) throw new NotFoundError("TASK_NOT_FOUND", "존재하지 않는 과제입니다.");
+    if (!parentTask)
+      throw new NotFoundError("TASK_NOT_FOUND", "존재하지 않는 과제입니다.");
 
     // 멤버 존재 여부 확인
     const userCheck = await taskRepository.findMemberInTask(taskId, userId);
     if (!userCheck)
-      throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
+      throw new ForbiddenError(
+        "FORBIDDEN_TASK",
+        "해당 과제에 접근할 권한이 없습니다.",
+      );
 
     // PERSONAL 과제의 경우, 소유자만 수정 가능
     if (parentTask.type === "PERSONAL" && userCheck.role !== false) {
@@ -1154,10 +1169,15 @@ class TaskService {
   // 단일 세부 과제 삭제
   async deleteSelectedSubTasks(userId, taskId, subTaskIds) {
     const parentTask = await taskRepository.findTaskById(taskId);
-    if (!parentTask) throw new NotFoundError("TASK_NOT_FOUND", "존재하지 않는 과제입니다.");
+    if (!parentTask)
+      throw new NotFoundError("TASK_NOT_FOUND", "존재하지 않는 과제입니다.");
 
     const userCheck = await taskRepository.findMemberInTask(taskId, userId);
-    if (!userCheck) throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
+    if (!userCheck)
+      throw new ForbiddenError(
+        "FORBIDDEN_TASK",
+        "해당 과제에 접근할 권한이 없습니다.",
+      );
 
     // PERSONAL 과제의 경우, 소유자만 삭제 가능
     if (parentTask.type === "PERSONAL" && userCheck.role !== false) {
@@ -1168,7 +1188,10 @@ class TaskService {
     }
 
     if (!subTaskIds || subTaskIds.length === 0) {
-      throw new NotFoundError("NO_SUBTASKS_TO_DELETE", "삭제할 세부 과제가 없습니다.");
+      throw new NotFoundError(
+        "NO_SUBTASKS_TO_DELETE",
+        "삭제할 세부 과제가 없습니다.",
+      );
     }
 
     return await prisma.$transaction(async (tx) => {
@@ -1185,10 +1208,15 @@ class TaskService {
   // 전체 세부 과제 삭제
   async deleteAllSubTasks(userId, taskId) {
     const parentTask = await taskRepository.findTaskById(taskId);
-    if (!parentTask) throw new NotFoundError("TASK_NOT_FOUND", "존재하지 않는 과제입니다.");
+    if (!parentTask)
+      throw new NotFoundError("TASK_NOT_FOUND", "존재하지 않는 과제입니다.");
 
     const userCheck = await taskRepository.findMemberInTask(taskId, userId);
-    if (!userCheck) throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
+    if (!userCheck)
+      throw new ForbiddenError(
+        "FORBIDDEN_TASK",
+        "해당 과제에 접근할 권한이 없습니다.",
+      );
 
     // PERSONAL 과제의 경우, 소유자만 삭제 가능
     if (parentTask.type === "PERSONAL" && userCheck.role !== false) {
