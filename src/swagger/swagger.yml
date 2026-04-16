@@ -3029,7 +3029,7 @@ paths:
                   resultType: "FAIL"
                   code: 400
                   errorCode: "INVALID_NICKNAME"
-                  reason: "닉네임은 최대 100자까지만 가능합니다."
+                  reason: "닉네임은 최대 30자까지만 가능합니다."
                   data: null                      
         '401':
           description: |
