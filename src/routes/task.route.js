@@ -4,6 +4,7 @@ import multer from "multer";
 import taskController from "../controllers/task.controller.js";
 import authenticate from "../middlewares/authenticate.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
+import { validateTaskType } from "../middlewares/taskAuthorization.middleware.js";
 import {
   createTaskSchema,
   getTasksSchema,
@@ -73,13 +74,14 @@ router.patch(
 router.get("/", authenticate, validate(getTasksSchema), taskController.getTasks);
 
 // PATCH /api/v1/task/:taskId -- 과제 수정 (validate)
-router.patch( "/:taskId", authenticate, validate(updateTaskSchema), taskController.updateTask);
+router.patch( "/:taskId", authenticate, validateTaskType, validate(updateTaskSchema), taskController.updateTask);
 
 
 // GET /api/v1/task/:taskId -- 과제 세부 사항 조회
 router.get(
   "/:taskId",
   authenticate,
+  validateTaskType,
   validate(taskIdParamSchema),
   taskController.getTaskDetail
 );
@@ -88,6 +90,7 @@ router.get(
 router.patch(
   "/:taskId/member/:userId",
   authenticate,
+  validateTaskType,
   validate(updateTeamMemberSchema),
   taskController.updateTeamMember
 );
@@ -96,6 +99,7 @@ router.patch(
 router.delete(
   "/:taskId/member/:userId",
   authenticate,
+  validateTaskType,
   validate(deleteTeamMemberSchema),
   taskController.deleteTeamMember
 );
@@ -104,6 +108,7 @@ router.delete(
 router.post(
   "/:taskId/subtask",
   authenticate,
+  validateTaskType,
   validate(addSubTaskSchema),
   taskController.addSubTask
 );
@@ -112,6 +117,7 @@ router.post(
 router.patch(
   "/:taskId/subtask",
   authenticate,
+  validateTaskType,
   validate(patchSubTaskSchema),
   taskController.patchSubTask
 );
@@ -120,6 +126,7 @@ router.patch(
 router.delete(
   "/:taskId/subtask/all",
   authenticate,
+  validateTaskType,
   validate(deleteAllSubTaskParamsSchema),
   taskController.allDeleteSubTask
 );
@@ -128,6 +135,7 @@ router.delete(
 router.delete(
   "/:taskId/subtask",
   authenticate,
+  validateTaskType,
   validate(deleteSelectedSubTaskSchema),
   taskController.deleteSubTask
 );
@@ -136,6 +144,7 @@ router.delete(
 router.patch(
   "/:taskId/deadline",
   authenticate,
+  validateTaskType,
   validate(updateTaskDeadlineSchema),
   taskController.updateTaskDeadline
 );
@@ -144,6 +153,7 @@ router.patch(
 router.post(
   "/:taskId/invitation",
   authenticate,
+  validateTaskType,
   validate(generateInviteCodeSchema),
   taskController.generateInviteCode
 );

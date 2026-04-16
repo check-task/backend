@@ -218,8 +218,8 @@ class AlarmRepository {
       data: { isAlarm },
       select: {
         id: true,
-        assigneeId: true,
         taskId: true,
+        assigneeId: true,
         title: true,
         endDate: true,
         isAlarm: true,

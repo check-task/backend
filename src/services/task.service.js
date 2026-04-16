@@ -276,6 +276,14 @@ class TaskService {
       );
     }
 
+    // PERSONAL 과제의 경우, 소유자만 수정 가능
+    if (currentTask.type === "PERSONAL" && member.role !== false) {
+      throw new ForbiddenError(
+        "FORBIDDEN_PERSONAL_TASK",
+        "개인 과제는 소유자만 수정할 수 있습니다.",
+      );
+    }
+
     if (Object.keys(updateData).length === 0) {
       throw new Error("수정할 값이 없습니다.");
     }
@@ -1009,6 +1017,14 @@ class TaskService {
       );
     }
 
+    // PERSONAL 과제의 경우, 소유자만 생성 가능
+    if (parentTask.type === "PERSONAL" && member.role !== false) {
+      throw new ForbiddenError(
+        "FORBIDDEN_PERSONAL_TASK",
+        "개인 과제의 세부 과제는 소유자만 생성할 수 있습니다.",
+      );
+    }
+
     const endDateRaw = createData.endDate ?? createData.deadline;
     const endDate =
       endDateRaw instanceof Date
@@ -1104,12 +1120,20 @@ class TaskService {
   async updateSelectedSubTasks(userId, taskId, subTaskUpdates) {
     // 부모 과제 존재 여부 확인
     const parentTask = await taskRepository.findTaskById(taskId);
-    if (!parentTask) throw new NotFoundError("존재하지 않는 과제입니다.");
+    if (!parentTask) throw new NotFoundError("TASK_NOT_FOUND", "존재하지 않는 과제입니다.");
 
     // 멤버 존재 여부 확인
     const userCheck = await taskRepository.findMemberInTask(taskId, userId);
     if (!userCheck)
-      throw new ForbiddenError("유저가 해당 과제에 권한이 없습니다.");
+      throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
+
+    // PERSONAL 과제의 경우, 소유자만 수정 가능
+    if (parentTask.type === "PERSONAL" && userCheck.role !== false) {
+      throw new ForbiddenError(
+        "FORBIDDEN_PERSONAL_TASK",
+        "개인 과제의 세부 과제는 소유자만 수정할 수 있습니다.",
+      );
+    }
 
     return await prisma.$transaction(async (tx) => {
       const results = [];
@@ -1185,13 +1209,21 @@ class TaskService {
   // 단일 세부 과제 삭제
   async deleteSelectedSubTasks(userId, taskId, subTaskIds) {
     const parentTask = await taskRepository.findTaskById(taskId);
-    if (!parentTask) throw new NotFoundError("존재하지 않는 과제입니다.");
+    if (!parentTask) throw new NotFoundError("TASK_NOT_FOUND", "존재하지 않는 과제입니다.");
 
     const userCheck = await taskRepository.findMemberInTask(taskId, userId);
-    if (!userCheck) throw new ForbiddenError("권한이 없습니다.");
+    if (!userCheck) throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
+
+    // PERSONAL 과제의 경우, 소유자만 삭제 가능
+    if (parentTask.type === "PERSONAL" && userCheck.role !== false) {
+      throw new ForbiddenError(
+        "FORBIDDEN_PERSONAL_TASK",
+        "개인 과제의 세부 과제는 소유자만 삭제할 수 있습니다.",
+      );
+    }
 
     if (!subTaskIds || subTaskIds.length === 0) {
-      throw new NotFoundError("삭제할 세부 과제가 없습니다.");
+      throw new NotFoundError("NO_SUBTASKS_TO_DELETE", "삭제할 세부 과제가 없습니다.");
     }
 
     return await prisma.$transaction(async (tx) => {
@@ -1208,10 +1240,18 @@ class TaskService {
   // 전체 세부 과제 삭제
   async deleteAllSubTasks(userId, taskId) {
     const parentTask = await taskRepository.findTaskById(taskId);
-    if (!parentTask) throw new NotFoundError("존재하지 않는 과제입니다.");
+    if (!parentTask) throw new NotFoundError("TASK_NOT_FOUND", "존재하지 않는 과제입니다.");
 
     const userCheck = await taskRepository.findMemberInTask(taskId, userId);
-    if (!userCheck) throw new ForbiddenError("권한이 없습니다.");
+    if (!userCheck) throw new ForbiddenError("FORBIDDEN_TASK", "해당 과제에 접근할 권한이 없습니다.");
+
+    // PERSONAL 과제의 경우, 소유자만 삭제 가능
+    if (parentTask.type === "PERSONAL" && userCheck.role !== false) {
+      throw new ForbiddenError(
+        "FORBIDDEN_PERSONAL_TASK",
+        "개인 과제의 세부 과제는 소유자만 삭제할 수 있습니다.",
+      );
+    }
 
     return await prisma.$transaction(async (tx) => {
       // subTask id 전부 조회

@@ -84,7 +84,7 @@ export class KakaoAuthService {
     //카카오 비즈앱 최소 동의 정책으로 phone_number 미제공 시 데모데이용 임시 더미 전화번호 사용
     const phoneNum = kakaoAccount.phone_number
       ? kakaoAccount.phone_number.replace("+82 ", "0")
-      : "010-0000-0000";
+      : "전화번호를 입력해 주세요.";
 
     const providerId = profile.id.toString();
     // console.log("카카오 프로필:", JSON.stringify(profile._json, null, 2));
@@ -256,15 +256,19 @@ export class KakaoAuthService {
         } while (cursor !== "0");
 
         // 카카오 연결 해제
-        await axios.post(
-          "https://kapi.kakao.com/v1/user/unlink",
-          new URLSearchParams({ target_id_type: "user_id", target_id: user.providerId }),
-          { headers: { Authorization: `KakaoAK ${process.env.KAKAO_ADMIN_KEY}` } }
-        );
-        
+        try {
+          await axios.post(
+            "https://kapi.kakao.com/v1/user/unlink",
+            new URLSearchParams({ target_id_type: "user_id", target_id: user.providerId }),
+            { headers: { Authorization: `KakaoAK ${process.env.KAKAO_ADMIN_KEY}` } }
+          );
+        }catch(err){
+          console.warn(`카카오 연동 해제 실패 (userId: ${user.id})`, err.response?.data ?? err.message); 
+        }
         await prisma.$transaction(async (tx) => {
           await tx.comment.deleteMany({ where: { userId } });
           await tx.userAlarm.deleteMany({ where: { userId } });
+          await tx.taskPriority.deleteMany({ where: { userId } });
           await tx.member.deleteMany({ where: { userId } });
           await tx.folder.deleteMany({ where: { userId } });
           // 나머지는 cascade 자동 처리
