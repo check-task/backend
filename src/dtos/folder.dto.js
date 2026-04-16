@@ -26,7 +26,6 @@ export class FolderDto {
     }
 
     const trimmedColor = body.color.trim().toUpperCase();
-    const colorRegex = /^#[0-9A-Fa-f]{6}$/;
 
     if (!ALLOWED_COLORS.includes(trimmedColor)) {
       throw new BadRequestError("INVALID_COLOR", "허용되지 않는 색상입니다.");
