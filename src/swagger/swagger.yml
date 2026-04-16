@@ -149,7 +149,9 @@ paths:
                   code: 400
                   errorCode: VALIDATION_ERROR
                   reason: 요청값이 올바르지 않습니다.
-                  data: null
+                  data:
+                    - field: query.type
+                      message: 'Invalid option: expected one of "TASK"|"SUBTASK"|"MEMBER"|"NOTIFICATION"|"OTHER"'
         '401':
           description: 인증 실패
           content:
@@ -160,7 +162,7 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND
-                  reason: 토큰이 누락되었습니다.
+                  reason: 인증 토큰이 없습니다.
                   data: null
         '403':
           description: 탈퇴한 유저
@@ -234,7 +236,7 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND
-                  reason: 토큰이 누락되었습니다.
+                  reason: 인증 토큰이 없습니다.
                   data: null
         '404':
           description: 사용자 없음
@@ -296,7 +298,7 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND | TOKEN_INVALID | TOKEN_EXPIRED
-                  reason: 토큰이 누락되었습니다. | 토큰이 유효하지 않습니다. | 토큰이 만료되었습니다.
+                  reason: 인증 토큰이 없습니다. | 토큰이 유효하지 않습니다. | 토큰이 만료되었습니다.
                   data: null
         '403':
           description: 권한 없음
@@ -377,9 +379,11 @@ paths:
                 example:
                   resultType: FAIL
                   code: 400
-                  errorCode: INVALID_PARAMETER
-                  reason: params는 숫자로 보내야합니다.
-                  data: null
+                  errorCode: VALIDATION_ERROR
+                  reason: 요청값이 올바르지 않습니다.
+                  data: 
+                    - field: path.alarmId
+                      message: 숫자 ID여야 합니다.
         '401':
           description: 인증 실패
           content:
@@ -390,7 +394,7 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND
-                  reason: 토큰이 누락되었습니다..
+                  reason: 인증 토큰이 없습니다.
                   data: null
         '403':
           description: 탈퇴한 유저
@@ -401,20 +405,8 @@ paths:
                 example:
                   resultType: FAIL
                   code: 403
-                  errorCode: USER_DELETED
-                  reason: 탈퇴한 유저는 알림을 삭제할 수 없습니다.
-                  data: null
-        '403': 
-          description: 해당 알림에 접근 권한이 없습니다.
-          content:
-            application/json:
-              schema:
-                type: object
-                example:
-                  resultType: FAIL
-                  code: 403
-                  errorCode: ALARM_ACCESS_DENIED
-                  reason: 해당 알림에 접근할 권한이 없습니다.
+                  errorCode: USER_DELETED | ALARM_ACCESS_DENIED
+                  reason: 탈퇴한 유저는 알림을 삭제할 수 없습니다. | 해당 알림에 접근할 권한이 없습니다.
                   data: null
         '404':
           description: 알림 또는 사용자 없음
@@ -426,7 +418,7 @@ paths:
                   resultType: FAIL
                   code: 404
                   errorCode: ALARM_NOT_FOUND | USER_NOT_FOUND
-                  reason: 해당 알림을 찾을 수 없습니다. | 사용자를 찾을 수 없습니다.
+                  reason: 요청하신 alarmID가 DB에 존재하지 않습니다. | 사용자를 찾을 수 없습니다.
                   data: null
         '500':
           description: 서버 오류
@@ -503,9 +495,11 @@ paths:
                 example:
                   resultType: FAIL
                   code: 400
-                  errorCode: INVALID_PARAMETER | INVALID_BODY
-                  reason: params는 숫자로 보내야합니다. | Body는 Boolean값으로 보내야합니다.
-                  data: null
+                  errorCode: VALIDATION_ERROR
+                  reason: 요청값이 올바르지 않습니다.
+                  data: 
+                    - field: path.alarmId
+                      message: 숫자 ID여야 합니다.
         '401':
           description: 인증 실패
           content:
@@ -516,7 +510,7 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND
-                  reason: 토큰이 누락되었습니다.
+                  reason: 인증 토큰이 없습니다.
                   data: null
         '404':
           description: 알림 또는 사용자 없음
@@ -528,7 +522,7 @@ paths:
                   resultType: FAIL
                   code: 404
                   errorCode: ALARM_NOT_FOUND | USER_NOT_FOUND
-                  reason: 해당 알림을 찾을 수 없습니다. | 사용자를 찾을 수 없습니다.
+                  reason: 알림을 찾을 수 없습니다. | 사용자를 찾을 수 없습니다.
                   data: null
         '500':
           description: 서버 오류
@@ -588,6 +582,9 @@ paths:
                           userId:
                             type: integer
                             example: 1
+                          nickname:
+                            type: string
+                            example: "홍길동"
                           deadlineAlarm:
                             type: integer
                             example: 24
@@ -600,9 +597,11 @@ paths:
                 example:
                   resultType: FAIL
                   code: 400
-                  errorCode: INVALID_BODY
-                  reason: DeadlineAlarm의 타입은 number 입니다.
-                  data: null
+                  errorCode: VALIDATION_ERROR
+                  reason: 요청값이 올바르지 않습니다.
+                  data:
+                    - field: body.deadlineAlarm
+                      message: deadlineAlarm은 숫자여야 합니다.
         '401':
           description: 인증 실패
           content:
@@ -613,7 +612,7 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND
-                  reason: 토큰이 누락되었습니다.
+                  reason: 인증 토큰이 없습니다.
                   data: null
         '404':
           description: 사용자 없음
@@ -685,6 +684,9 @@ paths:
                           userId:
                             type: integer
                             example: 1
+                          nickname:
+                            type: string
+                            example: "홍길동"
                           taskAlarm:
                             type: integer
                             example: 24
@@ -697,9 +699,11 @@ paths:
                 example:
                   resultType: FAIL
                   code: 400
-                  errorCode: INVALID_BODY
-                  reason: TaskAlarm의 타입은 number 입니다.
-                  data: null
+                  errorCode: VALIDATION_ERROR
+                  reason: 요청값이 올바르지 않습니다.
+                  data:
+                    - field: body.taskAlarm
+                      message: taskAlarm은 숫자여야 합니다.
         '401':
           description: 인증 실패
           content:
@@ -710,7 +714,7 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND
-                  reason: 토큰이 누락되었습니다.
+                  reason: 인증 토큰이 없습니다.
                   data: null
         '404':
           description: 사용자 없음
@@ -786,12 +790,20 @@ paths:
                       task:
                         type: object
                         properties:
-                          taskId:
-                            type: integer
-                            example: 1
+                          title:
+                            type: string
+                            example: 팀 프로젝트 개발
+                          deadline:
+                            type: string
+                            format: date-time
+                            example: "2026-05-15T12:44:39.509Z"
                           isAlarm:
                             type: boolean
-                            example: true
+                            example: false
+                          updatedAt:
+                            type: string
+                            format: date-time
+                            example: "2026-04-16T09:00:08.000Z"
         '400':
           description: 잘못된 요청
           content:
@@ -801,9 +813,11 @@ paths:
                 example:
                   resultType: FAIL
                   code: 400
-                  errorCode: INVALID_PARAMETER | INVALID_BODY
-                  reason: params의 taskId는 숫자로 보내야합니다. | Body의 isAlarm 데이터는 Boolean 형식으로 보내야합니다.
-                  data: null
+                  errorCode: VALIDATION_ERROR
+                  reason: 요청값이 올바르지 않습니다.
+                  data:
+                    - field: body.isAlarm | params.taskId
+                      message: isAlarm은 Boolean 형식이어야 합니다. | 숫자 ID여야 합니다.
         '401':
           description: 인증 실패
           content:
@@ -814,7 +828,19 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND
-                  reason: 토큰이 누락되었습니다.
+                  reason: 인증 토큰이 없습니다.
+                  data: null
+        '403':
+          description: 해당 과제에 접근 권한이 없습니다.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 403
+                  errorCode: TASK_ACCESS_DENIED
+                  reason: 해당 과제에 접근할 권한이 없습니다.
                   data: null
         '404':
           description: 사용자 또는 과제 없음
@@ -826,7 +852,7 @@ paths:
                   resultType: FAIL
                   code: 404
                   errorCode: USER_NOT_FOUND | TASK_NOT_FOUND
-                  reason: 사용자를 찾을 수 없습니다. | 요청하신 taskID가 DB에 존재하지 않습니다.
+                  reason: 사용자를 찾을 수 없습니다. | 과제를 찾을 수 없습니다.
                   data: null
         '500':
           description: 서버 오류
@@ -893,10 +919,24 @@ paths:
                           subTaskId:
                             type: integer
                             example: 1
+                          taskId:
+                            type: integer
+                            example: 1
+                          title:
+                            type: string
+                            example: API 명세 정리
+                          endDate:
+                            type: string
+                            format: date-time
+                            example: "2026-05-10T18:00:00.000Z"
                           isAlarm:
                             type: boolean
-                            example: true
-        '400':
+                            example: false
+                          updatedAt:
+                            type: string
+                            format: date-time
+                            example: "2026-04-16T09:00:08.000Z"
+              '400':
           description: 잘못된 요청
           content:
             application/json:
@@ -905,9 +945,11 @@ paths:
                 example:
                   resultType: FAIL
                   code: 400
-                  errorCode: INVALID_PARAMETER | INVALID_BODY
-                  reason: params의 subTaskId는 숫자로 보내야합니다. | Body의 isAlarm 데이터는 Boolean 형식으로 보내야합니다.
-                  data: null
+                  errorCode: VALIDATION_ERROR
+                  reason: 요청값이 올바르지 않습니다.
+                  data:
+                    - field: body.isAlarm | params.subtaskId
+                      message: isAlarm은 Boolean 형식이어야 합니다. | 숫자 ID여야 합니다.
         '401':
           description: 인증 실패
           content:
@@ -918,7 +960,7 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND
-                  reason: 토큰이 누락되었습니다.
+                  reason: 인증 토큰이 없습니다.
                   data: null
         '403':
           description: 해당 세부과제에 접근 권한이 없습니다.
@@ -942,7 +984,7 @@ paths:
                   resultType: FAIL
                   code: 404
                   errorCode: USER_NOT_FOUND | SUBTASK_NOT_FOUND | SUBTASK_UPDATE_FAILED
-                  reason: 사용자를 찾을 수 없습니다. | 세부과제를 찾을 수 없습니다. | 세부과제 업데이트에 실패했습니다.
+                  reason: 사용자를 찾을 수 없습니다. | 요청하신 subTaskId가 DB에 존재하지 않습니다. | 세부과제 업데이트에 실패했습니다.
                   data: null
         '500':
           description: 서버 오류
@@ -3029,7 +3071,7 @@ paths:
                   resultType: "FAIL"
                   code: 400
                   errorCode: "INVALID_NICKNAME"
-                  reason: "닉네임은 최대 100자까지만 가능합니다."
+                  reason: "닉네임은 최대 30자까지만 가능합니다."
                   data: null                      
         '401':
           description: |
@@ -3094,7 +3136,9 @@ paths:
                   example: "프로그래밍"
                 color:
                   type: string
-                  example: "#FF5733"
+                  enum: ["#F55757", "#FFC93F", "#6EC77B", "#A177E2", "#081221", "#B5BAC4"]
+                  description: "허용된 색상 코드 중 하나"
+                  example: "#F55757"
       responses:
         '200':
           description: 생성 성공
@@ -3123,14 +3167,14 @@ paths:
                         example: "프로그래밍"
                       color:
                         type: string
-                        example: "#FF5733"
+                        example: "#F55757"
         '400':
           description: |
             - BAD_REQUEST: 토큰이 형식에 맞지 않음.
             - INVALID_INPUT_VALUE: 폴더명이 비어있을 때.
             - INVALID_FOLDER_TITLE: 폴더 이름이 길 때.
             - COLOR_REQUIRED: 색상이 입력되지 않음.
-            - INVALID_COLOR: 색상 형식이 올바르지 않음 (#123456 형식 아님).
+            - INVALID_COLOR: 지정된 목록에 없는 색상 코드일 때.
             - MAX_FOLDER_LIMIT: 폴더 개수 6개 초과.
             - DUPLICATE_COLOR: 이미 사용 중인 색상.
             - DUPLICATE_NAME: 이미 사용 중인 폴더 이름.
@@ -3142,7 +3186,7 @@ paths:
                   resultType: "FAIL"
                   code: 400
                   errorCode: "BAD_REQUEST | INVALID_INPUT_VALUE | INVALID_FOLDER_TITLE | COLOR_REQUIRED | INVALID_COLOR | MAX_FOLDER_LIMIT | DUPLICATE_COLOR | DUPLICATE_NAME"
-                  reason: "인증 토큰이 형식에 맞지 않습니다. | 폴더 이름은 필수입니다. | 폴더 이름은 최대 10자까지만 가능합니다. | 색상은 필수 입력 사항입니다. | 색상은 #을 포함한 7자리 Hex 코드여야 합니다. | 폴더는 최대 6개까지만 생성할 수 있습니다. | 이미 사용 중인 색상입니다. | 이미 존재하는 폴더 이름입니다."
+                  reason: "인증 토큰이 형식에 맞지 않습니다. | 폴더 이름은 필수입니다. | 폴더 이름은 최대 10자까지만 가능합니다. | 색상은 필수 입력 사항입니다. | 허용되지 않는 색상입니다. | 폴더는 최대 6개까지만 생성할 수 있습니다. | 이미 사용 중인 색상입니다. | 이미 존재하는 폴더 이름입니다."
                   data: null
         '401':
           description: |
@@ -3199,7 +3243,9 @@ paths:
                   example: "프로그래밍"
                 color:
                   type: string
-                  example: "#123456"
+                  enum: ["#F55757", "#FFC93F", "#6EC77B", "#A177E2", "#081221", "#B5BAC4"]
+                  description: "수정할 색상 (허용된 색상 코드 중 하나)"
+                  example: "#FFC93F"
       responses:
         '200':
           description: 수정 성공
@@ -3228,12 +3274,12 @@ paths:
                         example: "프로그래밍"
                       color:
                         type: string
-                        example: "#123456"
+                        example: "#FFC93F"
         '400':
           description: |
             - BAD_REQUEST: 토큰이 형식에 맞지 않음. 
             - INVALID_FOLDER_TITLE: 폴더 이름이 길 때.     
-            - INVALID_COLOR: 색상 형식이 올바르지 않음.
+            - INVALID_COLOR: 지정된 목록에 없는 색상 코드일 때.
             - DUPLICATE_COLOR: 이미 사용 중인 색상으로 변경 시도.
             - DUPLICATE_NAME: 이미 사용 중인 폴더 이름으로 변경 시도.
             - PROTECTED_FOLDER: '지정안함' 폴더는 수정할 수 없습니다.
@@ -3245,7 +3291,7 @@ paths:
                   resultType: "FAIL"
                   code: 400
                   errorCode: "BAD_REQUEST | INVALID_FOLDER_TITLE | INVALID_COLOR | DUPLICATE_COLOR | DUPLICATE_NAME | PROTECTED_FOLDER"
-                  reason: "인증 토큰이 형식에 맞지 않습니다. | 폴더 이름은 최대 10자까지만 가능합니다. | 색상 형식이 올바르지 않습니다. | 이미 사용 중인 색상입니다. | 이미 존재하는 폴더 이름입니다. | '지정안함' 폴더는 수정할 수 없습니다."
+                  reason: "인증 토큰이 형식에 맞지 않습니다. | 폴더 이름은 최대 10자까지만 가능합니다. | 허용되지 않는 색상입니다. | 이미 사용 중인 색상입니다. | 이미 존재하는 폴더 이름입니다. | '지정안함' 폴더는 수정할 수 없습니다."
                   data: null     
         '401':
           description: |
