@@ -405,20 +405,8 @@ paths:
                 example:
                   resultType: FAIL
                   code: 403
-                  errorCode: USER_DELETED
-                  reason: 탈퇴한 유저는 알림을 삭제할 수 없습니다.
-                  data: null
-        '403': 
-          description: 해당 알림에 접근 권한이 없습니다.
-          content:
-            application/json:
-              schema:
-                type: object
-                example:
-                  resultType: FAIL
-                  code: 403
-                  errorCode: ALARM_ACCESS_DENIED
-                  reason: 해당 알림에 접근할 권한이 없습니다.
+                  errorCode: USER_DELETED | ALARM_ACCESS_DENIED
+                  reason: 탈퇴한 유저는 알림을 삭제할 수 없습니다. | 해당 알림에 접근할 권한이 없습니다.
                   data: null
         '404':
           description: 알림 또는 사용자 없음
@@ -430,7 +418,7 @@ paths:
                   resultType: FAIL
                   code: 404
                   errorCode: ALARM_NOT_FOUND | USER_NOT_FOUND
-                  reason: 해당 알림을 찾을 수 없습니다. | 사용자를 찾을 수 없습니다.
+                  reason: 요청하신 alarmID가 DB에 존재하지 않습니다. | 사용자를 찾을 수 없습니다.
                   data: null
         '500':
           description: 서버 오류
@@ -507,9 +495,11 @@ paths:
                 example:
                   resultType: FAIL
                   code: 400
-                  errorCode: INVALID_PARAMETER | INVALID_BODY
-                  reason: params는 숫자로 보내야합니다. | Body는 Boolean값으로 보내야합니다.
-                  data: null
+                  errorCode: VALIDATION_ERROR
+                  reason: 요청값이 올바르지 않습니다.
+                  data: 
+                    - field: path.alarmId
+                      message: 숫자 ID여야 합니다.
         '401':
           description: 인증 실패
           content:
@@ -532,7 +522,7 @@ paths:
                   resultType: FAIL
                   code: 404
                   errorCode: ALARM_NOT_FOUND | USER_NOT_FOUND
-                  reason: 해당 알림을 찾을 수 없습니다. | 사용자를 찾을 수 없습니다.
+                  reason: 알림을 찾을 수 없습니다. | 사용자를 찾을 수 없습니다.
                   data: null
         '500':
           description: 서버 오류
