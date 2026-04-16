@@ -149,7 +149,9 @@ paths:
                   code: 400
                   errorCode: VALIDATION_ERROR
                   reason: 요청값이 올바르지 않습니다.
-                  data: null
+                  data:
+                    - field: query.type
+                      message: 'Invalid option: expected one of "TASK"|"SUBTASK"|"MEMBER"|"NOTIFICATION"|"OTHER"'
         '401':
           description: 인증 실패
           content:
