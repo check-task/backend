@@ -376,6 +376,30 @@ class AlarmRepository {
     }
   }
 
+  // SubTask 마감일 변경 시 알림 시간 업데이트
+  async updateAlarmsForSubTaskDeadline(subTaskId, newEndDate, tx = prisma) {
+    const alarms = await tx.userAlarm.findMany({
+      where: {
+        subTaskId,
+      },
+      include: {
+        user: { include: { alarmSetting: true } },
+      },
+    });
+
+    for (const alarm of alarms) {
+      const alarmHours = alarm.user.alarmSetting?.taskAlarm ?? 24;
+      const newAlarmDate = calculateAlarmDate(newEndDate, alarmHours);
+
+      await tx.userAlarm.update({
+        where: { id: alarm.id },
+        data: {
+          alarmDate: newAlarmDate,
+        },
+      });
+    }
+  }
+
   // 팀원 참여 알림 생성
   async createMemberJoinAlarm(
     userId,

@@ -550,16 +550,24 @@ class TaskService {
         throw error;
       }
 
-      // 마감일 업데이트
-      const updatedTask = await prisma.subTask.update({
-        where: { id: parseInt(subTaskId) },
-        data: {
-          endDate: newDeadline,
-          updatedAt: new Date(),
-        },
-      });
+      return await prisma.$transaction(async (tx) => {
+        // 마감일 업데이트
+        const updatedTask = await tx.subTask.update({
+          where: { id: parseInt(subTaskId) },
+          data: {
+            endDate: newDeadline,
+            updatedAt: new Date(),
+          },
+        });
 
-      return updatedTask;
+        await alarmRepository.updateAlarmsForSubTaskDeadline(
+          parseInt(subTaskId),
+          newDeadline,
+          tx,
+        );
+
+        return updatedTask;
+      });
     } catch (error) {
       console.error("Error updating subtask deadline:", error);
       throw error;
