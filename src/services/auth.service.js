@@ -84,7 +84,7 @@ export class KakaoAuthService {
     //카카오 비즈앱 최소 동의 정책으로 phone_number 미제공 시 데모데이용 임시 더미 전화번호 사용
     const phoneNum = kakaoAccount.phone_number
       ? kakaoAccount.phone_number.replace("+82 ", "0")
-      : "010-0000-0000";
+      : "전화번호를 입력해 주세요.";
 
     const providerId = profile.id.toString();
     // console.log("카카오 프로필:", JSON.stringify(profile._json, null, 2));
