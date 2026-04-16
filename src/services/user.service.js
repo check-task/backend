@@ -21,10 +21,10 @@ class UserService {
 
   // 2. 프로필 수정
   async updateProfile(userId, body) {
-    if (body.nickname && body.nickname.length > 100) {
+    if (body.nickname && body.nickname.length > 30) {
       throw new BadRequestError(
         "INVALID_NICKNAME",
-        "닉네임은 최대 100자까지만 가능합니다.",
+        "닉네임은 최대 30자까지만 가능합니다.",
       );
     }
 
