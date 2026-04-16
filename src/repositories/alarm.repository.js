@@ -14,8 +14,8 @@ class AlarmRepository {
       type = null,
     } = options;
 
-    // 환경 타지 않도록 순수 Date 객체 사용 (현재 시간)
-    const kstDate = new Date();
+    // UTC+9 기준 현재 시각
+    const kstDate = new Date(Date.now() + 9 * 60 * 60 * 1000);
 
     const where = {
       userId,
@@ -284,7 +284,8 @@ class AlarmRepository {
 
   //안읽음 알림 여부
   async countUnreadAlarms(userId) {
-    const kstDate = new Date();
+    // UTC+9 기준 현재 시각
+    const kstDate = new Date(Date.now() + 9 * 60 * 60 * 1000);
 
     return await prisma.userAlarm.count({
       where: {
