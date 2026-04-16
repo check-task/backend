@@ -27,7 +27,14 @@ const subTaskSchema = z.object({
 export const createTaskSchema = z.object({
   body: z.object({
     title: z.string().trim().min(1, "제목은 필수입니다."),
-    folderId: z.coerce.number().optional().nullable(),
+    folderId: z.coerce.number({
+      invalid_type_error: "폴더 ID는 숫자여야 합니다.", 
+      required_error: "폴더 ID가 필요합니다."         
+    })
+    .int("폴더 ID는 정수여야 합니다.") // 추가적인 정수 체크
+    .positive("유효하지 않은 폴더 ID입니다.") // 양수 체크
+    .optional()
+    .nullable(),
     deadline: z.string().optional(),
     type: z.enum(["TEAM", "PERSONAL"]).default("PERSONAL"),
     subTasks: z.array(subTaskSchema).optional().default([]),
@@ -116,7 +123,7 @@ export const updateTeamMemberSchema = z.object({
 export const deleteTeamMemberSchema = z.object({
   params: z.object({
     taskId: idParam,
-    memberId: idParam,
+    userId: idParam,
   }),
 });
 

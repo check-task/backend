@@ -1211,32 +1211,82 @@ paths:
                       properties:
                         field:
                           type: string
-                          description: "에러가 발생한 필드 위치"
                           example: "body.title"
                         message:
                           type: string
-                          description: "에러 상세 메시지"
                           example: "제목은 필수입니다."
-              example:
-                resultType: "FAIL"
-                code: 400
-                errorCode: "VALIDATION_ERROR"
-                reason: "요청값이 올바르지 않습니다."
-                data:
-                  - field: "body.title"
-                    message: "제목은 필수입니다."
+              examples:
+                TitleRequired:
+                  summary: 필수 값(제목) 누락
+                  value:
+                    resultType: "FAIL"
+                    code: 400
+                    errorCode: "VALIDATION_ERROR"
+                    reason: "요청값이 올바르지 않습니다."
+                    data:
+                      - field: "body.title"
+                        message: "제목은 필수입니다."
+                InvalidFolderId:
+                  summary: 폴더 ID에 숫자가 아닌 값이 들어온 경우 (NaN)
+                  value:
+                    resultType: "FAIL"
+                    code: 400
+                    errorCode: "VALIDATION_ERROR"
+                    reason: "요청값이 올바르지 않습니다."
+                    data:
+                      - field: "body.folderId"
+                        message: "Invalid input: expected number, received NaN"
+                TitleTooLong:
+                  summary: 과제명이 10자 초과인 경우
+                  value:
+                    resultType: "FAIL"
+                    code: 400
+                    errorCode: "TASK_TITLE_TOO_LONG"
+                    reason: "과제명은 10자 이하여야 합니다."
+                    data:
+                      - field: "body.title"
+                        message: "과제명은 10자 이하여야 합니다."
         '401':
           description: 인증 실패 (토큰 만료 또는 누락)
+          content:
+            application/json:
+              example: 
+                resultType: "FAIL"
+                code: 401
+                errorCode: "TOKEN_NOT_FOUND"
+                reason: "인증 토큰이 없습니다."
+                data: null
+        '403':
+          description: 본인의 폴더가 아닌 경우
+          content:
+            application/json:
+              example: 
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FOLDER_NOT_OWNED"
+                reason: "본인 폴더가 아닙니다."
+                data: null
         '404':
           description: 존재하지 않는 폴더
           content:
             application/json:
-              example:
-                resultType: "FAIL"
-                code: 404
-                errorCode: "FOLDER_NOT_FOUND"
-                reason: "존재하지 않는 폴더입니다."
-                data: null
+              examples:
+                FolderNotFound:
+                  summary: 지정한 폴더가 없는 경우
+                  value:
+                    resultType: "FAIL"
+                    code: 404
+                    errorCode: "FOLDER_NOT_FOUND"
+                    reason: "존재하지 않는 폴더입니다."
+                    data: null
+                DefaultFolderNotFound:
+                  summary: 시스템 기본 폴더가 없는 경우
+                  value:
+                    resultType: "FAIL"
+                    code: 404
+                    errorCode: "DEFAULT_FOLDER_NOT_FOUND"
+                    reason: "기본 폴더가 존재하지 않습니다."
+                    data: null
         '500':
           description: 서버 내부 오류
 
@@ -1317,7 +1367,15 @@ paths:
                         status: "PENDING"
                         deadline: "2026.06.25"
         '401':
-          description: 인증 실패 (로그인 필요)
+          description: 인증 실패 (토큰 만료 또는 누락)
+          content:
+            application/json:
+              example: 
+                resultType: "FAIL"
+                code: 401
+                errorCode: "TOKEN_NOT_FOUND"
+                reason: "인증 토큰이 없습니다."
+                data: null
         '500':
           description: 서버 내부 오류
 
@@ -1407,7 +1465,15 @@ paths:
                       createdAt: "2026-02-10T19:10:46.000Z"
                       updatedAt: null
         '401':
-          description: 인증 실패
+          description: 인증 실패 (토큰 만료 또는 누락)
+          content:
+            application/json:
+              example: 
+                resultType: "FAIL"
+                code: 401
+                errorCode: "TOKEN_NOT_FOUND"
+                reason: "인증 토큰이 없습니다."
+                data: null
         '403':
           description: 권한 없음
           content:
@@ -1455,19 +1521,74 @@ paths:
               properties:
                 title:
                   type: string
-                  example: "프로젝트1"
+                  description: "과제 제목 (최대 10자)"
+                  example: "기말 프로젝트"
                 folderId:
                   type: integer
                   nullable: true
+                  description: "소속 폴더 ID"
                   example: 2
                 deadline:
                   type: string
                   format: date-time
-                  example: "2026-02-28T12:00:00Z"
-            example:
-              title: "프로젝트1"
-              folderId: 2
-              deadline: "2026-02-28T12:00:00Z"
+                  description: "과제 마감 기한"
+                  example: "2026-06-20T23:59:59Z"
+                type:
+                  type: string
+                  enum: [TEAM, PERSONAL]
+                  example: "TEAM"
+                status:
+                  type: string
+                  enum: [PENDING, PROGRESS, COMPLETED]
+                  example: "PROGRESS"
+                isAlarm:
+                  type: boolean
+                  example: true
+                subTasks:
+                  type: array
+                  description: "세부 과제 리스트 (ID 유무에 따라 수정/생성)"
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        description: "기존 세부과제 수정 시 필수"
+                        example: 1
+                      title:
+                        type: string
+                        example: "기존 세부과제 수정"
+                      endDate:
+                        type: string
+                        format: date-time
+                        example: "2026-06-01T12:00:00Z"
+                      status:
+                        type: string
+                        enum: [PENDING, PROGRESS, COMPLETED]
+                        example: "COMPLETED"
+                references:
+                  type: array
+                  description: "참고 자료 리스트"
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        example: "수정된 기획안"
+                      url:
+                        type: string
+                        example: "https://notion.so/updated-plan"
+                communications:
+                  type: array
+                  description: "커뮤니케이션 채널 리스트"
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        example: "팀 디스코드"
+                      url:
+                        type: string
+                        example: "https://discord.gg/test"
       responses:
         '200':
           description: 과제 수정 성공
@@ -1478,8 +1599,45 @@ paths:
                 message: "과제가 성공적으로 수정되었습니다."
                 data:
                   taskId: 101
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              examples:
+                data_not_provided:
+                  summary: "수정할 데이터가 전달되지 않았을 때"
+                  value:
+                    resultType: "FAIL"
+                    code: 400
+                    errorCode: "DATA_NOT_PROVIDED"
+                    reason: "수정할 데이터가 전달되지 않았습니다."
+                    data: null
+                folder_not_owned:
+                  summary: "사용자가 소유하지 않은 폴더일 때"
+                  value:
+                    resultType: "FAIL"
+                    code: 400
+                    errorCode: "FOLDER_NOT_OWNED"
+                    reason: "본인 폴더가 아닙니다."
+                    data: null
+                folder_not_found:
+                  summary: "지정된 폴더가 존재하지 않을 때"
+                  value:
+                    resultType: "FAIL"
+                    code: 400
+                    errorCode: "FOLDER_NOT_FOUND"
+                    reason: "폴더가 존재하지 않습니다."
+                    data: null
         '401':
-          description: 인증 실패
+          description: 인증 실패 (토큰 만료 또는 누락)
+          content:
+            application/json:
+              example: 
+                resultType: "FAIL"
+                code: 401
+                errorCode: "TOKEN_NOT_FOUND"
+                reason: "인증 토큰이 없습니다."
+                data: null
         '403':
           description: 권한 없음
           content:
@@ -1488,7 +1646,7 @@ paths:
                 resultType: "FAIL"
                 code: 403
                 errorCode: "FORBIDDEN_TASK"
-                reason: "해당 과제에 접근할 권한이 없습니다."
+                reason: "해당 과제를 수정할 권한이 없습니다."
                 data: null
         '404':
           description: 과제를 찾을 수 없음
@@ -1498,7 +1656,7 @@ paths:
                 resultType: "FAIL"
                 code: 404
                 errorCode: "TASK_NOT_FOUND"
-                reason: "해당 과제를 찾을 수 없습니다."
+                reason: "수정하려는 과제가 존재하지 않습니다."
                 data: null
         '500':
           description: 서버 내부 오류
@@ -1685,11 +1843,13 @@ paths:
           description: 인증 실패
           content:
             application/json:
-              example:
-                resultType: "FAIL"
-                error:
-                  errorCode: "UNAUTHORIZED"
-                  reason: "로그인이 필요합니다."
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 401
+                  errorCode: "TOKEN_INVALID"
+                  reason: "토큰이 유효하지 않습니다."
                   data: null
         '403':
           description: 권한 없음 (Owner가 아님)
@@ -1698,7 +1858,7 @@ paths:
               example:
                 resultType: "FAIL"
                 error:
-                  errorCode: "FORBIDDEN"
+                  errorCode: "FORBIDDEN_TASK_DEADLINE"
                   reason: "과제 마감일을 수정할 권한이 없습니다."
                   data: null
         '404':
@@ -1708,7 +1868,7 @@ paths:
               example:
                 resultType: "FAIL"
                 error:
-                  errorCode: "NOT_FOUND"
+                  errorCode: "TASK_NOT_FOUND"
                   reason: "존재하지 않는 과제입니다."
                   data: null
         '500':
@@ -1771,10 +1931,23 @@ paths:
               example:
                 resultType: "FAIL"
                 code: 400
-                errorCode: "BAD_REQUEST"
-                reason: "orderedTasks 배열은 비어있을 수 없으며, taskId와 rank가 포함되어야 합니다."
+                errorCode: "VALIDATION_ERROR"
+                reason: "요청값이 올바르지 않습니다."
+                data:
+                  - field: "body.orderedTasks"
+                    message: "orderedTasks는 최소 1개 이상이어야 합니다."
         '401':
           description: 인증 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 401
+                  errorCode: "TOKEN_INVALID"
+                  reason: "토큰이 유효하지 않습니다."
+                  data: null
         '403':
           description: 권한 없음
           content:
@@ -1782,8 +1955,8 @@ paths:
               example:
                 resultType: "FAIL"
                 code: 403
-                errorCode: "FORBIDDEN"
-                reason: "본인의 과제가 아닌 항목의 우선순위는 변경할 수 없습니다."
+                errorCode: "FORBIDDEN_TASK"
+                reason: "해당 과제에 접근할 권한이 없습니다."
         '404':
           description: 과제를 찾을 수 없음
           content:
@@ -1834,46 +2007,38 @@ paths:
                   type: boolean
                   example: true
       responses:
-        '201':
+        '200':
           description: 생성 성공
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  message:
-                    type: string
-                    example: "세부 과제가 성공적으로 추가되었습니다."
-                  data:
-                    type: object
-                    properties:
-                      subTaskId:
-                        type: integer
-                        example: 105
-                      title:
-                        type: string
-                        example: "세부과제1"
-                      deadline:
-                        type: string
-                        example: "2026-05-30"
-                      status:
-                        type: string
-                        example: "PENDING"
-                      assigneeName:
-                        type: string
-                        example: "유저"
+              example:
+                resultType: "SUCCESS"
+                message: "세부 Task가 성공적으로 추가되었습니다."
+                data:
+                  subTaskId: 12
+                  title: "세부과제1"
+                  deadline: "2026-05-30T00:00:00.000Z"
         '400':
           description: 마감일 설정 오류
           content:
             application/json:
-              example:
-                resultType: "FAIL"
-                code: 400
-                errorCode: "INVALID_DEADLINE"
-                reason: "세부 과제의 마감일은 부모 과제의 마감일보다 늦을 수 없습니다."
+              examples:
+                invalid_deadline:
+                  summary: "세부 과제 마감일이 부모 마감일을 초과하는 경우"
+                  value:
+                    resultType: "FAIL"
+                    code: 400
+                    errorCode: "INVALID_DEADLINE"
+                    reason: "세부 과제의 마감일은 부모 과제의 마감일보다 늦을 수 없습니다."
+                    data: null
+                subtask_end_date_required:
+                  summary: "세부 과제 마감일이 전달되지 않은 경우"
+                  value:
+                    resultType: "FAIL"
+                    code: 400
+                    errorCode: "SUBTASK_END_DATE_REQUIRED"
+                    reason: "세부 과제 마감일(deadline)이 필요합니다."
+                    data: null
         '403':
           description: 권한 없음
           content:
@@ -1891,8 +2056,8 @@ paths:
               example:
                 resultType: "FAIL"
                 code: 404
-                errorCode: "존재하지 않는 과제입니다."
-                reason: "리소스를 찾을 수 없습니다."
+                errorCode: "TASK_NOT_FOUND"
+                reason: "존재하지 않는 과제입니다."
                 data: null
         '500':
           description: 서버 내부 오류
@@ -1925,12 +2090,6 @@ paths:
               type: object
               required: [taskId, userId, role]
               properties:
-                taskId:
-                  type: integer
-                  example: 1
-                userId:
-                  type: integer
-                  example: 5
                 role:
                   type: integer
                   description: "0: 일반, 1: 관리자"
@@ -1940,32 +2099,59 @@ paths:
           description: 역할 수정 성공
           content:
             application/json:
-              schema:
-              type: object
-              properties:
-                resultType:
-                  type: string
-                  example: "SUCCESS"
-                message: 
-                  type: string
-                  example: "요청이 성공적으로 처리되었습니다."
+              example:
+                resultType: "SUCCESS"
+                message: "멤버 권한이 변경되었습니다."
                 data:
-                    type: object
-                    properties:
-                      memberId:
-                        type: integer
-                        example: 1
-                      userid:
-                        type: integer
-                        example: 1
-                      taskId:
-                        type: integer
-                        example: 1
-                      role:
-                        type: integer
-                        example: 1
+                  memberId: 5
+                  userId: 1
+                  taskId: 4
+                  role: 0
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 401
+                  errorCode: "TOKEN_INVALID"
+                  reason: "토큰이 유효하지 않습니다."
+                  data: null
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN"
+                reason: "과제의 소유자(Owner)만 멤버 권한을 변경할 수 있습니다."
+                data: null
+        '404':
+          description: Not found errors
+          content:
+            application/json:
+              examples:
+                task_not_found:
+                  summary: "과제를 찾을 수 없음"
+                  value:
+                    resultType: "FAIL"
+                    code: 404
+                    errorCode: "TASK_NOT_FOUND"
+                    reason: "존재하지 않는 과제입니다."
+                    data: null
+                member_not_found:
+                  summary: "해당 과제에서 해당 유저를 찾을 수 없음"
+                  value:
+                    resultType: "FAIL"
+                    code: 404
+                    errorCode: "MEMBER_NOT_FOUND"
+                    reason: "해당 과제에서 해당 유저를 찾을 수 없음"
+                    data: null
   # 팀원 추방
-  /api/v1/task/{taskId}/member/{memberId}:
+  /api/v1/task/{taskId}/member/{userId}:
     delete:
       summary: "팀원 추방"
       description: "팀장만 팀원의 참여를 제거할 수 있습니다."
@@ -1978,9 +2164,9 @@ paths:
           required: true
           schema:
             type: integer
-        - name: memberId
+        - name: userId
           in: path
-          description: "추방할 팀원의 ID"
+          description: "추방할 팀원의 User.id"
           required: true
           schema:
             type: integer
@@ -1999,7 +2185,7 @@ paths:
                     example: "SUCCESS"
                   message:
                     type: string
-                    example: "memberId: 3가 추방되었습니다."
+                    example: "userId: 3가 추방되었습니다."
                   data:
                     type: object
                     properties:
@@ -2012,9 +2198,6 @@ paths:
                       taskId:
                         type: integer
                         example: 10
-                      role:
-                        type: integer
-                        example: 0
         '403':
           description: "권한 없음 - 팀장만 추방 가능"
           content:
@@ -2029,12 +2212,12 @@ paths:
           description: "멤버 또는 요청자 없음"
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "멤버를 찾을 수 없음"
+              example:
+                resultType: "FAIL"
+                code: 404
+                errorCode: "MEMBER_NOT_FOUND"
+                reason: "멤버를 찾을 수 없습니다."
+                data: null
 
   # 팀원 초대 링크 생성
   /api/v1/task/{taskId}/invitation:
@@ -2057,36 +2240,33 @@ paths:
           description: 초대 링크 생성 성공
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  message:
-                    type: string
-                    example: "초대 링크가 생성되었습니다."
-                  data:
-                    type: object
-                    properties:
-                      invite_code:
-                        type: string
-                        example: "ABC123"
-                      invite_expired:
-                        type: string
-                        format: date-time
-                        example: "2024-01-31T23:59:59.999Z"
-        '400':
-          description: |
-            잘못된 요청
-            - PERSONAL_TASK: 개인 과제는 초대 링크 생성이 불가능합니다.
+              example:
+                resultType: "SUCCESS"
+                message: "초대 링크가 생성되었습니다."
+                data:
+                  invite_code: "ABC123"
+                  invite_expired: "2024-01-31T23:59:59.999Z"
         '403':
           description: |
-            권한 없음
-            - NOT_OWNER: 과제 소유자만 초대 링크를 생성할 수 있습니다.
+            - PERSONAL_TASK: 개인 과제는 초대 코드 생성이 불가능합니다.
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "PERSONAL_TASK"
+                reason: "개인 과제는 초대 코드 생성이 불가능합니다."
+                data: null
         '404':
-          description: |
-            - TASK_NOT_FOUND: 과제를 찾을 수 없습니다.
+          description: "과제가 존재하지 않음"
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 404
+                errorCode: "TASK_NOT_FOUND"
+                reason: "과제를 찾을 수 없습니다."
+                data: null
 
   # 세부 TASK 상태 업데이트
   /api/v1/task/subtask/{subTaskId}/status:
@@ -2115,9 +2295,9 @@ paths:
               properties:
                 status:
                   type: string
-                  enum: [COMPLETE, PENDING]
-                  description: 변경할 상태 (COMPLETE 또는 PENDING)
-                  example: "COMPLETE"
+                  enum: [COMPLETED, PENDING]
+                  description: 변경할 상태 (COMPLETED 또는 PENDING)
+                  example: "COMPLETED"
       responses:
         '200':
           description: 세부 TASK 상태 업데이트 성공
@@ -2152,8 +2332,15 @@ paths:
                 reason: "해당 과제에 접근할 권한이 없습니다."
                 data: null
         '404':
-          description: |
-            - SUBTASK_NOT_FOUND: 해당하는 세부 태스크를 찾을 수 없습니다.
+          description: 해당하는 세부 태스크를 찾을 수 없습니다.
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 404
+                errorCode: "NOT_FOUND_SUBTASK"
+                reason: "해당하는 세부 태스크를 찾을 수 없습니다."
+                data: null
 
   # 세부 TASK 마감일 변경
   /api/v1/task/subtask/{subTaskId}/deadline:
@@ -2210,8 +2397,15 @@ paths:
                         format: date
                         example: "2026-01-31"
         '400':
-          description: |
-            - INVALID_DEADLINE: 부모 Task의 마감일을 초과할 수 없습니다.
+          description: 부모 Task의 마감일을 초과할 수 없습니다.
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 400
+                errorCode: "INTERNAL_SERVER_ERROR"
+                reason: "부모 Task의 마감일을 초과할 수 없습니다."
+                data: null
         '403':
           description: 권한 없음
           content:
@@ -2223,8 +2417,15 @@ paths:
                 reason: "해당 과제에 접근할 권한이 없습니다."
                 data: null
         '404':
-          description: |
-            - SUBTASK_NOT_FOUND: 해당하는 세부 태스크를 찾을 수 없습니다.
+          description: 해당하는 세부 태스크를 찾을 수 없습니다.
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 404
+                errorCode: "세부 과제가 존재하지 않습니다."
+                reason: "리소스를 찾을 수 없습니다"
+                data: null
 
   # 세부 TASK 담당자 설정
   /api/v1/task/subtask/{subTaskId}/assignee:
@@ -2260,24 +2461,11 @@ paths:
           description: 담당자 설정 성공
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  message:
-                    type: string
-                    example: "담당자가 지정되었습니다."
-                  data:
-                    type: object
-                    properties:
-                      sub_task_id:
-                        type: integer
-                        example: 10
-                      assignee_id:
-                        type: integer
-                        example: 5
+              example:
+                resultType: "SUCCESS"
+                message: "담당자가 지정되었습니다."
+                data:
+                  sub_task_id: 10
         '403':
           description: 권한 없음
           content:
@@ -2289,9 +2477,26 @@ paths:
                 reason: "해당 과제에 접근할 권한이 없습니다."
                 data: null
         '404':
-          description: |
-            - SUBTASK_NOT_FOUND: 해당하는 세부 태스크를 찾을 수 없습니다.
-            - USER_NOT_FOUND: 지정된 사용자를 찾을 수 없습니다.
+          description: Not found errors
+          content:
+            application/json:
+              examples:
+                subtask_not_found:
+                  summary: "세부 태스크를 찾을 수 없음"
+                  value:
+                    resultType: "FAIL"
+                    code: 404
+                    errorCode: "SUBTASK_NOT_FOUND"
+                    reason: "해당하는 세부 태스크를 찾을 수 없습니다."
+                    data: null
+                user_not_found:
+                  summary: "지정된 사용자를 찾을 수 없음"
+                  value:
+                    resultType: "FAIL"
+                    code: 404
+                    errorCode: "USER_NOT_FOUND"
+                    reason: "지정된 사용자를 찾을 수 없습니다."
+                    data: null
         '500':
           description: |
             - INTERNAL_SERVER_ERROR: 서버 오류가 발생했습니다.
@@ -2330,43 +2535,36 @@ paths:
           description: 팀 참여 성공
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  message:
-                    type: string
-                    example: "팀에 성공적으로 참여했습니다."
-                  data:
-                    type: object
-                    properties:
-                      task_id:
-                        type: integer
-                        description: 참여한 과제 ID
-                        example: 1
-                      task_title:
-                        type: string
-                        description: 참여한 과제 제목
-                        example: "팀 프로젝트 개발"
-                      member_id:
-                        type: integer
-                        description: 생성된 멤버 ID
-                        example: 5
+              example:
+                resultType: "SUCCESS"
+                message: "팀에 성공적으로 참여했습니다."
+                data:
+                  task_id: 7
+                  task_title: "프로젝트 이름2"
+                  member_id: 12
+                  folderId: 2
         '403':
           description: |
             - EXPIRED_INVITE_CODE: 만료된 초대 코드입니다.
             - ALREADY_MEMBER: 이미 팀 멤버입니다.
           content:
-              application/json:
-                schema:
-                  type: object
-                  example:
+            application/json:
+              examples:
+                expired_invite_code:
+                  summary: "만료된 초대 코드"
+                  value:
                     resultType: "FAIL"
                     code: 403
-                    errorCode: "EXPIRED_INVITE_CODE | ALREADY_MEMBER"
-                    reason: "만료된 초대 코드입니다. | 이미 팀 멤버입니다."
+                    errorCode: "EXPIRED_INVITE_CODE"
+                    reason: "만료된 초대 코드입니다."
+                    data: null
+                already_member:
+                  summary: "이미 팀 멤버"
+                  value:
+                    resultType: "FAIL"
+                    code: 403
+                    errorCode: "ALREADY_MEMBER"
+                    reason: "이미 팀 멤버입니다."
                     data: null
         '404':
           description: |
@@ -2474,19 +2672,21 @@ paths:
           description: 세부 TASK 삭제 성공
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      deletedCount:
-                        type: integer
-                        example: 3
+              example:
+                resultType: "SUCCESS"
+                message: "선택한 세부 과제들이 삭제되었습니다."
+                data:
+                  deletedCount: 3
+        '404':
+          description: 과제가 존재하지 않음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 404
+                errorCode: "존재하지 않는 과제입니다."
+                reason: "리소스를 찾을 수 없습니다"
+                data: null
     patch:
         tags:
           - Task
@@ -2554,7 +2754,16 @@ paths:
                           deadline:
                             type: string
                             format: date-time
-
+          '404':
+            description: 세부 과제가 존재하지 않습니다.
+            content:
+              application/json:
+                example:
+                  resultType: "FAIL"
+                  code: 404
+                  errorCode: "세부 과제가 존재하지 않습니다."
+                  reason: "리소스를 찾을 수 없습니다"
+                  data: null
   /api/v1/task/{taskId}/subtask/all:
     delete:
       tags:
@@ -2574,19 +2783,24 @@ paths:
           description: 전체 삭제 성공
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                  message:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      deletedCount:
-                        type: integer
-                        example: 5
+              example:
+                resultType: "SUCCESS"
+                message: "선택한 과제에 대한 세부 과제가 삭제되었습니다."
+                data:
+                  deleted:
+                    - 6
+                    - 7
+                    - 5
+        '404':
+            description: 세부 과제가 존재하지 않습니다.
+            content:
+              application/json:
+                example:
+                  resultType: "FAIL"
+                  code: 404
+                  errorCode: "세부 과제가 존재하지 않습니다."
+                  reason: "리소스를 찾을 수 없습니다"
+                  data: null
   
   # -- 팀원 API --
   # 특정 과제의 팀원 목록 조회
