@@ -936,7 +936,7 @@ paths:
                             type: string
                             format: date-time
                             example: "2026-04-16T09:00:08.000Z"
-        '400':
+              '400':
           description: 잘못된 요청
           content:
             application/json:
@@ -945,9 +945,11 @@ paths:
                 example:
                   resultType: FAIL
                   code: 400
-                  errorCode: INVALID_PARAMETER | INVALID_BODY
-                  reason: params의 subTaskId는 숫자로 보내야합니다. | Body의 isAlarm 데이터는 Boolean 형식으로 보내야합니다.
-                  data: null
+                  errorCode: VALIDATION_ERROR
+                  reason: 요청값이 올바르지 않습니다.
+                  data:
+                    - field: body.isAlarm | params.subtaskId
+                      message: isAlarm은 Boolean 형식이어야 합니다. | 숫자 ID여야 합니다.
         '401':
           description: 인증 실패
           content:
@@ -982,7 +984,7 @@ paths:
                   resultType: FAIL
                   code: 404
                   errorCode: USER_NOT_FOUND | SUBTASK_NOT_FOUND | SUBTASK_UPDATE_FAILED
-                  reason: 사용자를 찾을 수 없습니다. | 세부과제를 찾을 수 없습니다. | 세부과제 업데이트에 실패했습니다.
+                  reason: 사용자를 찾을 수 없습니다. | 요청하신 subTaskId가 DB에 존재하지 않습니다. | 세부과제 업데이트에 실패했습니다.
                   data: null
         '500':
           description: 서버 오류
