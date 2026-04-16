@@ -162,7 +162,7 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND
-                  reason: 토큰이 누락되었습니다.
+                  reason: 인증 토큰이 없습니다.
                   data: null
         '403':
           description: 탈퇴한 유저
@@ -236,7 +236,7 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND
-                  reason: 토큰이 누락되었습니다.
+                  reason: 인증 토큰이 없습니다.
                   data: null
         '404':
           description: 사용자 없음
@@ -298,7 +298,7 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND | TOKEN_INVALID | TOKEN_EXPIRED
-                  reason: 토큰이 누락되었습니다. | 토큰이 유효하지 않습니다. | 토큰이 만료되었습니다.
+                  reason: 인증 토큰이 없습니다. | 토큰이 유효하지 않습니다. | 토큰이 만료되었습니다.
                   data: null
         '403':
           description: 권한 없음
@@ -394,7 +394,7 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND
-                  reason: 토큰이 누락되었습니다..
+                  reason: 인증 토큰이 없습니다.
                   data: null
         '403':
           description: 탈퇴한 유저
@@ -520,7 +520,7 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND
-                  reason: 토큰이 누락되었습니다.
+                  reason: 인증 토큰이 없습니다.
                   data: null
         '404':
           description: 알림 또는 사용자 없음
@@ -617,7 +617,7 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND
-                  reason: 토큰이 누락되었습니다.
+                  reason: 인증 토큰이 없습니다.
                   data: null
         '404':
           description: 사용자 없음
@@ -714,7 +714,7 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND
-                  reason: 토큰이 누락되었습니다.
+                  reason: 인증 토큰이 없습니다.
                   data: null
         '404':
           description: 사용자 없음
@@ -818,7 +818,7 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND
-                  reason: 토큰이 누락되었습니다.
+                  reason: 인증 토큰이 없습니다.
                   data: null
         '404':
           description: 사용자 또는 과제 없음
@@ -922,7 +922,7 @@ paths:
                   resultType: FAIL
                   code: 401
                   errorCode: TOKEN_NOT_FOUND
-                  reason: 토큰이 누락되었습니다.
+                  reason: 인증 토큰이 없습니다.
                   data: null
         '403':
           description: 해당 세부과제에 접근 권한이 없습니다.
