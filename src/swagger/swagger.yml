@@ -379,9 +379,11 @@ paths:
                 example:
                   resultType: FAIL
                   code: 400
-                  errorCode: INVALID_PARAMETER
-                  reason: params는 숫자로 보내야합니다.
-                  data: null
+                  errorCode: VALIDATION_ERROR
+                  reason: 요청값이 올바르지 않습니다.
+                  data: 
+                    - field: path.alarmId
+                      message: 숫자 ID여야 합니다.
         '401':
           description: 인증 실패
           content:
