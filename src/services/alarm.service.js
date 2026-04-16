@@ -236,13 +236,6 @@ class AlarmService {
 
   // ✅ 세부과제 알림 여부 설정
   async updateSubtaskAlarmStatus(userId, subTaskId, isAlarm) {
-    // subTaskId가 유효한 숫자인지 확인
-    if (!Number.isInteger(subTaskId) || subTaskId <= 0) {
-      throw new BadRequestError(
-        "INVALID_PARAMETER",
-        "params의 subTaskId는 숫자로 보내야합니다.",
-      );
-    }
     const subTask = await prisma.subTask.findUnique({
       where: { id: subTaskId },
       include: {
@@ -257,7 +250,7 @@ class AlarmService {
     // 세부과제 존재 여부 확인
     if (!subTask) {
       throw new NotFoundError(
-        "SUB_TASK_NOT_FOUND",
+        "SUBTASK_NOT_FOUND",
         "요청하신 subTaskId가 DB에 존재하지 않습니다.",
       );
     }
@@ -275,12 +268,6 @@ class AlarmService {
       );
     }
 
-    if (typeof isAlarm !== "boolean") {
-      throw new BadRequestError(
-        "INVALID_BODY",
-        "Body의 isAlarm 데이터는 boolean 형식으로 보내야합니다.",
-      );
-    }
     const updatedSubTask = await this.alarmRepository.updateSubtaskAlarmStatus(
       subTaskId,
       isAlarm,
@@ -296,8 +283,7 @@ class AlarmService {
     const notifyUserId =
       subTask.assignee?.userId ??
       (subTask.assigneeId != null
-        ? subTask.task.members.find((m) => m.id === subTask.assigneeId)
-            ?.userId
+        ? subTask.task.members.find((m) => m.id === subTask.assigneeId)?.userId
         : null);
 
     if (updatedSubTask.isAlarm === true) {
@@ -308,12 +294,8 @@ class AlarmService {
         );
       }
 
-      const alarmHours =
-        subTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
-      const alarmDate = calculateAlarmDate(
-        updatedSubTask.endDate,
-        alarmHours,
-      );
+      const alarmHours = subTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
+      const alarmDate = calculateAlarmDate(updatedSubTask.endDate, alarmHours);
 
       const existingAlarm = await prisma.userAlarm.findFirst({
         where: { subTaskId: updatedSubTask.id, type: AlarmType.SUBTASK },
@@ -343,9 +325,7 @@ class AlarmService {
         );
       }
     } else {
-      await this.alarmRepository.deleteAlarmsBySubTaskIds([
-        updatedSubTask.id,
-      ]);
+      await this.alarmRepository.deleteAlarmsBySubTaskIds([updatedSubTask.id]);
     }
 
     return updateSubtaskAlarmStatusDto(updatedSubTask);

@@ -80,7 +80,7 @@ class AlarmController {
       isAlarm,
     );
 
-    return res.success(result, "과제에 대한 알림 여부를 변경하였습니다..");
+    return res.success(result, "과제에 대한 알림 여부를 변경하였습니다.");
   };
 
   // subtask 알림 여부 설정
@@ -95,7 +95,7 @@ class AlarmController {
       isAlarm,
     );
 
-    return res.success(result, "세부과제에 대한 알림 여부를 변경하였습니다..");
+    return res.success(result, "세부과제에 대한 알림 여부를 변경하였습니다.");
   };
 
   // 알림 읽음 처리
