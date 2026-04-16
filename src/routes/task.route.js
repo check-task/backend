@@ -94,7 +94,7 @@ router.patch(
 
 // 팀원 관계 삭제
 router.delete(
-  "/:taskId/member/:memberId",
+  "/:taskId/member/:userId",
   authenticate,
   validate(deleteTeamMemberSchema),
   taskController.deleteTeamMember

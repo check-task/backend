@@ -88,6 +88,14 @@ class TaskService {
     if (!taskData.title)
       throw new BadRequestError("TASK_TITLE_REQUIRED", "과제명은 필수입니다.");
 
+    // 과제명 길이 제한: 10자 이하
+    const titleStr = String(taskData.title ?? "").trim();
+    if (titleStr.length > 10) {k
+      throw new BadRequestError(
+        "TASK_TITLE_TOO_LONG",
+        "과제명은 10자 이하여야 합니다.",
+      );
+    }
     // 저장할 폴더 ID 결정 로직
     let targetFolderId = null;
 
@@ -97,16 +105,16 @@ class TaskService {
         userId,
         "지정안함",
       );
-      if (!defaultFolder) throw new Error("기본 폴더가 존재하지 않습니다.");
+      if (!defaultFolder) throw new BadRequestError("DEFAULT_FOLDER_NOT_FOUND", "기본 폴더가 존재하지 않습니다.");
       targetFolderId = defaultFolder.id;
     } else {
       targetFolderId = Number(data.folderId);
-      if (isNaN(targetFolderId)) throw new Error("folderId는 숫자여야 합니다.");
+      if (isNaN(targetFolderId)) throw new BadRequestError("INVALID_FOLDER_ID", "folderId는 숫자여야 합니다.");
 
       const folderCheck = await taskRepository.findFolderById(targetFolderId);
-      if (!folderCheck) throw new Error("폴더가 존재하지 않습니다.");
+      if (!folderCheck) throw new BadRequestError("FOLDER_NOT_FOUND", "폴더가 존재하지 않습니다.");
       if (folderCheck.userId !== userId)
-        throw new Error("본인 폴더가 아닙니다.");
+        throw new BadRequestError("FOLDER_NOT_OWNED", "본인 폴더가 아닙니다.");
     }
 
     // 트랜잭션 시작
@@ -257,7 +265,7 @@ class TaskService {
     // 과제 존재 여부 확인
     const currentTask = await taskRepository.findTaskById(taskId);
     if (!currentTask)
-      throw new NotFoundError("수정하려는 과제가 존재하지 않습니다.");
+      throw new NotFoundError("TASK_NOT_FOUND", "수정하려는 과제가 존재하지 않습니다.");
 
     // 본인이 멤버인지 확인
     const member = await taskRepository.findMemberInTask(taskId, userId);
@@ -289,9 +297,9 @@ class TaskService {
           throw new Error("folderId는 숫자여야 합니다.");
 
         const folderCheck = await taskRepository.findFolderById(targetFolderId);
-        if (!folderCheck) throw new Error("폴더가 존재하지 않습니다.");
+        if (!folderCheck) throw new BadRequestError("FOLDER_NOT_FOUND", "폴더가 존재하지 않습니다.");
         if (folderCheck.userId !== userId)
-          throw new Error("본인 폴더가 아닙니다.");
+          throw new BadRequestError("FOLDER_NOT_OWNED", "본인 폴더가 아닙니다.");
       }
 
       // 폴더 업데이트
@@ -313,7 +321,7 @@ class TaskService {
     // 1. Task 존재 여부 확인
     const existingTask = await taskRepository.findTaskById(taskId);
     if (!existingTask) {
-      throw new NotFoundError("존재하지 않는 과제입니다.");
+      throw new NotFoundError("TASK_NOT_FOUND", "존재하지 않는 과제입니다.");
     }
 
     // 2. 수정 권한 확인 (중요!)
@@ -327,13 +335,13 @@ class TaskService {
     });
 
     if (!member) {
-      throw new ForbiddenError("과제 마감일을 수정할 권한이 없습니다.");
+      throw new ForbiddenError("FORBIDDEN_TASK_DEADLINE", "과제 마감일을 수정할 권한이 없습니다.");
     }
 
     // 3. 날짜 형식 유효성 검사
     const newDeadline = new Date(deadline);
     if (isNaN(newDeadline.getTime())) {
-      throw new BadRequestError("유효하지 않은 날짜 형식입니다.");
+      throw new BadRequestError("BAD_REQUEST", "유효하지 않은 날짜 형식입니다.");
     }
 
     // 4. 세부 과제들의 마감일보다 이른 날짜로 변경 불가하도록 검증
@@ -425,7 +433,7 @@ class TaskService {
       });
 
       if (!existingTask) {
-        const error = new Error("해당하는 세부 태스크를 찾을 수 없습니다.");
+        const error = new NotFoundError("NOT_FOUND_SUBTASK", "해당하는 세부 태스크를 찾을 수 없습니다.");
         error.status = 404;
         throw error;
       }
@@ -906,48 +914,83 @@ class TaskService {
   }
 
   // 멤버 역할 수정
-  async modifyMemberRole(taskId, userId, role) {
-    const member = await taskRepository.findMemberInTask(taskId, userId);
-    if (!member)
-      throw new NotFoundError("해당 과제에서 해당 유저를 찾을 수 없음");
+  async modifyMemberRole(taskId, actingUserId, targetUserId, role) {
+    // 권한: 요청자는 해당 과제의 owner(관리자 역할 false)여야 합니다.
+    const requester = await taskRepository.findMemberInTask(taskId, actingUserId);
+    if (!requester) {
+      throw new ForbiddenError("FORBIDDEN", "유저가 해당 과제에 권한이 없습니다.");
+    }
+    if (requester.role !== false) {
+      throw new ForbiddenError("FORBIDDEN", "과제의 소유자(Owner)만 멤버 권한을 변경할 수 있습니다.");
+    }
+
+    const member = await taskRepository.findMemberInTask(taskId, targetUserId);
+    if (!member) {
+      throw new NotFoundError("MEMBER_NOT_FOUND", "해당 과제에서 해당 유저를 찾을 수 없음");
+    }
 
     const isTargetBecomingOwner = role === 0;
 
     return await prisma.$transaction(async (tx) => {
       if (isTargetBecomingOwner) {
-        await taskRepository.resetOtherMembersRole(taskId, userId, tx);
+        await taskRepository.resetOtherMembersRole(taskId, targetUserId, tx);
       }
 
       const dbRoleValue = isTargetBecomingOwner ? false : true;
       return await taskRepository.updateMemberRole(member.id, dbRoleValue, tx);
     });
   }
+    async modifyMemberRole(taskId, actingUserId, targetUserId, role) {
+      // 권한: 요청자는 해당 과제의 owner(관리자 역할 false)여야 합니다.
+      const requester = await taskRepository.findMemberInTask(taskId, actingUserId);
+      if (!requester) {
+        throw new ForbiddenError("FORBIDDEN", "유저가 해당 과제에 권한이 없습니다.");
+      }
+      if (requester.role !== false) {
+        throw new ForbiddenError("FORBIDDEN", "과제의 소유자(Owner)만 멤버 권한을 변경할 수 있습니다.");
+      }
+
+      const member = await taskRepository.findMemberInTask(taskId, targetUserId);
+      if (!member) {
+        throw new NotFoundError("MEMBER_NOT_FOUND", "해당 과제에서 해당 유저를 찾을 수 없음");
+      }
+
+      const isTargetBecomingOwner = role === 0;
+
+      return await prisma.$transaction(async (tx) => {
+        if (isTargetBecomingOwner) {
+          await taskRepository.resetOtherMembersRole(taskId, targetUserId, tx);
+        }
+
+        const dbRoleValue = isTargetBecomingOwner ? false : true;
+        return await taskRepository.updateMemberRole(member.id, dbRoleValue, tx);
+      });
+    }
 
   // 팀원 추방
-  async outMember(taskId, memberId, userId) {
-    console.log("서비스 로직 : ", taskId, memberId, userId);
+  async outMember(taskId, targetUserId, actingUserId) {
+    console.log("서비스 로직 : outMember", taskId, targetUserId, actingUserId);
 
     const requestingUser = await taskRepository.findMemberInTask(
       taskId,
-      userId,
+      actingUserId,
     );
-    console.log("팀장확인:", requestingUser);
     if (!requestingUser)
-      throw new NotFoundError("요청한 유저가 팀에 없습니다.");
+      throw new NotFoundError("OWNER_NOT_FOUND", "요청한 유저가 팀에 없습니다.");
     if (requestingUser.role !== false)
       throw new UnauthorizedError(
+        "UNAUTHORIZED",
         "권한이 없습니다. 팀장만 추방할 수 있습니다.",
       );
 
-    const member = await taskRepository.findMemberInTask(taskId, memberId);
-    if (!member) throw new NotFoundError("멤버를 찾을 수 없음");
+    const member = await taskRepository.findMemberInTask(taskId, targetUserId);
+    if (!member) throw new NotFoundError("MEMBER_NOT_FOUND", "멤버를 찾을 수 없습니다.");
 
     await taskRepository.deleteMember(member.id);
 
     return {
       id: member.id,
       userId: member.userId,
-      memberId: member.memberId,
       taskId: member.taskId,
     };
   }
@@ -955,7 +998,7 @@ class TaskService {
   // 단일 세부 과제 생성 서비스
   async createSingleSubTask(userId, taskId, createData) {
     const parentTask = await taskRepository.findTaskById(taskId);
-    if (!parentTask) throw new NotFoundError("존재하지 않는 과제입니다.");
+    if (!parentTask) throw new NotFoundError("TASK_NOT_FOUND", "존재하지 않는 과제입니다.");
 
     // 본인이 멤버인지 확인
     const member = await taskRepository.findMemberInTask(taskId, userId);
@@ -978,6 +1021,17 @@ class TaskService {
         "SUBTASK_END_DATE_REQUIRED",
         "세부 과제 마감일(deadline)이 필요합니다.",
       );
+    }
+
+    // 부모 과제의 마감일이 설정되어 있으면, 세부 과제 마감일은 부모 마감일보다 늦을 수 없습니다.
+    if (parentTask.deadline) {
+      const parentDeadline = new Date(parentTask.deadline);
+      if (isNaN(parentDeadline.getTime()) === false && endDate > parentDeadline) {
+        throw new BadRequestError(
+          "INVALID_DEADLINE",
+          "세부 과제의 마감일은 부모 과제의 마감일보다 늦을 수 없습니다.",
+        );
+      }
     }
 
     const members = await prisma.member.findMany({
