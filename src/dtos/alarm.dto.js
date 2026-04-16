@@ -65,7 +65,6 @@ export const updateSubtaskAlarmStatusDto = (data) => {
   return {
     subtask: {
       subTaskId: data.subTaskId ?? data.id,
-      assigneeId: data.assigneeId,
       taskId: data.taskId,
       title: data.title,
       endDate: data.endDate,

@@ -919,9 +919,23 @@ paths:
                           subTaskId:
                             type: integer
                             example: 1
+                          taskId:
+                            type: integer
+                            example: 1
+                          title:
+                            type: string
+                            example: API 명세 정리
+                          endDate:
+                            type: string
+                            format: date-time
+                            example: "2026-05-10T18:00:00.000Z"
                           isAlarm:
                             type: boolean
-                            example: true
+                            example: false
+                          updatedAt:
+                            type: string
+                            format: date-time
+                            example: "2026-04-16T09:00:08.000Z"
         '400':
           description: 잘못된 요청
           content:
