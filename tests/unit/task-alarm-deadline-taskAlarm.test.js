@@ -28,6 +28,7 @@ vi.mock("../../src/repositories/alarm.repository.js", () => ({
     createTaskAlarm: vi.fn().mockResolvedValue({ id: 1 }),
     createSubTaskAlarm: vi.fn().mockResolvedValue({ id: 2 }),
     updateAlarmsForTaskDeadline: vi.fn().mockResolvedValue(undefined),
+    updateAlarmsForSubTaskDeadline: vi.fn().mockResolvedValue(undefined),
     updateAlarm: vi.fn().mockResolvedValue({}),
     updateAlarmDate: vi.fn().mockResolvedValue({}),
     deleteAlarmById: vi.fn().mockResolvedValue({}),
@@ -331,6 +332,33 @@ describe("TaskService 알림 — deadlineAlarm / taskAlarm", () => {
       expect(alarmRepository.updateAlarmsForTaskDeadline).toHaveBeenCalledWith(
         taskId,
         dataArg.deadline,
+        mockTx,
+      );
+    });
+  });
+
+  describe("updateSubTaskDeadline", () => {
+    it("세부과제 마감 변경 후 updateAlarmsForSubTaskDeadline 호출", async () => {
+      const subTaskId = 321;
+      const parentDeadline = new Date(Date.UTC(2025, 6, 1, 0, 0, 0));
+      prisma.subTask.findUnique.mockResolvedValue({
+        id: subTaskId,
+        taskId: 60,
+        task: { deadline: parentDeadline },
+      });
+      taskRepository.findMemberInTask.mockResolvedValue({ id: 7 });
+      mockTx.subTask.update.mockResolvedValue({
+        id: subTaskId,
+        endDate: new Date(Date.UTC(2025, 5, 20, 0, 0, 0)),
+      });
+
+      await taskService.updateSubTaskDeadline(subTaskId, "2025-06-20", 1);
+
+      const [updateArg] = mockTx.subTask.update.mock.calls[0];
+      expect(updateArg.data.endDate).toBeInstanceOf(Date);
+      expect(alarmRepository.updateAlarmsForSubTaskDeadline).toHaveBeenCalledWith(
+        subTaskId,
+        updateArg.data.endDate,
         mockTx,
       );
     });
