@@ -582,6 +582,9 @@ paths:
                           userId:
                             type: integer
                             example: 1
+                          nickname:
+                            type: string
+                            example: "홍길동"
                           deadlineAlarm:
                             type: integer
                             example: 24
@@ -594,9 +597,11 @@ paths:
                 example:
                   resultType: FAIL
                   code: 400
-                  errorCode: INVALID_BODY
-                  reason: DeadlineAlarm의 타입은 number 입니다.
-                  data: null
+                  errorCode: VALIDATION_ERROR
+                  reason: 요청값이 올바르지 않습니다.
+                  data:
+                    - field: body.deadlineAlarm
+                      message: deadlineAlarm은 숫자여야 합니다.
         '401':
           description: 인증 실패
           content:
