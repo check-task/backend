@@ -8,6 +8,7 @@ export const getAlarmListSchema = z.object({
     limit: z.coerce.number().int().positive().optional(),
     orderBy: z.string().optional(),
     order: z.enum(["asc", "desc"]).optional(),
+    type: z.enum(["TASK", "SUBTASK", "MEMBER", "NOTIFICATION", "OTHER"]).optional(),
   }),
 });
 
