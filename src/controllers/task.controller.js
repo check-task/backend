@@ -163,7 +163,12 @@ class TaskController {
       const { taskId, userId } = req.params;
       const { role } = req.body; // 프론트에서 0(Owner) 또는 1(Member)이 옴
 
-      const result = await taskService.modifyMemberRole(taskId, userId, role);
+      const result = await taskService.modifyMemberRole(
+        Number(taskId),
+        req.user.id,
+        Number(userId),
+        role,
+      );
 
       res.status(200).json({
         resultType: "SUCCESS",
@@ -184,14 +189,18 @@ class TaskController {
   // 팀원 추방
   async deleteTeamMember(req, res, next) {
     try {
-      const { taskId, memberId } = req.params;
-      const userId = req.user.id;
+      const { taskId, userId: targetUserId } = req.params;
+      const requestingUserId = req.user.id;
 
-      const result = await taskService.outMember(taskId, memberId, userId);
+      const result = await taskService.outMember(
+        Number(taskId),
+        Number(targetUserId),
+        Number(requestingUserId),
+      );
 
       res.status(200).json({
         resultType: "SUCCESS",
-        message: `memberId: ${memberId}가 추방되었습니다.`,
+        message: `userId: ${targetUserId}가 추방되었습니다.`,
         data: result,
       });
     } catch (error) {
