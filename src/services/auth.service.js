@@ -256,15 +256,19 @@ export class KakaoAuthService {
         } while (cursor !== "0");
 
         // 카카오 연결 해제
-        await axios.post(
-          "https://kapi.kakao.com/v1/user/unlink",
-          new URLSearchParams({ target_id_type: "user_id", target_id: user.providerId }),
-          { headers: { Authorization: `KakaoAK ${process.env.KAKAO_ADMIN_KEY}` } }
-        );
-        
+        try {
+          await axios.post(
+            "https://kapi.kakao.com/v1/user/unlink",
+            new URLSearchParams({ target_id_type: "user_id", target_id: user.providerId }),
+            { headers: { Authorization: `KakaoAK ${process.env.KAKAO_ADMIN_KEY}` } }
+          );
+        }catch(err){
+          console.warn(`카카오 연동 해제 실패 (userId: ${user.id})`, err.response?.data ?? err.message); 
+        }
         await prisma.$transaction(async (tx) => {
           await tx.comment.deleteMany({ where: { userId } });
           await tx.userAlarm.deleteMany({ where: { userId } });
+          await tx.taskPriority.deleteMany({ where: { userId } });
           await tx.member.deleteMany({ where: { userId } });
           await tx.folder.deleteMany({ where: { userId } });
           // 나머지는 cascade 자동 처리
