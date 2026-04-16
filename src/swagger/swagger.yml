@@ -684,6 +684,9 @@ paths:
                           userId:
                             type: integer
                             example: 1
+                          nickname:
+                            type: string
+                            example: "홍길동"
                           taskAlarm:
                             type: integer
                             example: 24
@@ -787,12 +790,20 @@ paths:
                       task:
                         type: object
                         properties:
-                          taskId:
-                            type: integer
-                            example: 1
+                          title:
+                            type: string
+                            example: 팀 프로젝트 개발
+                          deadline:
+                            type: string
+                            format: date-time
+                            example: "2026-05-15T12:44:39.509Z"
                           isAlarm:
                             type: boolean
-                            example: true
+                            example: false
+                          updatedAt:
+                            type: string
+                            format: date-time
+                            example: "2026-04-16T09:00:08.000Z"
         '400':
           description: 잘못된 요청
           content:
