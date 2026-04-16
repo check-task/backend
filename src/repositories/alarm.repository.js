@@ -390,9 +390,8 @@ class AlarmRepository {
         type: AlarmType.MEMBER,
         title: `새로운 팀원이 참여했어요!`,
         alarmContent: `${memberName}님이 '${taskTitle}'에 참여했습니다.`,
-        alarmDate: new Date(Date.now() + 9 * 60 * 60 * 1000), // 현재 시간으로 즉시 알림
+        alarmDate: new Date(),
         isRead: false,
-        createdAt: new Date(Date.now() + 9 * 60 * 60 * 1000),
       },
     });
   }
