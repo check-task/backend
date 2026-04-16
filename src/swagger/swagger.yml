@@ -802,9 +802,11 @@ paths:
                 example:
                   resultType: FAIL
                   code: 400
-                  errorCode: INVALID_PARAMETER | INVALID_BODY
-                  reason: params의 taskId는 숫자로 보내야합니다. | Body의 isAlarm 데이터는 Boolean 형식으로 보내야합니다.
-                  data: null
+                  errorCode: VALIDATION_ERROR
+                  reason: 요청값이 올바르지 않습니다.
+                  data:
+                    - field: body.isAlarm | params.taskId
+                      message: isAlarm은 Boolean 형식이어야 합니다. | 숫자 ID여야 합니다.
         '401':
           description: 인증 실패
           content:
@@ -817,6 +819,18 @@ paths:
                   errorCode: TOKEN_NOT_FOUND
                   reason: 인증 토큰이 없습니다.
                   data: null
+        '403':
+          description: 해당 과제에 접근 권한이 없습니다.
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: FAIL
+                  code: 403
+                  errorCode: TASK_ACCESS_DENIED
+                  reason: 해당 과제에 접근할 권한이 없습니다.
+                  data: null
         '404':
           description: 사용자 또는 과제 없음
           content:
@@ -827,7 +841,7 @@ paths:
                   resultType: FAIL
                   code: 404
                   errorCode: USER_NOT_FOUND | TASK_NOT_FOUND
-                  reason: 사용자를 찾을 수 없습니다. | 요청하신 taskID가 DB에 존재하지 않습니다.
+                  reason: 사용자를 찾을 수 없습니다. | 과제를 찾을 수 없습니다.
                   data: null
         '500':
           description: 서버 오류
