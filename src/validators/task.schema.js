@@ -192,6 +192,13 @@ export const generateInviteCodeSchema = z.object({
 export const joinTaskSchema = z.object({
   body: z.object({
     inviteCode: z.string().trim().min(1, "초대 코드는 필수입니다."),
+    folderId: z.coerce.number({
+      invalid_type_error: "폴더 ID는 숫자여야 합니다.",
+    })
+      .int("폴더 ID는 정수여야 합니다.")
+      .positive("유효하지 않은 폴더 ID입니다.")
+      .optional()
+      .nullable(),
   }),
 });
 
