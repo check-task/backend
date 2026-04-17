@@ -2530,6 +2530,11 @@ paths:
                   type: string
                   description: 팀 과제 초대 코드
                   example: "ABC12345"
+                folderId:
+                  type: integer
+                  description: 과제를 저장할 폴더 ID (선택, 미입력 시 기본 폴더에 저장)
+                  example: 2
+                  nullable: true
       responses:
         '200':
           description: 팀 참여 성공
