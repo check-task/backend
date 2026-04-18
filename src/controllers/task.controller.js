@@ -179,7 +179,7 @@ class TaskController {
           targetUserId: result.targetUserId,
           taskId: result.taskId,
           // 📍 DB가 false(0)면 0(Owner), true(1)면 1(Member) 반환
-          role: result.role ? 1 : 0,
+          role: result.role,
         },
       });
     } catch (error) {

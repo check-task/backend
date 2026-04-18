@@ -86,9 +86,9 @@ router.get(
   taskController.getTaskDetail
 );
 
-// PATCH /api/v1/task/:taskId/member/:userId -- 팀원 정보 수정
+// PATCH /api/v1/task/:taskId/member/:targetUserId -- 팀원 정보 수정
 router.patch(
-  "/:taskId/member/:userId",
+  "/:taskId/member/:targetUserId",
   authenticate,
   validateTaskType,
   validate(updateTeamMemberSchema),
