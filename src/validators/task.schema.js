@@ -110,7 +110,7 @@ export const updateTaskPrioritiesSchema = z.object({
 export const updateTeamMemberSchema = z.object({
   params: z.object({
     taskId: idParam,
-    userId: idParam,
+    targetUserId: idParam,
   }),
   body: z.object({
     role: z.union([z.literal(0), z.literal(1)], {
