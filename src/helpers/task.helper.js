@@ -101,14 +101,16 @@ class TaskHandler {
     }
   }
 
-  buildUpdateMemberRoleParams({ taskId, userId, role }) {
+  buildUpdateMemberRoleParams({ taskId, userId, targetUserId, role }) {
     if (!taskId) { throw new BadRequestError("INVALID_TASK_ID", "taskId가 필요합니다."); }
     if (!userId) { throw new BadRequestError("INVALID_USER_ID", "userId가 필요합니다.");}
+    if (!targetUserId) { throw new BadRequestError("INVALID_TARGET_USER_ID", "targetUserId가 필요합니다.");}
     if (role === undefined || role === null) { throw new BadRequestError("INVALID_ROLE", "role이 필요합니다."); }
 
     return {
       taskId: Number(taskId),
       userId: Number(userId),
+      targetUserId: Number(targetUserId),
       role: Number(role),
     };
   }

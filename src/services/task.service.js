@@ -974,7 +974,7 @@ class TaskService {
         "유저가 해당 과제에 권한이 없습니다.",
       );
     }
-    if (requester.role == false) {
+    if (requester.role !== false) {
       throw new ForbiddenError(
         "FORBIDDEN",
         "과제의 소유자(Owner)만 멤버 권한을 변경할 수 있습니다.",
