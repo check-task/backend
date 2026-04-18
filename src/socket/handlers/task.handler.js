@@ -358,7 +358,7 @@ export const setupTaskHandlers = (io, socket) => {
         memberId: result.id,
         userId: result.userId,
         taskId: result.taskId,
-        role: result.role ? 1 : 0,
+        role: result.role
       });
 
       respond(callback, { success: true, data: result });
