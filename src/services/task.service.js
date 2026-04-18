@@ -974,45 +974,7 @@ class TaskService {
         "유저가 해당 과제에 권한이 없습니다.",
       );
     }
-    if (requester.role !== false) {
-      throw new ForbiddenError(
-        "FORBIDDEN",
-        "과제의 소유자(Owner)만 멤버 권한을 변경할 수 있습니다.",
-      );
-    }
-
-    const member = await taskRepository.findMemberInTask(taskId, targetUserId);
-    if (!member) {
-      throw new NotFoundError(
-        "MEMBER_NOT_FOUND",
-        "해당 과제에서 해당 유저를 찾을 수 없음",
-      );
-    }
-
-    const isTargetBecomingOwner = role === 0;
-
-    return await prisma.$transaction(async (tx) => {
-      if (isTargetBecomingOwner) {
-        await taskRepository.resetOtherMembersRole(taskId, targetUserId, tx);
-      }
-
-      const dbRoleValue = isTargetBecomingOwner ? false : true;
-      return await taskRepository.updateMemberRole(member.id, dbRoleValue, tx);
-    });
-  }
-  async modifyMemberRole(taskId, actingUserId, targetUserId, role) {
-    // 권한: 요청자는 해당 과제의 owner(관리자 역할 false)여야 합니다.
-    const requester = await taskRepository.findMemberInTask(
-      taskId,
-      actingUserId,
-    );
-    if (!requester) {
-      throw new ForbiddenError(
-        "FORBIDDEN",
-        "유저가 해당 과제에 권한이 없습니다.",
-      );
-    }
-    if (requester.role !== false) {
+    if (requester.role == false) {
       throw new ForbiddenError(
         "FORBIDDEN",
         "과제의 소유자(Owner)만 멤버 권한을 변경할 수 있습니다.",
