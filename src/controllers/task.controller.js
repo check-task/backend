@@ -160,13 +160,14 @@ class TaskController {
 
   async updateTeamMember(req, res, next) {
     try {
-      const { taskId, userId } = req.params;
+      const { taskId, targetUserId } = req.params;
       const { role } = req.body; // 프론트에서 0(Owner) 또는 1(Member)이 옴
+      const userId = req.user.id;
 
       const result = await taskService.modifyMemberRole(
         Number(taskId),
-        req.user.id,
         Number(userId),
+        Number(targetUserId),
         role,
       );
 
@@ -174,8 +175,8 @@ class TaskController {
         resultType: "SUCCESS",
         message: "멤버 권한이 변경되었습니다.",
         data: {
-          memberId: result.id,
-          userId: result.userId,
+          memberId: userId,
+          targetUserId: result.targetUserId,
           taskId: result.taskId,
           // 📍 DB가 false(0)면 0(Owner), true(1)면 1(Member) 반환
           role: result.role ? 1 : 0,

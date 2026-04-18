@@ -350,7 +350,7 @@ export const setupTaskHandlers = (io, socket) => {
 
       const result = await taskService.modifyMemberRole(
         input.taskId,
-        input.userId,
+        socket.user.id,
         input.targetUserId,
         input.role
       );
