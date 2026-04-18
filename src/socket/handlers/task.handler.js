@@ -351,12 +351,13 @@ export const setupTaskHandlers = (io, socket) => {
       const result = await taskService.modifyMemberRole(
         input.taskId,
         input.userId,
+        input.targetUserId,
         input.role
       );
 
       io.to(`task:${input.taskId}`).emit(taskEvents.MEMBER_UPDATED, {
         memberId: result.id,
-        userId: result.userId,
+        targetUserId: result.userId,
         taskId: result.taskId,
         role: result.role
       });
