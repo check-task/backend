@@ -6,7 +6,15 @@ export class CommentRepository {
   static async findSubTaskById(subTaskId) {
     try {
       return await prisma.subTask.findUnique({
-        where: { id: parseInt(subTaskId) }
+        where: { id: parseInt(subTaskId) },
+        include: {
+          task: {
+            select: {
+              id: true,
+              type: true
+            }
+          }
+        }
       });
     } catch (error) {
       console.error('Error finding subTask:', error);
@@ -22,6 +30,21 @@ export class CommentRepository {
       });
     } catch (error) {
       console.error('Error finding user:', error);
+      throw new Error('서버 오류가 발생했습니다.');
+    }
+  }
+
+  // Task 멤버 확인
+  static async findMemberInTask(taskId, userId) {
+    try {
+      return await prisma.member.findFirst({
+        where: {
+          taskId: parseInt(taskId),
+          userId: userId
+        }
+      });
+    } catch (error) {
+      console.error('Error finding member in task:', error);
       throw new Error('서버 오류가 발생했습니다.');
     }
   }
