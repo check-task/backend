@@ -2961,7 +2961,7 @@ paths:
                   example: "세팅은 제가 할게요!"
                 
       responses:
-        '200':
+        '201':
           description: 댓글 생성 성공
           content:
             application/json:
@@ -2990,6 +2990,11 @@ paths:
                         type: string
                         format: date-time
                         example: "2024-01-25T08:30:00.000Z"
+
+        '403':
+          description: |
+            - FORBIDDEN_TASK: 해당 과제에 접근할 권한이 없습니다.
+            - FORBIDDEN_PERSONAL_TASK: 개인 과제는 소유자만 접근할 수 있습니다.
 
         '404':
           description: |

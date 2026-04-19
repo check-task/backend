@@ -23,6 +23,26 @@ class CommentService {
         throw new NotFoundError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
       }
 
+      // 사용자가 해당 과제의 멤버인지 확인
+      const member = await CommentRepository.findMemberInTask(
+        subTask.task.id,
+        createCommentDto.userId
+      );
+      if (!member) {
+        throw new ForbiddenError(
+          "FORBIDDEN_TASK",
+          "해당 과제에 접근할 권한이 없습니다.",
+        );
+      }
+
+      // 개인 과제의 경우 소유자만 접근 가능
+      if (subTask.task.type === "PERSONAL" && member.role !== false) {
+        throw new ForbiddenError(
+          "FORBIDDEN_PERSONAL_TASK",
+          "개인 과제는 소유자만 접근할 수 있습니다.",
+        );
+      }
+
       // 댓글 생성
       const comment = await CommentRepository.createComment(
         createCommentDto,
@@ -40,7 +60,7 @@ class CommentService {
   // 댓글 수정
   async updateComment(commentId, userId, content) {
     try {
-      // 댓글 존재 여부 및 소유자 확인
+      // 댓글 존재 여부 확인
       const comment = await CommentRepository.findCommentById(commentId);
 
       if (!comment) {
