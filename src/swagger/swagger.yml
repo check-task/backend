@@ -1771,7 +1771,7 @@ paths:
       tags:
         - Task
       summary: 과제 마감일 변경
-      description: 과제의 마감일을 변경합니다. (Owner 권한 필요)
+      description: 과제의 마감일을 변경합니다. (팀원 권한 필요, 개인 과제는 Owner만 가능)
       security:
         - bearerAuth: []
       parameters:
@@ -1852,7 +1852,7 @@ paths:
                   reason: "토큰이 유효하지 않습니다."
                   data: null
         '403':
-          description: 권한 없음 (Owner가 아님)
+          description: 권한 없음 (멤버가 아님 또는 개인 과제의 소유자가 아님)
           content:
             application/json:
               example:
