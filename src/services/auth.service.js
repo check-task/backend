@@ -74,7 +74,7 @@ export class KakaoAuthService {
   }
 
   //카카오 로그인 처리
-  async handleKakaoLogin(profile, kakaoAccessToken){
+  async handleKakaoLogin(profile){ // 추후 승인 나면 추가 ->  kakaoAccessToken
     const kakaoAccount = profile?._json?.kakao_account ?? {};
     const profileInfo = kakaoAccount.profile ?? {};
 
@@ -89,26 +89,28 @@ export class KakaoAuthService {
     const providerId = profile.id.toString();
     // console.log("카카오 프로필:", JSON.stringify(profile._json, null, 2));
 
-    // 카카오 동의 항목 파싱 - service_terms는 별도 API 호출 필요
-    let serviceTerm = [];
-    try {
-      const response = await axios.get("https://kapi.kakao.com/v1/user/service/terms", {
-        headers: { Authorization: `Bearer ${kakaoAccessToken}` },
-      });
-      serviceTerm = response.data?.allowed_service_terms ?? [];
-      // console.log("service_terms 응답:", JSON.stringify(response.data, null, 2));
-    } catch (error) {
-      console.error("service_terms 조회 실패:", error.message);
-    }
+    // // 카카오 동의 항목 파싱 - service_terms는 별도 API 호출 필요
+    // let serviceTerm = [];
+    // try {
+    //   const response = await axios.get("https://kapi.kakao.com/v1/user/service/terms", {
+    //     headers: { Authorization: `Bearer ${kakaoAccessToken}` },
+    //   });
+    //   serviceTerm = response.data?.allowed_service_terms ?? [];
+    //   // console.log("service_terms 응답:", JSON.stringify(response.data, null, 2));
+    // } catch (error) {
+    //   console.error("service_terms 조회 실패:", error.message);
+    // }
 
-    const getAgreedAt = (tag) => {
-      const term = serviceTerm.find(t => t.tag === tag);
-      return term ? new Date(term.agreed_at) : null;
-    };
-    const termsAgreedAt = getAgreedAt("termsAgreedAt");
-    const pushUpdatedAt = getAgreedAt("pushUpdatedAt");
-    const thirdPartyUpdatedAt = getAgreedAt("thirdPartyUpdatedAt");
-    const marketingUpdatedAt = getAgreedAt("marketingUpdatedAt");
+    // const getAgreedAt = (tag) => {
+    //   const term = serviceTerm.find(t => t.tag === tag);
+    //   return term ? new Date(term.agreed_at) : null;
+    // };
+    
+    const now = new Date();
+    const termsAgreedAt = now; // getAgreedAt("termsAgreedAt");
+    const pushUpdatedAt = now; // getAgreedAt("pushUpdatedAt");
+    const thirdPartyUpdatedAt = now; // getAgreedAt("thirdPartyUpdatedAt");
+    const marketingUpdatedAt = now; // getAgreedAt("marketingUpdatedAt");
 
     try {
       //기존 사용자 조회

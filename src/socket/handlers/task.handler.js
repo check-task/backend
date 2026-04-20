@@ -342,7 +342,7 @@ export const setupTaskHandlers = (io, socket) => {
   // 팀원 역할 변경 소켓 핸들러 수정
   socket.on(taskEvents.UPDATE_MEMBER, async (payload, callback) => {
     try {
-      console.log(`[SOCKET][member:update] 요청 수신`);
+      console.log(`[SOCKET][member:update] 요청 수신`, payload);
 
       const input = taskHelper.buildUpdateMemberRoleParams({
         ...payload,

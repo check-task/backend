@@ -355,20 +355,21 @@ class TaskService {
       throw new NotFoundError("TASK_NOT_FOUND", "존재하지 않는 과제입니다.");
     }
 
-    // 2. 수정 권한 확인 (중요!)
-    // 해당 유저가 과제의 Owner(생성자/관리자)인지 확인합니다.
-    const member = await prisma.member.findFirst({
-      where: {
-        taskId: taskId,
-        userId: userId,
-        role: false, // role: false가 Owner 권한
-      },
-    });
-
+    // 2. 수정 권한 확인
+    // 해당 유저가 과제의 멤버인지 확인합니다.
+    const member = await taskRepository.findMemberInTask(taskId, userId);
     if (!member) {
       throw new ForbiddenError(
         "FORBIDDEN_TASK",
         "과제 마감일을 수정할 권한이 없습니다.",
+      );
+    }
+
+    // PERSONAL 과제의 경우, 소유자만 수정 가능
+    if (existingTask.type === "PERSONAL" && member.role !== false) {
+      throw new ForbiddenError(
+        "FORBIDDEN_PERSONAL_TASK",
+        "개인 과제는 소유자만 수정할 수 있습니다.",
       );
     }
 
