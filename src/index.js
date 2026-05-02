@@ -72,6 +72,10 @@ swaggerDocument.servers = [
     description: "Production Server",
   },
   {
+    url: `https://checktask.p-e.kr/test`,
+    description: "Test Server",
+  },
+  {
     url: `http://localhost:${serverPort}`,
     description: "Local Development Server",
   },
