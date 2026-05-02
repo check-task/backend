@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # 이 한 줄이 수동 실행 버튼을 만들어줍니다.
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -45,7 +45,9 @@ jobs:
             cd /home/ubuntu/backend
 
             # 최신 코드로 PULL 받기
-            git pull origin main
+            git fetch origin
+            git reset --hard origin/main
+            git clean -fd
 
             # 의존성 설치
             npm ci
