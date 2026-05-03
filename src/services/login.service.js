@@ -15,6 +15,11 @@ export class LoginService {
   }
 
   async sendVerificationCode(email) {
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      throw new BadRequestError("EMAIL_DUPLICATE", "이미 가입된 이메일입니다.");
+    }
+
     const existing = await redis.get(`email_code:${email}`);
     if (existing) {
       throw new BadRequestError(
@@ -115,6 +120,12 @@ export class LoginService {
         data: {
           userId: user.id,
           termsAgreedAt: new Date(),
+          isPush: true,
+          pushUpdatedAt: new Date(),
+          isThirdParty: true,
+          thirdPartyUpdatedAt: new Date(),
+          isMarketing: true,
+          marketingUpdatedAt: new Date(),
         },
       });
 
