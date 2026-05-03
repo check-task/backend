@@ -5,11 +5,29 @@ import {
   nicknameQuery,
   sendCodeBody,
   verifyCodeBody,
+  signupBody,
 } from "../validators/auth.schema.js";
 
 export class LoginController {
   constructor() {
     this.loginService = new LoginService();
+  }
+
+  async signup(req, res, next) {
+    try {
+      const parsed = signupBody.safeParse(req.body);
+      if (!parsed.success) {
+        throw new BadRequestError("INVALID_INPUT", parsed.error.issues[0].message);
+      }
+      const { email, password, nickname } = parsed.data;
+      await this.loginService.signupLocalUser(email, password, nickname);
+      return res.status(201).json({
+        resultType: "SUCCESS",
+        message: "회원가입이 완료되었습니다.",
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 
   async checkEmail(req, res, next) {

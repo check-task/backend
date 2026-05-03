@@ -1,6 +1,8 @@
 import { prisma } from "../db.config.js";
 import { redis } from "../config/redis.config.js";
 import { transporter } from "../config/email.config.js";
+import { folderRepository } from "../repositories/folder.repository.js";
+import bcrypt from "bcrypt";
 import {
   BadRequestError,
   InternalServerError,
@@ -61,6 +63,71 @@ export class LoginService {
     await redis.del(`email_code:${email}`);
     await this.sendVerificationCode(email);
     await redis.set(`email_resend_cooldown:${email}`, "1", "EX", 60 * 2);
+  }
+
+  async signupLocalUser(email, password, nickname) {
+    const verified = await redis.get(`email_verified:${email}`);
+    if (!verified) {
+      throw new BadRequestError(
+        "EMAIL_NOT_VERIFIED",
+        "이메일 인증이 필요합니다.",
+      );
+    }
+
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw new BadRequestError(
+        "EMAIL_DUPLICATE",
+        "이미 사용 중인 이메일입니다.",
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    try {
+      console.log("INSERT DATA:", {
+        email,
+        emailLen: email.length,
+        passwordLen: hashedPassword.length,
+        nickname,
+        nicknameLen: nickname.length,
+      });
+      const user = await prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          nickname,
+          phoneNum: "",
+          role: "USER",
+        },
+      });
+
+      await folderRepository.addFolder(user.id, {
+        folderTitle: "지정안함",
+        color: "#818892",
+      });
+
+      await prisma.userAlarmSetting.create({
+        data: { userId: user.id },
+      });
+
+      await prisma.userAgreement.create({
+        data: {
+          userId: user.id,
+          termsAgreedAt: new Date(),
+        },
+      });
+
+      await redis.del(`email_verified:${email}`);
+
+      return user;
+    } catch (error) {
+      console.error("SIGNUP ERROR:", error);
+      throw new InternalServerError(
+        "SIGNUP_FAILED",
+        "회원가입 처리 중 오류가 발생했습니다.",
+      );
+    }
   }
 
   async verifyEmailCode(email, code) {
