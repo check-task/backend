@@ -90,13 +90,6 @@ export class LoginService {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     try {
-      console.log("INSERT DATA:", {
-        email,
-        emailLen: email.length,
-        passwordLen: hashedPassword.length,
-        nickname,
-        nicknameLen: nickname.length,
-      });
       const user = await prisma.user.create({
         data: {
           email,
@@ -133,7 +126,6 @@ export class LoginService {
 
       return user;
     } catch (error) {
-      console.error("SIGNUP ERROR:", error);
       throw new InternalServerError(
         "SIGNUP_FAILED",
         "회원가입 처리 중 오류가 발생했습니다.",
