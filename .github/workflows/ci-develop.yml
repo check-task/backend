@@ -22,9 +22,11 @@ jobs:
         
       - name: 의존성 설치
         run: npm ci 
+        working-directory: backend
 
       - name: Prisma Client 생성
         run: npm run prisma:generate
+        working-directory: backend
         env: 
           DATABASE_URL: "mysql://user:pass@localhost:3306/dummy"
 
