@@ -1,4 +1,4 @@
-name: CI/DCD - Pull Request
+name: CI/CD - Pull Request
 
 on:
   pull_request:
@@ -21,12 +21,10 @@ jobs:
           cache: 'npm'
         
       - name: 의존성 설치
-        run: npm ci 
-        working-directory: backend
+        run: npm ci
 
       - name: Prisma Client 생성
         run: npm run prisma:generate
-        working-directory: backend
         env: 
           DATABASE_URL: "mysql://user:pass@localhost:3306/dummy"
 
