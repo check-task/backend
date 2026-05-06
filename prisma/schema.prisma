@@ -78,7 +78,7 @@ model User {
   phoneNum     String  @map("phone_num") @db.VarChar(20)
   email        String  @unique @db.VarChar(50)
   profileImage String? @map("profile_image") @db.VarChar(200)
-  password     String? @db.VarChar(50)
+  password     String? @db.VarChar(255)
   role Role @default(USER)
   
   // 소셜 로그인 관련
