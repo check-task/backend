@@ -1,4 +1,4 @@
-name: CI/DCD - Pull Request
+name: CI/CD - Pull Request
 
 on:
   pull_request:
@@ -19,9 +19,12 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
+
+      - name: 디렉토리 확인
+        run: ls -R
         
       - name: 의존성 설치
-        run: npm ci 
+        run: npm ci
         working-directory: backend
 
       - name: Prisma Client 생성
