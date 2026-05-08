@@ -150,12 +150,6 @@ export class LoginService {
       );
     }
 
-    // if (!user.password) {
-    //   throw new UnauthorizedError(
-    //     "SOCIAL_LOGIN_USER",
-    //     "소셜 로그인으로 가입된 계정입니다.",
-    //   );
-    // }
 
     const matched = await bcrypt.compare(password, user.password);
     if (!matched) {
