@@ -17,6 +17,11 @@ export const verifyCodeBody = z.object({
   code: z.string().length(6, { error: "인증코드는 6자리입니다." }),
 });
 
+export const loginBody = z.object({
+  email: z.string().email({ error: "유효한 이메일 형식이 아닙니다." }),
+  password: z.string().min(1, { error: "비밀번호를 입력해 주세요." }),
+});
+
 export const signupBody = z.object({
   email: z.string().email({ error: "유효한 이메일 형식이 아닙니다." }),
   password: z
