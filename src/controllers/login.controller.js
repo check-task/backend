@@ -6,6 +6,7 @@ import {
   sendCodeBody,
   verifyCodeBody,
   signupBody,
+  loginBody,
 } from "../validators/auth.schema.js";
 
 export class LoginController {
@@ -24,6 +25,45 @@ export class LoginController {
       return res.status(201).json({
         resultType: "SUCCESS",
         message: "회원가입이 완료되었습니다.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async login(req, res, next) {
+    try {
+      const parsed = loginBody.safeParse(req.body);
+      if (!parsed.success) {
+        throw new BadRequestError(
+          "INVALID_INPUT",
+          parsed.error.issues[0].message,
+        );
+      }
+      const { email, password } = parsed.data;
+      const { user, accessToken, refreshToken } =
+        await this.loginService.loginLocalUser(email, password);
+
+      const isProd = process.env.NODE_ENV === "production";
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+        path: "/",
+        maxAge: 1000 * 60 * 60 * 24 * 14,
+      });
+
+      return res.status(200).json({
+        resultType: "SUCCESS",
+        message: "로그인이 완료되었습니다.",
+        data: {
+          accessToken,
+          user: {
+            id: user.id,
+            email: user.email,
+            nickname: user.nickname,
+          },
+        },
       });
     } catch (error) {
       next(error);

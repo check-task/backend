@@ -5,6 +5,11 @@ import crypto from "crypto";
 import { redis } from "../config/redis.config.js";
 import { folderRepository } from "../repositories/folder.repository.js";
 import axios from "axios";
+import {
+  generateAccessToken as generateAccessTokenUtil,
+  generateRefreshToken as generateRefreshTokenUtil,
+  saveRefreshToken as saveRefreshTokenUtil,
+} from "./token.service.js";
 
 export class KakaoAuthService {
   constructor(){
@@ -13,41 +18,16 @@ export class KakaoAuthService {
 
   //Access Token 생성
   generateAccessToken(user){
-    return jwt.sign(
-      {
-        id: user.id,
-        provider: user.provider,
-        providerId: user.providerId,
-      },
-      this.secret,
-      {
-        expiresIn: "1h"
-      }
-    );
+    return generateAccessTokenUtil(user);
   }
 
   //Refresh Token 생성
   generateRefreshToken(user){
-    const tokenId = crypto.randomUUID();
-
-    const refreshToken= jwt.sign(
-      { id: user.id, tokenId},
-      this.secret,
-      { expiresIn:"14d" }
-    );
-
-    return { refreshToken, tokenId};
+    return generateRefreshTokenUtil(user);
   }
   //Redis에 저장
   async saveRefreshToken(tokenId, userId){
-    const TTL = 60 * 60 * 24 * 14; //14일 설정
-
-    await redis.set(
-      `refresh_token:${tokenId}`,
-      userId,
-      "EX",
-      TTL
-    );
+    return saveRefreshTokenUtil(tokenId, userId);
   }
 
   //Refresh Token 검증 및 Access Token 재발급

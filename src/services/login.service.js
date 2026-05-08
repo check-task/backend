@@ -6,9 +6,16 @@ import bcrypt from "bcrypt";
 import {
   BadRequestError,
   InternalServerError,
+  UnauthorizedError,
 } from "../errors/custom.error.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  saveRefreshToken,
+} from "./token.service.js";
 
 export class LoginService {
+
   async checkEmailDuplicate(email) {
     const user = await prisma.user.findUnique({ where: { email } });
     return { isDuplicate: !!user };
@@ -131,6 +138,32 @@ export class LoginService {
         "회원가입 처리 중 오류가 발생했습니다.",
       );
     }
+  }
+
+  async loginLocalUser(email, password) {
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user || user.deletedAt) {
+      throw new UnauthorizedError(
+        "INVALID_CREDENTIALS",
+        "이메일 또는 비밀번호가 올바르지 않습니다.",
+      );
+    }
+
+
+    const matched = await bcrypt.compare(password, user.password);
+    if (!matched) {
+      throw new UnauthorizedError(
+        "INVALID_CREDENTIALS",
+        "이메일 또는 비밀번호가 올바르지 않습니다.",
+      );
+    }
+
+    const accessToken = generateAccessToken(user);
+    const { refreshToken, tokenId } = generateRefreshToken(user);
+    await saveRefreshToken(tokenId, user.id);
+
+    return { user, accessToken, refreshToken };
   }
 
   async verifyEmailCode(email, code) {
