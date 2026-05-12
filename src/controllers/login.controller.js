@@ -41,9 +41,20 @@ export class LoginController {
         );
       }
       const { email, password } = parsed.data;
-      const { user, accessToken, refreshToken } =
-        await this.loginService.loginLocalUser(email, password);
+      const result = await this.loginService.loginLocalUser(email, password);
 
+      if (result.withdrawnUser) {
+        return res.status(200).json({
+          resultType: "SUCCESS",
+          message: "탈퇴 처리된 계정입니다. 복구 토큰을 사용해 복구할 수 있습니다.",
+          data: {
+            withdrawnUser: true,
+            restoreToken: result.restoreToken,
+          },
+        });
+      }
+
+      const { user, accessToken, refreshToken } = result;
       const isProd = process.env.NODE_ENV === "production";
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
@@ -58,11 +69,68 @@ export class LoginController {
         message: "로그인이 완료되었습니다.",
         data: {
           accessToken,
+          accessTokenExpireIn: 3600,
           user: {
             id: user.id,
             email: user.email,
             nickname: user.nickname,
           },
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async withdraw(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new BadRequestError("UNAUTHORIZED", "인증 정보가 없습니다.");
+      }
+      await this.loginService.withdrawLocalUser(req.user.id);
+
+      const isProd = process.env.NODE_ENV === "production";
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+        path: "/",
+      });
+
+      return res.status(200).json({
+        resultType: "SUCCESS",
+        message: "회원 탈퇴가 완료되었습니다.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async restore(req, res, next) {
+    try {
+      const { token } = req.body;
+      if (!token) {
+        throw new BadRequestError("TOKEN_REQUIRED", "복구 토큰이 필요합니다.");
+      }
+
+      const { accessToken, refreshToken } =
+        await this.loginService.restoreLocalUser(token);
+
+      const isProd = process.env.NODE_ENV === "production";
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+        path: "/",
+        maxAge: 1000 * 60 * 60 * 24 * 14,
+      });
+
+      return res.status(200).json({
+        resultType: "SUCCESS",
+        message: "계정이 복구되었으며 로그인되었습니다.",
+        data: {
+          accessToken,
+          accessTokenExpireIn: 3600,
         },
       });
     } catch (error) {

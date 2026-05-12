@@ -3,6 +3,7 @@ import { redis } from "../config/redis.config.js";
 import { transporter } from "../config/email.config.js";
 import { folderRepository } from "../repositories/folder.repository.js";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import {
   BadRequestError,
   InternalServerError,
@@ -143,13 +144,12 @@ export class LoginService {
   async loginLocalUser(email, password) {
     const user = await prisma.user.findUnique({ where: { email } });
 
-    if (!user || user.deletedAt) {
+    if (!user || !user.password) {
       throw new UnauthorizedError(
         "INVALID_CREDENTIALS",
         "이메일 또는 비밀번호가 올바르지 않습니다.",
       );
     }
-
 
     const matched = await bcrypt.compare(password, user.password);
     if (!matched) {
@@ -159,11 +159,105 @@ export class LoginService {
       );
     }
 
+    if (user.deletedAt) {
+      const restoreToken = crypto.randomUUID();
+      await redis.set(
+        `restore_token:${restoreToken}`,
+        String(user.id),
+        "EX",
+        60 * 5,
+      );
+      return { withdrawnUser: true, restoreToken };
+    }
+
     const accessToken = generateAccessToken(user);
     const { refreshToken, tokenId } = generateRefreshToken(user);
     await saveRefreshToken(tokenId, user.id);
 
     return { user, accessToken, refreshToken };
+  }
+
+  //로컬 회원 탈퇴
+  async withdrawLocalUser(userId) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user || user.deletedAt) {
+      throw new BadRequestError(
+        "ALREADY_WITHDRAWN",
+        "이미 탈퇴 처리된 사용자입니다.",
+      );
+    }
+
+    if (user.provider) {
+      throw new BadRequestError(
+        "WRONG_WITHDRAW_PATH",
+        "자체 회원이 아닙니다.",
+      );
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { deletedAt: new Date() },
+    });
+
+    let cursor = "0";
+    do {
+      const result = await redis.scan(
+        cursor,
+        "MATCH",
+        "refresh_token:*",
+        "COUNT",
+        100,
+      );
+      cursor = result[0];
+      const keys = result[1];
+      for (const key of keys) {
+        const storedUserId = await redis.get(key);
+        if (storedUserId === String(userId)) {
+          await redis.del(key);
+        }
+      }
+    } while (cursor !== "0");
+  }
+
+  async restoreLocalUser(restoreToken) {
+    if (!restoreToken) {
+      throw new BadRequestError("TOKEN_REQUIRED", "복구 토큰이 필요합니다.");
+    }
+
+    const userIdStr = await redis.get(`restore_token:${restoreToken}`);
+    if (!userIdStr) {
+      throw new BadRequestError(
+        "INVALID_TOKEN",
+        "유효하지 않거나 만료된 토큰입니다.",
+      );
+    }
+
+    const userId = Number(userIdStr);
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        provider: null,
+        deletedAt: { not: null },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestError("USER_NOT_FOUND", "복구할 사용자가 없습니다.");
+    }
+
+    const restoredUser = await prisma.user.update({
+      where: { id: user.id },
+      data: { deletedAt: null },
+    });
+
+    await redis.del(`restore_token:${restoreToken}`);
+
+    const accessToken = generateAccessToken(restoredUser);
+    const { refreshToken, tokenId } = generateRefreshToken(restoredUser);
+    await saveRefreshToken(tokenId, restoredUser.id);
+
+    return { user: restoredUser, accessToken, refreshToken };
   }
 
   async verifyEmailCode(email, code) {
