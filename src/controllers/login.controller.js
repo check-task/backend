@@ -1,8 +1,7 @@
 import { LoginService } from "../services/login.service.js";
-import { BadRequestError } from "../errors/custom.error.js";
+import { BadRequestError, UnauthorizedError } from "../errors/custom.error.js";
 import {
   emailQuery,
-  nicknameQuery,
   sendCodeBody,
   verifyCodeBody,
   signupBody,
@@ -85,7 +84,7 @@ export class LoginController {
   async withdraw(req, res, next) {
     try {
       if (!req.user) {
-        throw new BadRequestError("UNAUTHORIZED", "인증 정보가 없습니다.");
+        throw new UnauthorizedError("UNAUTHORIZED", "인증 정보가 없습니다.");
       }
       await this.loginService.withdrawLocalUser(req.user.id);
 

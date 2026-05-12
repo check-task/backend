@@ -69,7 +69,7 @@ export class LoginService {
     if (cooldown) {
       throw new BadRequestError(
         "RESEND_TOO_SOON",
-        "1분 후에 재발송할 수 있습니다.",
+        "2분 후에 재발송할 수 있습니다.",
       );
     }
 
