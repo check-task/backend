@@ -6,6 +6,8 @@ import {
   verifyCodeBody,
   signupBody,
   loginBody,
+  passwordChangeBody,
+  passwordResetConfirmBody,
 } from "../validators/auth.schema.js";
 
 export class LoginController {
@@ -209,6 +211,106 @@ export class LoginController {
       return res.status(200).json({
         resultType: "SUCCESS",
         message: "이메일 인증이 완료되었습니다.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async changePassword(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new UnauthorizedError("UNAUTHORIZED", "인증 정보가 없습니다.");
+      }
+      const parsed = passwordChangeBody.safeParse(req.body);
+      if (!parsed.success) {
+        throw new BadRequestError(
+          "INVALID_INPUT",
+          parsed.error.issues[0].message,
+        );
+      }
+
+      await this.loginService.changePassword(
+        req.user.id,
+        parsed.data.currentPassword,
+        parsed.data.newPassword,
+      );
+
+      const isProd = process.env.NODE_ENV === "production";
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+        path: "/",
+      });
+
+      return res.status(200).json({
+        resultType: "SUCCESS",
+        message: "비밀번호가 변경되었습니다. 다시 로그인해 주세요.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async sendPasswordResetCode(req, res, next) {
+    try {
+      const parsed = emailQuery.safeParse(req.body);
+      if (!parsed.success) {
+        throw new BadRequestError(
+          "INVALID_EMAIL",
+          parsed.error.issues[0].message,
+        );
+      }
+      await this.loginService.sendPasswordResetCode(parsed.data.email);
+      return res.status(200).json({
+        resultType: "SUCCESS",
+        message: "비밀번호 재설정 인증코드가 발송되었습니다.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async verifyPasswordResetCode(req, res, next) {
+    try {
+      const parsed = verifyCodeBody.safeParse(req.body);
+      if (!parsed.success) {
+        throw new BadRequestError(
+          "INVALID_INPUT",
+          parsed.error.issues[0].message,
+        );
+      }
+      const result = await this.loginService.verifyPasswordResetCode(
+        parsed.data.email,
+        parsed.data.code,
+      );
+      return res.status(200).json({
+        resultType: "SUCCESS",
+        message: "인증이 완료되었습니다.",
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async confirmPasswordReset(req, res, next) {
+    try {
+      const parsed = passwordResetConfirmBody.safeParse(req.body);
+      if (!parsed.success) {
+        throw new BadRequestError(
+          "INVALID_INPUT",
+          parsed.error.issues[0].message,
+        );
+      }
+      await this.loginService.confirmPasswordReset(
+        parsed.data.resetToken,
+        parsed.data.newPassword,
+      );
+      return res.status(200).json({
+        resultType: "SUCCESS",
+        message: "비밀번호가 재설정되었습니다. 새 비밀번호로 로그인해 주세요.",
       });
     } catch (error) {
       next(error);

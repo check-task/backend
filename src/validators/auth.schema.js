@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+export const passwordSchema = z
+  .string()
+  .min(8, { error: "비밀번호는 8자 이상이어야 합니다." })
+  .max(20, { error: "비밀번호는 20자 이하여야 합니다." })
+  .regex(/[!@#$%^&*(),.?":{}|<>]/, {
+    error: "비밀번호에 특수문자가 포함되어야 합니다.",
+  });
+
 export const emailQuery = z.object({
   email: z.string().email({ error: "유효한 이메일 형식이 아닙니다." }),
 });
@@ -24,10 +32,16 @@ export const loginBody = z.object({
 
 export const signupBody = z.object({
   email: z.string().email({ error: "유효한 이메일 형식이 아닙니다." }),
-  password: z
-    .string()
-    .min(8, { error: "비밀번호는 8자 이상이어야 합니다." })
-    .max(20, { error: "비밀번호는 20자 이하여야 합니다." })
-    .regex(/[!@#$%^&*(),.?":{}|<>]/, { error: "비밀번호에 특수문자가 포함되어야 합니다." }),
+  password: passwordSchema,
   nickname: z.string().min(1, { error: "닉네임을 입력해 주세요." }).max(30, { error: "닉네임은 30자 이하여야 합니다." }),
+});
+
+export const passwordChangeBody = z.object({
+  currentPassword: z.string().min(1, { error: "현재 비밀번호를 입력해 주세요." }),
+  newPassword: passwordSchema,
+});
+
+export const passwordResetConfirmBody = z.object({
+  resetToken: z.string().min(1, { error: "재설정 토큰이 필요합니다." }),
+  newPassword: passwordSchema,
 });

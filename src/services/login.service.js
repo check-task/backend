@@ -200,6 +200,10 @@ export class LoginService {
       data: { deletedAt: new Date() },
     });
 
+    await this.revokeAllRefreshTokens(userId);
+  }
+
+  async revokeAllRefreshTokens(userId) {
     let cursor = "0";
     do {
       const result = await redis.scan(
@@ -258,6 +262,134 @@ export class LoginService {
     await saveRefreshToken(tokenId, restoredUser.id);
 
     return { user: restoredUser, accessToken, refreshToken };
+  }
+
+  async changePassword(userId, currentPassword, newPassword) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user || user.deletedAt) {
+      throw new UnauthorizedError(
+        "UNAUTHORIZED",
+        "유효하지 않은 사용자입니다.",
+      );
+    }
+
+    if (user.provider) {
+      throw new BadRequestError("NOT_LOCAL_USER", "자체 회원이 아닙니다.");
+    }
+
+    if (!user.password) {
+      throw new UnauthorizedError(
+        "INVALID_CREDENTIALS",
+        "현재 비밀번호가 올바르지 않습니다.",
+      );
+    }
+
+    const matched = await bcrypt.compare(currentPassword, user.password);
+    if (!matched) {
+      throw new UnauthorizedError(
+        "INVALID_CREDENTIALS",
+        "현재 비밀번호가 올바르지 않습니다.",
+      );
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashed },
+    });
+
+    await this.revokeAllRefreshTokens(userId);
+  }
+
+  async sendPasswordResetCode(email) {
+    const cooldown = await redis.get(`pw_reset_cooldown:${email}`);
+    if (cooldown) {
+      return;
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { email, provider: null, deletedAt: null },
+    });
+
+    if (!user || !user.password) {
+      return;
+    }
+
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    await redis.set(`pw_reset_code:${email}`, code, "EX", 60 * 2);
+    await redis.set(`pw_reset_cooldown:${email}`, "1", "EX", 60 * 2);
+
+    try {
+      await transporter.sendMail({
+        from: `"Check-Task" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: "[Check-Task] 비밀번호 재설정 인증코드",
+        html: `
+          <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+            <h2>비밀번호 재설정</h2>
+            <p>아래 인증코드를 입력해 주세요. 유효 시간은 <strong>2분</strong>입니다.</p>
+            <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; text-align: center; padding: 24px; background: #f5f5f5; border-radius: 8px;">
+              ${code}
+            </div>
+          </div>
+        `,
+      });
+    } catch (error) {
+      await redis.del(`pw_reset_code:${email}`);
+      await redis.del(`pw_reset_cooldown:${email}`);
+      throw new InternalServerError(
+        "EMAIL_SEND_FAILED",
+        "이메일 발송에 실패했습니다.",
+      );
+    }
+  }
+
+  async verifyPasswordResetCode(email, code) {
+    const stored = await redis.get(`pw_reset_code:${email}`);
+
+    if (!stored) {
+      throw new BadRequestError(
+        "CODE_EXPIRED",
+        "인증코드가 만료되었습니다. 다시 발송해 주세요.",
+      );
+    }
+    if (stored !== code) {
+      throw new BadRequestError("INVALID_CODE", "인증코드가 올바르지 않습니다.");
+    }
+
+    const resetToken = crypto.randomUUID();
+    await redis.set(`pw_reset_token:${resetToken}`, email, "EX", 60 * 10);
+    await redis.del(`pw_reset_code:${email}`);
+
+    return { resetToken };
+  }
+
+  async confirmPasswordReset(resetToken, newPassword) {
+    const email = await redis.get(`pw_reset_token:${resetToken}`);
+    if (!email) {
+      throw new BadRequestError(
+        "INVALID_TOKEN",
+        "유효하지 않거나 만료된 토큰입니다.",
+      );
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { email, provider: null, deletedAt: null },
+    });
+
+    if (!user) {
+      throw new BadRequestError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashed },
+    });
+
+    await this.revokeAllRefreshTokens(user.id);
+    await redis.del(`pw_reset_token:${resetToken}`);
   }
 
   async verifyEmailCode(email, code) {

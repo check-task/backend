@@ -18,4 +18,22 @@ router.delete(
 );
 router.post("/local/restore", loginController.restore.bind(loginController));
 
+router.patch(
+  "/password",
+  authenticate,
+  loginController.changePassword.bind(loginController),
+);
+router.post(
+  "/password/reset/send",
+  loginController.sendPasswordResetCode.bind(loginController),
+);
+router.post(
+  "/password/reset/verify",
+  loginController.verifyPasswordResetCode.bind(loginController),
+);
+router.post(
+  "/password/reset",
+  loginController.confirmPasswordReset.bind(loginController),
+);
+
 export default router;
