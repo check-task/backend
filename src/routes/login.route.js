@@ -32,7 +32,7 @@ router.post(
   loginController.verifyPasswordResetCode.bind(loginController),
 );
 router.post(
-  "/password/reset",
+  "/password/reset/confirm",
   loginController.confirmPasswordReset.bind(loginController),
 );
 
