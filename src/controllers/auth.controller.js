@@ -46,7 +46,7 @@ export class AuthController{
 
       return res.status(200).json({
         resultType: "SUCCESS",
-        message: "카카오 로그아웃이 완료되었습니다."
+        message: "로그아웃이 완료되었습니다."
       });
     } catch (error) {
       next(error);
