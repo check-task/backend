@@ -4202,6 +4202,454 @@ paths:
                   reason: "서버 내부 오류가 발생했습니다."
                   data: null
 
+  # 이메일 중복 확인
+  /api/v1/auth/check-email:
+    get:
+      tags:
+        - Auth
+      summary: 이메일 중복 확인
+      description: |
+        회원가입 전 이메일 중복 여부를 확인한다.
+        이미 가입된 이메일인 경우 isDuplicate가 true로 응답된다.
+        인증코드 발송 전 클라이언트에서 먼저 호출하는 것을 권장한다.
+      parameters:
+        - in: query
+          name: email
+          required: true
+          schema:
+            type: string
+            format: email
+            example: "user@example.com"
+          description: 중복 확인할 이메일 주소
+      responses:
+        '200':
+          description: 이메일 중복 확인 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  data:
+                    type: object
+                    properties:
+                      isDuplicate:
+                        type: boolean
+                        example: false
+        '400':
+          description: INVALID_EMAIL - 유효한 이메일 형식이 아님
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "INVALID_EMAIL"
+                  reason: "유효한 이메일 형식이 아닙니다."
+                  data: null
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "INTERNAL_SERVER_ERROR"
+                  reason: "서버 내부 오류가 발생했습니다."
+                  data: null
+
+  # 이메일 인증코드 발송
+  /api/v1/auth/email/send:
+    post:
+      tags:
+        - Auth
+      summary: 이메일 인증코드 발송
+      description: |
+        회원가입 시 이메일 인증을 위해 6자리 인증코드를 발송한다.
+        이미 가입된 이메일이거나 2분 이내에 이미 발송된 코드가 있는 경우 에러를 반환한다.
+        인증코드는 2분간 유효하며, 유효 시간 내에 /api/v1/auth/email/verify로 검증해야 한다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+      responses:
+        '200':
+          description: 인증코드 발송 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "인증코드가 발송되었습니다."
+                  data:
+                    type: "null"
+                    example: null
+        '400':
+          description: |
+            - INVALID_EMAIL: 유효한 이메일 형식이 아님
+            - EMAIL_DUPLICATE: 이미 가입된 이메일
+            - CODE_ALREADY_SENT: 이미 발송된 인증코드가 있음 (2분 대기)
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "INVALID_EMAIL | EMAIL_DUPLICATE | CODE_ALREADY_SENT"
+                  reason: "유효한 이메일 형식이 아닙니다. | 이미 가입된 이메일입니다. | 이미 발송된 인증코드가 있습니다. 만료 후 다시 시도해 주세요."
+                  data: null
+        '500':
+          description: EMAIL_SEND_FAILED - 이메일 발송 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "EMAIL_SEND_FAILED"
+                  reason: "이메일 발송에 실패했습니다."
+                  data: null
+
+  # 이메일 인증코드 재발송
+  /api/v1/auth/email/resend:
+    post:
+      tags:
+        - Auth
+      summary: 이메일 인증코드 재발송
+      description: |
+        기존 인증코드를 폐기하고 새 인증코드를 재발송한다.
+        재발송 후 2분간 쿨다운이 적용되어 동일 이메일로 추가 재발송이 불가하다.
+        이미 가입된 이메일이거나 쿨다운 중인 경우 에러를 반환한다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+      responses:
+        '200':
+          description: 인증코드 재발송 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "인증코드가 재발송되었습니다."
+                  data:
+                    type: "null"
+                    example: null
+        '400':
+          description: |
+            - INVALID_EMAIL: 유효한 이메일 형식이 아님
+            - RESEND_TOO_SOON: 재발송 쿨다운 중 (2분 대기)
+            - EMAIL_DUPLICATE: 이미 가입된 이메일
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "INVALID_EMAIL | RESEND_TOO_SOON | EMAIL_DUPLICATE"
+                  reason: "유효한 이메일 형식이 아닙니다. | 2분 후에 재발송할 수 있습니다. | 이미 가입된 이메일입니다."
+                  data: null
+        '500':
+          description: EMAIL_SEND_FAILED - 이메일 발송 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "EMAIL_SEND_FAILED"
+                  reason: "이메일 발송에 실패했습니다."
+                  data: null
+
+  # 이메일 인증코드 검증
+  /api/v1/auth/email/verify:
+    post:
+      tags:
+        - Auth
+      summary: 이메일 인증코드 검증
+      description: |
+        발송된 6자리 인증코드를 검증하여 이메일 인증을 완료한다.
+        인증 성공 시 해당 이메일의 인증 완료 상태가 Redis에 저장되며, 이후 회원가입(`POST /api/v1/auth/signup`) 시 사용된다.
+        코드 만료(2분) 또는 코드 불일치 시 에러를 반환한다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - code
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                code:
+                  type: string
+                  minLength: 6
+                  maxLength: 6
+                  example: "483921"
+                  description: 이메일로 발송된 6자리 인증코드
+      responses:
+        '200':
+          description: 이메일 인증 완료
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "이메일 인증이 완료되었습니다."
+                  data:
+                    type: "null"
+                    example: null
+        '400':
+          description: |
+            - INVALID_INPUT: 입력값 형식 오류
+            - CODE_EXPIRED: 인증코드 만료 (2분 초과)
+            - INVALID_CODE: 인증코드 불일치
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "INVALID_INPUT | CODE_EXPIRED | INVALID_CODE"
+                  reason: "올바른 입력값이 아닙니다. | 인증코드가 만료되었습니다. | 인증코드가 올바르지 않습니다."
+                  data: null
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "INTERNAL_SERVER_ERROR"
+                  reason: "서버 내부 오류가 발생했습니다."
+                  data: null
+
+  # 자체 회원가입
+  /api/v1/auth/signup:
+    post:
+      tags:
+        - Auth
+      summary: 자체 회원가입
+      description: |
+        이메일 인증이 완료된 이메일로 자체 계정을 생성한다.
+        회원가입 전에 반드시 `/api/v1/auth/email/verify`를 통해 이메일 인증을 완료해야 한다.
+        인증되지 않은 이메일로 요청 시 EMAIL_NOT_VERIFIED 에러가 반환된다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - nickname
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "Password1!"
+                  description: 비밀번호
+                nickname:
+                  type: string
+                  example: "홍길동"
+                  description: 사용자 닉네임
+      responses:
+        '201':
+          description: 회원가입 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "회원가입이 완료되었습니다."
+                  data:
+                    type: "null"
+                    example: null
+        '400':
+          description: |
+            - INVALID_INPUT: 입력값 형식 오류 (이메일, 비밀번호, 닉네임 검증 실패)
+            - EMAIL_NOT_VERIFIED: 이메일 인증이 완료되지 않음
+            - EMAIL_DUPLICATE: 이미 가입된 이메일
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "INVALID_INPUT | EMAIL_NOT_VERIFIED | EMAIL_DUPLICATE"
+                  reason: "올바른 입력값이 아닙니다. | 이메일 인증이 필요합니다. | 이미 사용 중인 이메일입니다."
+                  data: null
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "INTERNAL_SERVER_ERROR"
+                  reason: "서버 내부 오류가 발생했습니다."
+                  data: null
+
+  # 자체 로그인
+  /api/v1/auth/signin:
+    post:
+      tags:
+        - Auth
+      summary: 자체 로그인
+      description: |
+        이메일과 비밀번호로 자체 로그인한다.
+        로그인 성공 시 accessToken이 응답 본문에, refreshToken이 HttpOnly 쿠키로 설정된다.
+        accessToken 유효 시간은 3600초(1시간)이며, refreshToken은 14일간 유효하다.
+        탈퇴 처리된 계정으로 로그인 시 withdrawnUser: true와 restoreToken이 응답으로 내려가며,
+        `/api/v1/auth/local/restore` API를 통해 7일 이내 계정을 복구할 수 있다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "Password1!"
+      responses:
+        '200':
+          description: |
+            로그인 성공.
+            탈퇴 계정인 경우 withdrawnUser: true와 restoreToken이 반환되며 쿠키는 설정되지 않는다.
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                일반_로그인:
+                  summary: 정상 로그인
+                  value:
+                    resultType: "SUCCESS"
+                    message: "로그인이 완료되었습니다."
+                    data:
+                      accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      accessTokenExpireIn: 3600
+                      user:
+                        id: 1
+                        email: "user@example.com"
+                        nickname: "홍길동"
+                탈퇴_계정_로그인:
+                  summary: 탈퇴 처리된 계정 로그인 (복구 가능)
+                  value:
+                    resultType: "SUCCESS"
+                    message: "탈퇴 처리된 계정입니다. 복구 토큰을 사용해 복구할 수 있습니다."
+                    data:
+                      withdrawnUser: true
+                      restoreToken: "abc123xyz..."
+        '400':
+          description: INVALID_INPUT - 입력값 형식 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "INVALID_INPUT"
+                  reason: "올바른 입력값이 아닙니다."
+                  data: null
+        '401':
+          description: INVALID_CREDENTIALS - 이메일 또는 비밀번호 불일치
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 401
+                  errorCode: "INVALID_CREDENTIALS"
+                  reason: "이메일 또는 비밀번호가 올바르지 않습니다."
+                  data: null
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "INTERNAL_SERVER_ERROR"
+                  reason: "서버 내부 오류가 발생했습니다."
+                  data: null
+
   # 자체 회원 탈퇴
   /api/v1/auth/local/withdraw:
     delete:
