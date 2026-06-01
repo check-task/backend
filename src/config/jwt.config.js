@@ -16,14 +16,19 @@ export const jwtStrategy = new JwtStrategy(
   jwtOptions,
   async (payload, done) => {
     try {
-      const user = await prisma.user.findUnique({
-        where: {
-          provider_providerId:{
-            provider: payload.provider,
-            providerId: payload.providerId,
+      let user;
+      if (!payload.provider) {
+        user = await prisma.user.findUnique({ where: { id: payload.id } });
+      } else {
+        user = await prisma.user.findUnique({
+          where: {
+            provider_providerId: {
+              provider: payload.provider,
+              providerId: payload.providerId,
+            },
           },
-        },
-      });
+        });
+      }
 
       if (!user || user.deletedAt) {
         return done(null, false);

@@ -3984,12 +3984,82 @@ paths:
                   reason: "서버 내부 오류가 발생했습니다"
                   data: null
   
-  #카카오 회원 탈퇴
+  # 통합 회원 탈퇴
+  /api/v1/auth/withdraw:
+    delete:
+      tags:
+        - Auth
+      summary: 회원 탈퇴 (통합)
+      description: |
+        자체 회원 및 카카오 회원 모두 사용하는 통합 회원 탈퇴 API.
+        JWT 토큰의 provider 값에 따라 자동 분기된다.
+        - provider null (자체 회원): Refresh Token 즉시 폐기 및 쿠키 삭제.
+        - provider "KAKAO": soft-delete 처리. 스케줄러가 7일 후 영구 삭제 및 카카오 연동 해제.
+        탈퇴 후 7일 이내 복구 가능.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+      responses:
+        '200':
+          description: 회원 탈퇴 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "회원 탈퇴가 완료되었습니다."
+                  data:
+                    type: "null"
+                    example: null
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "ALREADY_WITHDRAWN"
+                  reason: "이미 탈퇴 처리된 사용자입니다."
+                  data: null
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 401
+                  errorCode: "UNAUTHORIZED"
+                  reason: "인증 정보가 없습니다."
+                  data: null
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "USER_WITHDRAW_FAILED"
+                  reason: "회원 탈퇴 처리 중 오류가 발생했습니다."
+                  data: null
+
+  # @deprecated — /api/v1/auth/withdraw 사용 권장
   /api/v1/auth/kakao/unlink:
     delete:
       tags:
         - Auth
-      summary: 카카오 회원탈퇴
+      summary: "[deprecated] 카카오 회원탈퇴 - /api/v1/auth/withdraw 사용 권장"
       description: |
         카카오 0Atuh를 통해 로그인한 사용자의 회원 탈퇴를 처리한다.
         탈퇴 요청 시 즉시 삭제되지 않으며, deleted_at이 현재 시각으로 업데이트 된다.
@@ -4650,12 +4720,12 @@ paths:
                   reason: "서버 내부 오류가 발생했습니다."
                   data: null
 
-  # 자체 회원 탈퇴
+  # @deprecated — /api/v1/auth/withdraw 사용 권장
   /api/v1/auth/local/withdraw:
     delete:
       tags:
         - Auth
-      summary: 자체 회원 탈퇴
+      summary: "[deprecated] 자체 회원 탈퇴 - /api/v1/auth/withdraw 사용 권장"
       description: |
         자체 로그인 회원이 자신의 계정을 탈퇴 처리한다.
         즉시 삭제되지 않으며 deletedAt이 현재 시각으로 업데이트되는 soft-delete 방식이다.
