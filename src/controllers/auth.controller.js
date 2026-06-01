@@ -1,13 +1,56 @@
 import { KakaoAuthService } from "../services/auth.service.js";
+import { LoginService } from "../services/login.service.js";
 import { BadRequestError, UnauthorizedError } from "../errors/custom.error.js";
 // import { prisma } from "../db.config.js";
 
 export class AuthController{
     constructor(){
         this.kakaoAuthService = new KakaoAuthService();
+        this.loginService = new LoginService();
     }
 
-    //카카오 회원 탈퇴
+    // 통합 회원 탈퇴 — provider 값으로 자체/카카오 자동 분기
+    async withdraw(req, res, next) {
+        try {
+            if (!req.user) {
+                throw new UnauthorizedError("UNAUTHORIZED", "인증 정보가 없습니다.");
+            }
+
+            const provider = req.user.provider ?? null;
+
+            if (provider === null) {
+                await this.loginService.withdrawLocalUser(req.user.id);
+
+                const isProd = process.env.NODE_ENV === "production";
+                res.clearCookie("refreshToken", {
+                    httpOnly: true,
+                    secure: isProd,
+                    sameSite: isProd ? "none" : "lax",
+                    path: "/",
+                });
+
+                return res.status(200).json({
+                    resultType: "SUCCESS",
+                    message: "회원 탈퇴가 완료되었습니다.",
+                });
+            }
+
+            if (provider === "KAKAO") {
+                await this.kakaoAuthService.withdrawKakaoUser(req.user);
+
+                return res.status(200).json({
+                    resultType: "SUCCESS",
+                    message: "카카오 회원 탈퇴가 완료되었습니다.",
+                });
+            }
+
+            throw new BadRequestError("UNSUPPORTED_PROVIDER", "지원하지 않는 로그인 방식입니다.");
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    // @deprecated — /api/v1/auth/withdraw 사용 권장
     async kakaoWithdraw(req, res, next){
         try{
             if(!req.user){
