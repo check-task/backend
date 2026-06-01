@@ -1,3 +1,7 @@
+# Claude
+.omc/
+.claude/
+
 # Environment variables
 .env
 
