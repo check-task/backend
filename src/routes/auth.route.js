@@ -71,7 +71,14 @@ router.get(
 );
 
 
-//카카오 회원 탈퇴
+// 통합 회원 탈퇴 (자체/카카오 공용)
+router.delete(
+  "/withdraw",
+  passport.authenticate("jwt", { session: false }),
+  authController.withdraw.bind(authController)
+);
+
+// @deprecated — /api/v1/auth/withdraw 사용 권장
 router.delete(
   "/kakao/unlink",
   passport.authenticate("jwt", { session: false }),

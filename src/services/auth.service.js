@@ -204,6 +204,8 @@ export class KakaoAuthService {
       throw new InternalServerError("USER_WITHDRAW_FAILED","회원 탈퇴 처리 중 오류가 발생했습니다.");
     }
   }
+
+  // 만료된 사용자 삭제
   async deleteExpiredUsers() {
     try {
       const DELETE_AFTER_DAYS = Number(process.env.DELETE_AFTER_DAYS || 7); //DB 삭제 기준 = 일주일

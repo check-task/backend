@@ -156,32 +156,68 @@
   "hotPaths": [
     {
       "path": "src/swagger/swagger.yml",
-      "accessCount": 9,
-      "lastAccessed": 1780238841693,
-      "type": "file"
-    },
-    {
-      "path": "src/controllers/login.controller.js",
-      "accessCount": 3,
-      "lastAccessed": 1780238594078,
+      "accessCount": 23,
+      "lastAccessed": 1780296513931,
       "type": "file"
     },
     {
       "path": "src/routes/login.route.js",
-      "accessCount": 2,
-      "lastAccessed": 1780238558273,
+      "accessCount": 6,
+      "lastAccessed": 1780296488827,
       "type": "file"
     },
     {
-      "path": "src/routes/auth.route.js",
-      "accessCount": 1,
-      "lastAccessed": 1780238363134,
+      "path": "src/controllers/login.controller.js",
+      "accessCount": 5,
+      "lastAccessed": 1780295554707,
       "type": "file"
     },
     {
       "path": "src/controllers/auth.controller.js",
-      "accessCount": 1,
-      "lastAccessed": 1780238363530,
+      "accessCount": 5,
+      "lastAccessed": 1780296477842,
+      "type": "file"
+    },
+    {
+      "path": "src/routes/auth.route.js",
+      "accessCount": 5,
+      "lastAccessed": 1780296482656,
+      "type": "file"
+    },
+    {
+      "path": "src/services/login.service.js",
+      "accessCount": 3,
+      "lastAccessed": 1780295558637,
+      "type": "file"
+    },
+    {
+      "path": "src/routes/index.js",
+      "accessCount": 3,
+      "lastAccessed": 1780295563062,
+      "type": "file"
+    },
+    {
+      "path": "src/config/jwt.config.js",
+      "accessCount": 3,
+      "lastAccessed": 1780296467138,
+      "type": "file"
+    },
+    {
+      "path": "src/services/auth.service.js",
+      "accessCount": 2,
+      "lastAccessed": 1780295562633,
+      "type": "file"
+    },
+    {
+      "path": "src/services/token.service.js",
+      "accessCount": 2,
+      "lastAccessed": 1780295722220,
+      "type": "file"
+    },
+    {
+      "path": "src/config/passport.config.js",
+      "accessCount": 2,
+      "lastAccessed": 1780322750658,
       "type": "file"
     },
     {
@@ -191,15 +227,27 @@
       "type": "file"
     },
     {
-      "path": "src/routes/index.js",
+      "path": "src/middlewares/authenticate.middleware.js",
       "accessCount": 1,
-      "lastAccessed": 1780238393639,
+      "lastAccessed": 1780295563401,
       "type": "file"
     },
     {
-      "path": "src/services/login.service.js",
+      "path": "src/middlewares/auth.middleware.js",
       "accessCount": 1,
-      "lastAccessed": 1780238606309,
+      "lastAccessed": 1780295568206,
+      "type": "file"
+    },
+    {
+      "path": "prisma/schema.prisma",
+      "accessCount": 1,
+      "lastAccessed": 1780295634422,
+      "type": "file"
+    },
+    {
+      "path": "src/config/auth.config.js",
+      "accessCount": 1,
+      "lastAccessed": 1780322753872,
       "type": "file"
     }
   ],
