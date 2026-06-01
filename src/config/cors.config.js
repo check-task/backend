@@ -2,6 +2,7 @@ export const corsOptions = {
   origin: [
     "http://localhost:3000",
     "http://localhost:8000",
+    "https://www.checktask.kr",
     "https://checktask.kr",
     "https://api.checktask.kr",
   ],
