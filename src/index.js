@@ -68,11 +68,11 @@ const swaggerDocument = YAML.load(
 const serverPort = process.env.PORT;
 swaggerDocument.servers = [
   {
-    url: `https://checktask.p-e.kr`,
+    url: `https://api.checktask.kr`,
     description: "Production Server",
   },
   {
-    url: `https://checktask.p-e.kr/test`,
+    url: `https://api.checktask.kr/test`,
     description: "Test Server",
   },
   {
