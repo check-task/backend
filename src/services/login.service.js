@@ -9,6 +9,7 @@ import {
   InternalServerError,
   UnauthorizedError,
 } from "../errors/custom.error.js";
+import { uploadToS3 } from "../middlewares/upload.middleware.js";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -78,7 +79,7 @@ export class LoginService {
     await redis.set(`email_resend_cooldown:${email}`, "1", "EX", 60 * 2);
   }
 
-  async signupLocalUser(email, password, nickname) {
+  async signupLocalUser(email, password, nickname, phoneNum = "", file = null) {
     const verified = await redis.get(`email_verified:${email}`);
     if (!verified) {
       throw new BadRequestError(
@@ -96,6 +97,7 @@ export class LoginService {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const profileImage = file ? await uploadToS3(file) : null;
 
     try {
       const user = await prisma.user.create({
@@ -103,7 +105,8 @@ export class LoginService {
           email,
           password: hashedPassword,
           nickname,
-          phoneNum: "",
+          phoneNum,
+          profileImage,
           role: "USER",
         },
       });

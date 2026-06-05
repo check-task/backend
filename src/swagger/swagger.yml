@@ -4554,10 +4554,12 @@ paths:
         이메일 인증이 완료된 이메일로 자체 계정을 생성한다.
         회원가입 전에 반드시 `/api/v1/auth/email/verify`를 통해 이메일 인증을 완료해야 한다.
         인증되지 않은 이메일로 요청 시 EMAIL_NOT_VERIFIED 에러가 반환된다.
+        요청은 `multipart/form-data` 형식으로 전송해야 한다.
+        `phoneNum`과 `profileImage`는 선택 항목이다.
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               required:
@@ -4573,11 +4575,19 @@ paths:
                   type: string
                   format: password
                   example: "Password1!"
-                  description: 비밀번호
+                  description: "비밀번호 (8~20자, 특수문자 포함)"
                 nickname:
                   type: string
                   example: "홍길동"
-                  description: 사용자 닉네임
+                  description: "사용자 닉네임 (1~30자)"
+                phoneNum:
+                  type: string
+                  example: "01012345678"
+                  description: "핸드폰 번호 (선택, 최대 20자)"
+                profileImage:
+                  type: string
+                  format: binary
+                  description: "프로필 이미지 파일 (선택, S3 업로드)"
       responses:
         '201':
           description: 회원가입 성공
@@ -4597,7 +4607,7 @@ paths:
                     example: null
         '400':
           description: |
-            - INVALID_INPUT: 입력값 형식 오류 (이메일, 비밀번호, 닉네임 검증 실패)
+            - INVALID_INPUT: 입력값 형식 오류 (이메일, 비밀번호, 닉네임, 핸드폰 번호 검증 실패)
             - EMAIL_NOT_VERIFIED: 이메일 인증이 완료되지 않음
             - EMAIL_DUPLICATE: 이미 가입된 이메일
           content:

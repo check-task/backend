@@ -34,6 +34,7 @@ export const signupBody = z.object({
   email: z.string().email({ error: "유효한 이메일 형식이 아닙니다." }),
   password: passwordSchema,
   nickname: z.string().min(1, { error: "닉네임을 입력해 주세요." }).max(30, { error: "닉네임은 30자 이하여야 합니다." }),
+  phoneNum: z.string().max(20, { error: "핸드폰 번호는 20자 이하여야 합니다." }).optional().default(""),
 });
 
 export const passwordChangeBody = z.object({
