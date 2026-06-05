@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { LoginController } from "../controllers/login.controller.js";
 import authenticate from "../middlewares/authenticate.middleware.js";
+import upload from "../middlewares/upload.middleware.js";
 
 const router = Router();
 const loginController = new LoginController();
@@ -9,7 +10,7 @@ router.get("/check-email", loginController.checkEmail.bind(loginController));
 router.post("/email/send", loginController.sendCode.bind(loginController));
 router.post("/email/resend", loginController.resendCode.bind(loginController));
 router.post("/email/verify", loginController.verifyCode.bind(loginController));
-router.post("/signup", loginController.signup.bind(loginController));
+router.post("/signup", upload.single("profileImage"), loginController.signup.bind(loginController));
 router.post("/signin", loginController.login.bind(loginController));
 // @deprecated — /api/v1/auth/withdraw 사용 권장
 router.delete(

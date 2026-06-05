@@ -21,8 +21,8 @@ export class LoginController {
       if (!parsed.success) {
         throw new BadRequestError("INVALID_INPUT", parsed.error.issues[0].message);
       }
-      const { email, password, nickname } = parsed.data;
-      await this.loginService.signupLocalUser(email, password, nickname);
+      const { email, password, nickname, phoneNum } = parsed.data;
+      await this.loginService.signupLocalUser(email, password, nickname, phoneNum, req.file);
       return res.status(201).json({
         resultType: "SUCCESS",
         message: "회원가입이 완료되었습니다.",
