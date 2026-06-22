@@ -5,6 +5,7 @@ export const corsOptions = {
     "https://www.checktask.kr",
     "https://checktask.kr",
     "https://api.checktask.kr",
+    "https://api.checktask.kr/test",
   ],
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
