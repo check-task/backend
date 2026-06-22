@@ -66,6 +66,7 @@ jobs:
             git pull origin develop  # develop 브랜치 pull
 
             npm ci
+            npx prisma generate
             npx prisma migrate deploy
 
             # pm2 앱 이름을 'backend-test'로 구분

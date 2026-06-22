@@ -56,11 +56,11 @@ export class LoginController {
       }
 
       const { user, accessToken, refreshToken } = result;
-      const isProd = process.env.NODE_ENV === "production";
+      const isSecure = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? "none" : "lax",
+        secure: isSecure,
+        sameSite: isSecure ? "none" : "lax",
         path: "/",
         maxAge: 1000 * 60 * 60 * 24 * 14,
       });
@@ -90,11 +90,11 @@ export class LoginController {
       }
       await this.loginService.withdrawLocalUser(req.user.id);
 
-      const isProd = process.env.NODE_ENV === "production";
+      const isSecure = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
       res.clearCookie("refreshToken", {
         httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? "none" : "lax",
+        secure: isSecure,
+        sameSite: isSecure ? "none" : "lax",
         path: "/",
       });
 
@@ -117,11 +117,11 @@ export class LoginController {
       const { accessToken, refreshToken } =
         await this.loginService.restoreLocalUser(token);
 
-      const isProd = process.env.NODE_ENV === "production";
+      const isSecure = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? "none" : "lax",
+        secure: isSecure,
+        sameSite: isSecure ? "none" : "lax",
         path: "/",
         maxAge: 1000 * 60 * 60 * 24 * 14,
       });
@@ -236,11 +236,11 @@ export class LoginController {
         parsed.data.newPassword,
       );
 
-      const isProd = process.env.NODE_ENV === "production";
+      const isSecure = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
       res.clearCookie("refreshToken", {
         httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? "none" : "lax",
+        secure: isSecure,
+        sameSite: isSecure ? "none" : "lax",
         path: "/",
       });
 
