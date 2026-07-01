@@ -55,13 +55,13 @@ router.get(
     }
 
     const { refreshToken } = req.user;
-    const isProd = process.env.NODE_ENV === "production";
+    const isSecure = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
 
     //refresh Token -> HttpOnly 쿠키에 저장
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? "none" : "lax",
+      secure: isSecure,
+      sameSite: isSecure ? "none" : "lax",
       path: "/",
       maxAge: 1000 * 60 * 60 * 24 * 14, // 14일
     });
@@ -71,7 +71,14 @@ router.get(
 );
 
 
-//카카오 회원 탈퇴
+// 통합 회원 탈퇴 (자체/카카오 공용)
+router.delete(
+  "/withdraw",
+  passport.authenticate("jwt", { session: false }),
+  authController.withdraw.bind(authController)
+);
+
+// @deprecated — /api/v1/auth/withdraw 사용 권장
 router.delete(
   "/kakao/unlink",
   passport.authenticate("jwt", { session: false }),

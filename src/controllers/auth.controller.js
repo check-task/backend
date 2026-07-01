@@ -1,13 +1,56 @@
 import { KakaoAuthService } from "../services/auth.service.js";
+import { LoginService } from "../services/login.service.js";
 import { BadRequestError, UnauthorizedError } from "../errors/custom.error.js";
 // import { prisma } from "../db.config.js";
 
 export class AuthController{
     constructor(){
         this.kakaoAuthService = new KakaoAuthService();
+        this.loginService = new LoginService();
     }
 
-    //카카오 회원 탈퇴
+    // 통합 회원 탈퇴 — provider 값으로 자체/카카오 자동 분기
+    async withdraw(req, res, next) {
+        try {
+            if (!req.user) {
+                throw new UnauthorizedError("UNAUTHORIZED", "인증 정보가 없습니다.");
+            }
+
+            const provider = req.user.provider ?? null;
+
+            if (provider === null) {
+                await this.loginService.withdrawLocalUser(req.user.id);
+
+                const isSecure = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
+                res.clearCookie("refreshToken", {
+                    httpOnly: true,
+                    secure: isSecure,
+                    sameSite: isSecure ? "none" : "lax",
+                    path: "/",
+                });
+
+                return res.status(200).json({
+                    resultType: "SUCCESS",
+                    message: "회원 탈퇴가 완료되었습니다.",
+                });
+            }
+
+            if (provider === "KAKAO") {
+                await this.kakaoAuthService.withdrawKakaoUser(req.user);
+
+                return res.status(200).json({
+                    resultType: "SUCCESS",
+                    message: "카카오 회원 탈퇴가 완료되었습니다.",
+                });
+            }
+
+            throw new BadRequestError("UNSUPPORTED_PROVIDER", "지원하지 않는 로그인 방식입니다.");
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    // @deprecated — /api/v1/auth/withdraw 사용 권장
     async kakaoWithdraw(req, res, next){
         try{
             if(!req.user){
@@ -34,19 +77,19 @@ export class AuthController{
       if (refreshToken){
         await this.kakaoAuthService.revokeRefreshToken(refreshToken);
       }
-      const isProd = process.env.NODE_ENV === "production";
+      const isSecure = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
       
       //refresh token 쿠키 삭제
       res.clearCookie("refreshToken",{
         httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? "none" : "lax",
+        secure: isSecure,
+        sameSite: isSecure ? "none" : "lax",
         path: "/",
       });
 
       return res.status(200).json({
         resultType: "SUCCESS",
-        message: "카카오 로그아웃이 완료되었습니다."
+        message: "로그아웃이 완료되었습니다."
       });
     } catch (error) {
       next(error);
@@ -55,8 +98,6 @@ export class AuthController{
 
   async refresh(req, res, next){
     try{
-      console.log("🍪 cookies:", req.cookies);
-
       const refreshToken =
         req.cookies?.refreshToken ||
         req.headers.authorization?.replace("Bearer ", "");
@@ -88,13 +129,13 @@ export class AuthController{
       const { accessToken, refreshToken } =
         await this.kakaoAuthService.restoreKakaoUser(token);
 
-      const isProd = process.env.NODE_ENV === "production";
+      const isSecure = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
 
       // refreshToken 쿠키 세팅
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? "none" : "lax",
+        secure: isSecure,
+        sameSite: isSecure ? "none" : "lax",
         path: "/",
         maxAge: 1000 * 60 * 60 * 24 * 14,
       });

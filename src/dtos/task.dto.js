@@ -6,7 +6,7 @@ class TaskUtils {
 
     // 서버 시간(UTC)을 한국 시간(+9)으로 변환
     const now = new Date();
-    const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+    const kstNow = new Date(now.getTime());
     // 한국 날짜의 '0시 0분 0초'로 세팅
     const today = new Date(
       kstNow.getFullYear(),
@@ -16,7 +16,7 @@ class TaskUtils {
 
     // 마감일(UTC)을 한국 시간(+9)으로 변환
     const dDate = new Date(deadline);
-    const kstDeadline = new Date(dDate.getTime() + 9 * 60 * 60 * 1000);
+    const kstDeadline = new Date(dDate.getTime());
     // 마감 날짜의 '0시 0분 0초'로 세팅
     const targetDay = new Date(
       kstDeadline.getFullYear(),
@@ -25,7 +25,7 @@ class TaskUtils {
     );
 
     // 두 날짜의 차이 계산
-    const diffTime = targetDay - today;
+    const diffTime = targetDay - today + 1;
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return "D-Day";

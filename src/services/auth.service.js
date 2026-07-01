@@ -5,6 +5,11 @@ import crypto from "crypto";
 import { redis } from "../config/redis.config.js";
 import { folderRepository } from "../repositories/folder.repository.js";
 import axios from "axios";
+import {
+  generateAccessToken as generateAccessTokenUtil,
+  generateRefreshToken as generateRefreshTokenUtil,
+  saveRefreshToken as saveRefreshTokenUtil,
+} from "./token.service.js";
 
 export class KakaoAuthService {
   constructor(){
@@ -13,41 +18,16 @@ export class KakaoAuthService {
 
   //Access Token 생성
   generateAccessToken(user){
-    return jwt.sign(
-      {
-        id: user.id,
-        provider: user.provider,
-        providerId: user.providerId,
-      },
-      this.secret,
-      {
-        expiresIn: "1h"
-      }
-    );
+    return generateAccessTokenUtil(user);
   }
 
   //Refresh Token 생성
   generateRefreshToken(user){
-    const tokenId = crypto.randomUUID();
-
-    const refreshToken= jwt.sign(
-      { id: user.id, tokenId},
-      this.secret,
-      { expiresIn:"14d" }
-    );
-
-    return { refreshToken, tokenId};
+    return generateRefreshTokenUtil(user);
   }
   //Redis에 저장
   async saveRefreshToken(tokenId, userId){
-    const TTL = 60 * 60 * 24 * 14; //14일 설정
-
-    await redis.set(
-      `refresh_token:${tokenId}`,
-      userId,
-      "EX",
-      TTL
-    );
+    return saveRefreshTokenUtil(tokenId, userId);
   }
 
   //Refresh Token 검증 및 Access Token 재발급
@@ -74,7 +54,7 @@ export class KakaoAuthService {
   }
 
   //카카오 로그인 처리
-  async handleKakaoLogin(profile, kakaoAccessToken){
+  async handleKakaoLogin(profile){ // 추후 승인 나면 추가 ->  kakaoAccessToken
     const kakaoAccount = profile?._json?.kakao_account ?? {};
     const profileInfo = kakaoAccount.profile ?? {};
 
@@ -89,26 +69,28 @@ export class KakaoAuthService {
     const providerId = profile.id.toString();
     // console.log("카카오 프로필:", JSON.stringify(profile._json, null, 2));
 
-    // 카카오 동의 항목 파싱 - service_terms는 별도 API 호출 필요
-    let serviceTerm = [];
-    try {
-      const response = await axios.get("https://kapi.kakao.com/v1/user/service/terms", {
-        headers: { Authorization: `Bearer ${kakaoAccessToken}` },
-      });
-      serviceTerm = response.data?.allowed_service_terms ?? [];
-      // console.log("service_terms 응답:", JSON.stringify(response.data, null, 2));
-    } catch (error) {
-      console.error("service_terms 조회 실패:", error.message);
-    }
+    // // 카카오 동의 항목 파싱 - service_terms는 별도 API 호출 필요
+    // let serviceTerm = [];
+    // try {
+    //   const response = await axios.get("https://kapi.kakao.com/v1/user/service/terms", {
+    //     headers: { Authorization: `Bearer ${kakaoAccessToken}` },
+    //   });
+    //   serviceTerm = response.data?.allowed_service_terms ?? [];
+    //   // console.log("service_terms 응답:", JSON.stringify(response.data, null, 2));
+    // } catch (error) {
+    //   console.error("service_terms 조회 실패:", error.message);
+    // }
 
-    const getAgreedAt = (tag) => {
-      const term = serviceTerm.find(t => t.tag === tag);
-      return term ? new Date(term.agreed_at) : null;
-    };
-    const termsAgreedAt = getAgreedAt("termsAgreedAt");
-    const pushUpdatedAt = getAgreedAt("pushUpdatedAt");
-    const thirdPartyUpdatedAt = getAgreedAt("thirdPartyUpdatedAt");
-    const marketingUpdatedAt = getAgreedAt("marketingUpdatedAt");
+    // const getAgreedAt = (tag) => {
+    //   const term = serviceTerm.find(t => t.tag === tag);
+    //   return term ? new Date(term.agreed_at) : null;
+    // };
+    
+    const now = new Date();
+    const termsAgreedAt = now; // getAgreedAt("termsAgreedAt");
+    const pushUpdatedAt = now; // getAgreedAt("pushUpdatedAt");
+    const thirdPartyUpdatedAt = now; // getAgreedAt("thirdPartyUpdatedAt");
+    const marketingUpdatedAt = now; // getAgreedAt("marketingUpdatedAt");
 
     try {
       //기존 사용자 조회
@@ -222,6 +204,8 @@ export class KakaoAuthService {
       throw new InternalServerError("USER_WITHDRAW_FAILED","회원 탈퇴 처리 중 오류가 발생했습니다.");
     }
   }
+
+  // 만료된 사용자 삭제
   async deleteExpiredUsers() {
     try {
       const DELETE_AFTER_DAYS = Number(process.env.DELETE_AFTER_DAYS || 7); //DB 삭제 기준 = 일주일
@@ -255,15 +239,17 @@ export class KakaoAuthService {
           }
         } while (cursor !== "0");
 
-        // 카카오 연결 해제
-        try {
-          await axios.post(
-            "https://kapi.kakao.com/v1/user/unlink",
-            new URLSearchParams({ target_id_type: "user_id", target_id: user.providerId }),
-            { headers: { Authorization: `KakaoAK ${process.env.KAKAO_ADMIN_KEY}` } }
-          );
-        }catch(err){
-          console.warn(`카카오 연동 해제 실패 (userId: ${user.id})`, err.response?.data ?? err.message); 
+        // 카카오 연결 해제 (카카오 가입자에 한해)
+        if (user.provider === "KAKAO" && user.providerId) {
+          try {
+            await axios.post(
+              "https://kapi.kakao.com/v1/user/unlink",
+              new URLSearchParams({ target_id_type: "user_id", target_id: user.providerId }),
+              { headers: { Authorization: `KakaoAK ${process.env.KAKAO_ADMIN_KEY}` } }
+            );
+          }catch(err){
+            console.warn(`카카오 연동 해제 실패 (userId: ${user.id})`, err.response?.data ?? err.message);
+          }
         }
         await prisma.$transaction(async (tx) => {
           await tx.comment.deleteMany({ where: { userId } });
@@ -337,6 +323,35 @@ export class KakaoAuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  // 앱 카카오 로그인
+  async handleKakaoAppLogin(kakaoAccessToken) {
+    let profileResponse;
+    try {
+      profileResponse = await axios.get("https://kapi.kakao.com/v2/user/me", {
+        headers: {
+          Authorization: `Bearer ${kakaoAccessToken}`,
+        },
+      });
+    } catch (error) {
+      throw new UnauthorizedError("INVALID_KAKAO_TOKEN", "유효하지 않은 카카오 토큰입니다.");
+    }
+
+    const { id, kakao_account } = profileResponse.data;
+    const profileInfo = kakao_account?.profile ?? {};
+
+    const mockProfile = {
+      id: id.toString(),
+      _json: {
+        kakao_account: {
+          ...kakao_account,
+          profile: profileInfo
+        }
+      }
+    };
+
+    return await this.handleKakaoLogin(mockProfile);
   }
 }
 
