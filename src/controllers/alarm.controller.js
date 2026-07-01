@@ -1,4 +1,5 @@
 import alarmService from "../services/alarm.service.js";
+import { redis } from "../config/redis.config.js";
 
 class AlarmController {
   constructor() {
@@ -129,6 +130,58 @@ class AlarmController {
     const result = await this.alarmService.getUnreadAlarmCount(userId);
 
     return res.success(result, "안읽은 알림 개수 조회 성공");
+  };
+
+  // 디바이스 FCM 토큰 등록
+  handleRegisterDevice = async (req, res) => {
+    const userId = req.user.id;
+    const { fcmToken } = req.body;
+
+    if (!fcmToken) {
+      throw new BadRequestError("TOKEN_REQUIRED", "FCM 토큰이 필요합니다.");
+    }
+
+    // Redis에 유저 ID를 Key로 매핑하여 토큰 보관 (한 달 유효기간 설정)
+    await this.alarmService.registerDeviceToken(userId, fcmToken);
+
+    return res.success(null, "디바이스 토큰 등록 성공");
+  };
+
+  // 푸시 알림 테스트
+  sendTestAlarm = async (req, res) => {
+    try {
+      const userId = req.user?.id || 4; 
+      const { title, body } = req.body;
+      const response = await this.alarmService.sendPushNotification(userId, title, body);
+
+      return res.status(200).json({
+        resultType: "SUCCESS",
+        message: "테스트 알림 발송 성공",
+        data: {
+          messageId: response
+        }
+      });
+    } catch (error) {
+      console.error("❌ Controller 알림 발송 실패:", error);
+      
+      if (error.message === "FCM_TOKEN_NOT_FOUND") {
+        return res.status(404).json({
+          resultType: "FAIL",
+          code: 404,
+          errorCode: "FCM_TOKEN_NOT_FOUND",
+          reason: "해당 유저의 디바이스 토큰이 Redis에 존재하지 않습니다.",
+          data: null
+        });
+      }
+
+      return res.status(500).json({
+        resultType: "FAIL",
+        code: 500,
+        errorCode: "INTERNAL_SERVER_ERROR",
+        reason: error.message || "서버 내부 오류가 발생했습니다.",
+        data: null
+      });
+    }
   };
 }
 

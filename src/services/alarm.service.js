@@ -17,6 +17,8 @@ import alarmRepository from "../repositories/alarm.repository.js";
 import { checkDeletedUser } from "../repositories/user.repository.js";
 import { calculateAlarmDate } from "../utils/calculateAlarmDate.js";
 import { AlarmType } from "../constants/alarmType.js";
+import { redis } from "../config/redis.config.js";
+import { getMessaging } from "firebase-admin/messaging";
 
 class AlarmService {
   constructor() {
@@ -403,6 +405,35 @@ class AlarmService {
       hasUnread: count > 0,
     };
   }
+
+  // 디바이스 토큰 Redis 저장 서비스
+  async registerDeviceToken(userId, fcmToken) {
+    await redis.set(`fcm_token:${userId}`, fcmToken, "EX", 60 * 60 * 24 * 30);
+    return null;
+  }
+
+  // 푸시 알림 테스트
+  sendPushNotification = async (userId, title, body) => {
+    // 1. Redis에서 토큰 꺼내기 
+    const fcmToken = await redis.get(`fcm_token:${userId}`);
+    
+    if (!fcmToken) {
+      throw new Error("FCM_TOKEN_NOT_FOUND");
+    }
+
+    // 2. 메시지 구조 조립
+    const message = {
+      notification: {
+        title: title || "체크태스크 알림",
+        body: body || "테스트 메시지입니다.",
+      },
+      token: fcmToken,
+    };
+
+    // 3. FCM 발송 후 결과 리턴
+    const response = await getMessaging().send(message);
+    return response;
+  };
 }
 
 export default new AlarmService();
