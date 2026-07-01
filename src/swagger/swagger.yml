@@ -3938,6 +3938,134 @@ paths:
                   data:
                     type: "null"
                     example: null
+
+  # 앱 자체 로그인
+  /api/v1/auth/app/signin:
+    post:
+      summary: "앱 자체 로그인"
+      description: "이메일과 비밀번호를 이용해 앱에서 로그인을 진행합니다. (쿠키를 사용하지 않고 Response Body로 토큰 전송)"
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  example: "example@gmail.com"
+                password:
+                  type: string
+                  example: "password123!"
+      responses:
+        '200':
+          description: "로그인 성공"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "앱 로그인이 완료되었습니다."
+                  data:
+                    type: object
+                    properties:
+                      accessToken:
+                        type: string
+                        example: "eyJhbGciOiJIUzI1Ni..."
+                      refreshToken:
+                        type: string
+                        example: "7b8d9e10-c2b3..."
+                      accessTokenExpireIn:
+                        type: number
+                        example: 3600
+                      user:
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                            example: 1
+                          email:
+                            type: string
+                            example: "example@gmail.com"
+                          nickname:
+                            type: string
+                            example: "이름"
+        '400':
+          description: "요청값 에러 (INVALID_INPUT)"
+        '401':
+          description: "인증 실패 (INVALID_CREDENTIALS)"
+
+  # 앱 카카오 로그인
+  /api/v1/auth/app/signin/kakao:
+    post:
+      summary: "앱카카오 로그인 및 회원가입"
+      description: "모바일 앱(SDK)에서 획득한 카카오 Access Token을 검증하여 로그인 및 가입 처리를 수행합니다."
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - kakaoAccessToken
+              properties:
+                kakaoAccessToken:
+                  type: string
+                  example: "AAAA...kakao_access_token_string...AAAA"
+      responses:
+        '200':
+          description: "카카오 로그인 성공"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "카카오 앱 로그인이 완료되었습니다."
+                  data:
+                    type: object
+                    properties:
+                      accessToken:
+                        type: string
+                        example: "eyJhbGciOiJIUzI1Ni..."
+                      refreshToken:
+                        type: string
+                        example: "8c9d0e11-d3c4..."
+                      isNewUser:
+                        type: boolean
+                        example: false
+                      user:
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                            example: 2
+                          email:
+                            type: string
+                            example: "test@kakao.com"
+                          nickname:
+                            type: string
+                            example: "이름"
+        '400':
+          description: "토큰 누락 (TOKEN_REQUIRED)"
+        '401':
+          description: "카카오 토큰 만료 또는 위조 (INVALID_KAKAO_TOKEN)"
   
   # 로그아웃 (자체/카카오 공용)
   /api/v1/auth/logout:

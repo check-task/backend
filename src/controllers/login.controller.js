@@ -1,4 +1,5 @@
-import { LoginService } from "../services/login.service.js";
+import { LoginService} from "../services/login.service.js";
+import { KakaoAuthService } from "../services/auth.service.js";
 import { BadRequestError, UnauthorizedError } from "../errors/custom.error.js";
 import {
   emailQuery,
@@ -13,6 +14,7 @@ import {
 export class LoginController {
   constructor() {
     this.loginService = new LoginService();
+    this.kakaoAuthService = new KakaoAuthService();
   }
 
   async signup(req, res, next) {
@@ -311,6 +313,86 @@ export class LoginController {
       return res.status(200).json({
         resultType: "SUCCESS",
         message: "비밀번호가 재설정되었습니다. 새 비밀번호로 로그인해 주세요.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // 앱 자체 로그인
+  async appLogin(req, res, next) {
+    try {
+      const parsed = loginBody.safeParse(req.body);
+      if (!parsed.success) {
+        throw new BadRequestError("INVALID_INPUT", passwordResetConfirmBody.error.issues[0].message);
+      }
+
+      const { email, password } = parsed.data;
+
+      const result = await this.loginService.loginLocalUser(email, password);
+
+      if (result.withdrawnUser) {
+        return res.status(200).json({
+          resultType: "SUCCESS",
+          message: "탈퇴 처리된 계정입니다. 복구 토큰을 사용해 복구할 수 있습니다.",
+          data: {
+            withdrawnUser: true,
+            restoreToken: result.restoreToken,
+          },
+        });
+      }
+
+      const {user, accessToken, refreshToken} = result;
+
+      return res.status(200).json({
+        resultType: "SUCCESS",
+        message: "앱 로그인이 완료되었습니다.",
+        data: {
+          accessToken, 
+          refreshToken,
+          accessTokenExpireIn: 3600,
+          user: {
+            id: user.id,
+            email: user.email,
+            mickname: user.nickname,
+          },
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // 앱 카카오 로그인
+  async appKakaoLogin(req, res, next) {
+    try {
+      const { kakaoAccessToken } = req.body;
+      if (!kakaoAccessToken) {
+        throw new BadRequestError("TOKEN_REQUIRED", "카카오 엑세스 토큰이 필요합니다.");
+      }
+      const result = await this.kakaoAuthService.handleKakaoAppLogin(kakaoAccessToken);
+
+      if (result.withdrawnUser) {
+        return res.status(200).json({
+          resultType: "SUCCESS",
+          message: "탈퇴 처리된 카카오 계정입니다.",
+          data: { withdrawnUser: true, restoreToken: result.restoreToken },
+        });
+      }
+
+      return res.status(200).json({
+        resultType: "SUCCESS",
+        message: "카카오 앱 로그인이 완료되었습니다.",
+        data: {
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+          isNewUser: result.isNewUser,
+          user: {
+            id: result.user.id,
+            email: result.user.email,
+            nickname: result.user.nickname,
+          },
+        },
       });
     } catch (error) {
       next(error);

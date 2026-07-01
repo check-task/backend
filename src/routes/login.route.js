@@ -12,6 +12,8 @@ router.post("/email/resend", loginController.resendCode.bind(loginController));
 router.post("/email/verify", loginController.verifyCode.bind(loginController));
 router.post("/signup", upload.single("profileImage"), loginController.signup.bind(loginController));
 router.post("/signin", loginController.login.bind(loginController));
+router.post("/app/signin", loginController.appLogin.bind(loginController));
+router.post("/app/signin/kakao", loginController.appKakaoLogin.bind(loginController));
 // @deprecated — /api/v1/auth/withdraw 사용 권장
 router.delete(
   "/local/withdraw",
