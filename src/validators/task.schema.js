@@ -181,6 +181,13 @@ export const setSubTaskAssigneeSchema = z.object({
   }),
 });
 
+// ─── 개인 과제 → 팀 과제 변경 ────────────────────────────────────
+export const convertTaskToTeamSchema = z.object({
+  params: z.object({
+    taskId: idParam,
+  }),
+});
+
 // ─── 초대 링크 생성 ───────────────────────────────────────────────
 export const generateInviteCodeSchema = z.object({
   params: z.object({
