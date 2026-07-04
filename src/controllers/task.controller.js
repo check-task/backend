@@ -71,6 +71,24 @@ class TaskController {
     }
   }
 
+  // 개인 과제 → 팀 과제 변경
+  async convertTaskToTeam(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const { taskId } = req.params;
+
+      const result = await taskService.convertTaskToTeam(parseInt(taskId), userId);
+
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "과제가 팀 과제로 성공적으로 변경되었습니다.",
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // 과제 세부 사항 조회
   async getTaskDetail(req, res, next) {
     try {
