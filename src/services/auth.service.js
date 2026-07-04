@@ -324,5 +324,34 @@ export class KakaoAuthService {
       refreshToken,
     };
   }
+
+  // 앱 카카오 로그인
+  async handleKakaoAppLogin(kakaoAccessToken) {
+    let profileResponse;
+    try {
+      profileResponse = await axios.get("https://kapi.kakao.com/v2/user/me", {
+        headers: {
+          Authorization: `Bearer ${kakaoAccessToken}`,
+        },
+      });
+    } catch (error) {
+      throw new UnauthorizedError("INVALID_KAKAO_TOKEN", "유효하지 않은 카카오 토큰입니다.");
+    }
+
+    const { id, kakao_account } = profileResponse.data;
+    const profileInfo = kakao_account?.profile ?? {};
+
+    const mockProfile = {
+      id: id.toString(),
+      _json: {
+        kakao_account: {
+          ...kakao_account,
+          profile: profileInfo
+        }
+      }
+    };
+
+    return await this.handleKakaoLogin(mockProfile);
+  }
 }
 

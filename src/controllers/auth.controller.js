@@ -21,11 +21,11 @@ export class AuthController{
             if (provider === null) {
                 await this.loginService.withdrawLocalUser(req.user.id);
 
-                const isProd = process.env.NODE_ENV === "production";
+                const isSecure = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
                 res.clearCookie("refreshToken", {
                     httpOnly: true,
-                    secure: isProd,
-                    sameSite: isProd ? "none" : "lax",
+                    secure: isSecure,
+                    sameSite: isSecure ? "none" : "lax",
                     path: "/",
                 });
 
@@ -77,13 +77,13 @@ export class AuthController{
       if (refreshToken){
         await this.kakaoAuthService.revokeRefreshToken(refreshToken);
       }
-      const isProd = process.env.NODE_ENV === "production";
+      const isSecure = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
       
       //refresh token 쿠키 삭제
       res.clearCookie("refreshToken",{
         httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? "none" : "lax",
+        secure: isSecure,
+        sameSite: isSecure ? "none" : "lax",
         path: "/",
       });
 
@@ -98,8 +98,6 @@ export class AuthController{
 
   async refresh(req, res, next){
     try{
-      console.log("🍪 cookies:", req.cookies);
-
       const refreshToken =
         req.cookies?.refreshToken ||
         req.headers.authorization?.replace("Bearer ", "");
@@ -131,13 +129,13 @@ export class AuthController{
       const { accessToken, refreshToken } =
         await this.kakaoAuthService.restoreKakaoUser(token);
 
-      const isProd = process.env.NODE_ENV === "production";
+      const isSecure = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
 
       // refreshToken 쿠키 세팅
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? "none" : "lax",
+        secure: isSecure,
+        sameSite: isSecure ? "none" : "lax",
         path: "/",
         maxAge: 1000 * 60 * 60 * 24 * 14,
       });

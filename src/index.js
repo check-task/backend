@@ -17,6 +17,7 @@ import { createServer } from "http";
 import setupSocket from "./socket/socket.js";
 import cookieParser from "cookie-parser";
 import "./cron/cleanup.cron.js";
+import "./cron/alarm.cron.js";
 
 console.log(" INDEX.JS LOADED");
 const app = express();
