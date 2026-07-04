@@ -2,6 +2,7 @@ import prisma from "../db.config.js";
 import dayjs from "dayjs";
 import { calculateAlarmDate } from "../utils/calculateAlarmDate.js";
 import { AlarmType } from "../constants/alarmType.js";
+import { sendPushNotification } from "../utils/fcmSender.js";
 
 class AlarmRepository {
   //유저의 알림 조회
@@ -419,7 +420,28 @@ class AlarmRepository {
         isRead: false,
       },
     });
+
+    sendPushNotification(userId, title, alarmContent);
+
+    return newAlarm;
+  }
+
+  // 알림 스케쥴러
+  async findUnsentAlarms(tx = prisma) {
+    // UTC+9 기준 현재 시각
+    const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+
+    return await tx.userAlarm.findMany({
+      where: {
+        alarmDate: {
+          lte: kstNow, 
+        },
+        isRead: false, 
+      },
+    });
   }
 }
+
+
 
 export default new AlarmRepository();

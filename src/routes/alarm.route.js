@@ -75,4 +75,9 @@ router.patch(
   alarmController.handleAlarmUpdateAlarmReadStatus
 );
 
+// POST /api/v1/alarm/device - 디바이스 FCM 토큰 등록/갱신
+router.post("/device", authenticate, alarmController.handleRegisterDevice);
+
+router.post("/test", authenticate, alarmController.sendTestAlarm);
+
 export default router;
