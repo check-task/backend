@@ -1440,7 +1440,9 @@ paths:
       tags:
         - Task
       summary: 과제 목록 조회
-      description: 필터(유형, 폴더, 상태) 및 정렬 조건에 따라 과제 목록을 조회합니다.
+      description: |
+        필터(유형, 폴더, 상태) 및 정렬 조건에 따라 과제 목록을 조회합니다.
+        - subTask 목록은 마감일(deadline) 오름차순으로 정렬되어 반환됩니다. (완료된 세부 과제는 이 목록에 포함되지 않습니다.)
       security:
         - bearerAuth: []
       parameters:
@@ -1530,7 +1532,9 @@ paths:
       tags:
         - Task
       summary: 과제 상세 정보 조회
-      description: 특정 과제의 세부 태스크, 진행률, 폴더 정보, 댓글 목록 및 회의록/자료의 전체 데이터를 조회합니다.
+      description: |
+        특정 과제의 세부 태스크, 진행률, 폴더 정보, 댓글 목록 및 회의록/자료의 전체 데이터를 조회합니다.
+        - subTasks는 마감일(endDate) 오름차순으로 정렬되며, 완료(COMPLETED)된 항목은 마감일과 무관하게 목록 맨 아래로 배치됩니다.
       security:
         - bearerAuth: []
       parameters:

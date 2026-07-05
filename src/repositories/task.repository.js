@@ -74,7 +74,7 @@ class TaskRepository {
 
   // 과제 세부 사항 조회
   async findTaskDetail(taskId, userId) {
-    return await prisma.task.findUnique({
+    const task = await prisma.task.findUnique({
       where: { id: parseInt(taskId) },
       include: {
         members: {
@@ -82,6 +82,7 @@ class TaskRepository {
           include: { folder: true }
         },
         subTasks: {
+          orderBy: { endDate: 'asc' }, // 마감일 시간순 정렬
           include: {
             comments: {
               include: {
@@ -106,6 +107,16 @@ class TaskRepository {
         communications: true
       }
     });
+
+    if (!task) return task;
+
+    // 완료된 세부 과제는 목록 아래로 (각 그룹 내에서는 위에서 지정한 마감일 순서 유지 - stable sort)
+    return {
+      ...task,
+      subTasks: [...task.subTasks].sort(
+        (a, b) => (a.status === 'COMPLETED') - (b.status === 'COMPLETED'),
+      ),
+    };
   }
 
   // 과제 목록 조회
@@ -132,7 +143,9 @@ class TaskRepository {
           where: { userId: userId },
           include: { folder: true }
         },
-        subTasks: true,
+        subTasks: {
+          orderBy: { endDate: 'asc' } // 마감일 시간순 정렬
+        },
         priorities: {
           where: { userId: userId }
         }
