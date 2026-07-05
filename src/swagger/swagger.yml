@@ -3583,10 +3583,162 @@ paths:
                   code: 500
                   errorCode: "INTERNAL_SERVER_ERROR"
                   reason: "서버 내부 오류가 발생했습니다."
-                  data: null                                                                         
+                  data: null    
+
+  # 폴더 순서 일괄 수정
+  /api/v1/user/folder/priority:
+    patch:
+      tags:
+        - Folder
+      summary: 폴더 순서 일괄 변경
+      description: 사용자가 설정한 폴더의 순서(rank)를 변경합니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - orderedFolders
+              properties:
+                orderedFolders:
+                  type: array
+                  description: "폴더 ID와 변경할 순서(rank) 배열"
+                  items:
+                    type: object
+                    required:
+                      - folderId
+                      - rank
+                    properties:
+                      folderId:
+                        type: integer
+                        example: 27
+                      rank:
+                        type: integer
+                        example: 1
+      responses:
+        '200':
+          description: 폴더 순서 변경 성공
+          content:
+            application/json:
+              example:
+                resultType: "SUCCESS"
+                message: "폴더 순서가 일괄 변경되었습니다."
+                data: null
+        '400':
+          description: 데이터 형식 오류
+        '401':
+          description: 인증 실패                                                                     
+
+  # 폴더 상세 페이지 조회 (Task & SubTask 포함)
+  /api/v1/user/folder/{folderId}:
+    get:
+      tags:
+        - Folder
+      summary: 폴더 상세 페이지 조회
+      description: |
+        특정 폴더에 속한 과제 목록과 각 과제에 속한 세부 과제 목록을 한 번에 조회합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: folderId
+          required: true
+          schema:
+            type: integer
+          description: 상세 조회할 폴더의 ID
+          example: 27
+      responses:
+        '200':
+          description: 폴더 상세 정보 및 과제 목록 조회 성공
+          content:
+            application/json:
+              example:
+                resultType: "SUCCESS"
+                message: "폴더 상세 정보 및 과제 목록 조회 성공"
+                data:
+                  folderInfo:
+                    id: 27
+                    folderTitle: "개인 프로젝트"
+                    color: "#FF5733"
+                    rank: 1
+                    createdAt: "2026-07-01T12:00:00.000Z"
+                  tasks:
+                    - id: 14
+                      title: "포트폴리오"
+                      deadline: "2026-07-11T23:59:16.000Z"
+                      type: "PERSONAL"
+                      status: "PROGRESS"
+                      isAlarm: true
+                      createdAt: "2026-07-02T10:00:00.000Z"
+                      updatedAt: "2026-07-03T10:00:00.000Z"
+                      inviteCode: null
+                      inviteExpiredAt: null
+                      subTasks:
+                        - id: 15
+                          assigneeId: 1
+                          taskId: 14
+                          title: "디자인 완료"
+                          endDate: "2026-07-07T23:59:16.000Z"
+                          status: "PROGRESS"
+                          isAlarm: true
+                          createdAt: "2026-07-02T11:00:00.000Z"
+                          updatedAt: "2026-07-03T11:00:00.000Z"
+                        - id: 16
+                          assigneeId: 1
+                          taskId: 14
+                          title: "프론트엔드 개발"
+                          endDate: "2026-07-09T23:59:16.000Z"
+                          status: "PENDING"
+                          isAlarm: true
+                          createdAt: "2026-07-02T11:00:00.000Z"
+                          updatedAt: null
+        '400':
+          description: 잘못된 파라미터 요청
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 400
+                errorCode: "VALIDATION_ERROR"
+                reason: "요청값이 올바르지 않습니다."
+                data:
+                  - field: "path.folderId"
+                    message: "숫자 ID여야 합니다."
+        '401':
+          description: 인증 실패 (토큰 만료 또는 누락)
+          content:
+            application/json:
+              example: 
+                resultType: "FAIL"
+                code: 401
+                errorCode: "TOKEN_NOT_FOUND"
+                reason: "인증 토큰이 없습니다."
+                data: null
+        '404':
+          description: 폴더가 존재하지 않거나 권한이 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 404
+                errorCode: "FOLDER_NOT_FOUND"
+                reason: "해당 폴더를 찾을 수 없거나 접근 권한이 없습니다."
+                data: null
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 500
+                errorCode: "INTERNAL_SERVER_ERROR"
+                reason: "서버 내부 오류가 발생했습니다."
+                data: null
 
   # 폴더 수정 API
-  /api/v1/user/folder/{folderId}:
     patch:
       tags:
         - Folder

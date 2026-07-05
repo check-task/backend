@@ -187,6 +187,7 @@ model Folder {
   userId      Int      @map("user_id")
   folderTitle String   @map("folder_title") @db.VarChar(10)
   color       String   @db.VarChar(7)
+  rank        Int      @default(0)
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
 
   // 관계 설정 (Relations)

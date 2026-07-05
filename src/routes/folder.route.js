@@ -12,7 +12,9 @@ import {
 const router = express.Router();
 
 router.post("/", authenticate, validate(createFolderSchema), folderController.createFolder);
+router.patch("/priority", authenticate, folderController.updateFolderPriority);
 router.patch("/:folderId", authenticate, validate(updateFolderSchema), folderController.updateFolder);
 router.delete("/:folderId", authenticate, validate(deleteFolderSchema), folderController.deleteFolder);
+router.get("/:folderId", authenticate, folderController.getFolderDetail);
 
 export default router;

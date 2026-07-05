@@ -140,6 +140,32 @@ class FolderService {
 
     await folderRepository.removeFolder(userId, folderId);
   }
+
+  // 4. 폴더 순서 업데이트
+  async updateFolderPriority(userId, orderedFolders) {
+    if (!orderedFolders || !Array.isArray(orderedFolders)) {
+      throw new BadRequestError(
+        "INVALID_DATA",
+        "순서 변경 데이터가 올바르지 않습니다."
+      );
+    }
+
+    await folderRepository.updateFolderPriority(userId, orderedFolders);
+  }
+
+  // 5. 폴더 상세 조회
+  async getFolderDetail(userId, folderId) {
+    const result = await folderRepository.getFolderDetailTasks(userId, folderId);
+    
+    if (!result) {
+      throw new NotFoundError(
+        "FOLDER_NOT_FOUND",
+        "해당 폴더를 찾을 수 없거나 접근 권한이 없습니다."
+      );
+    }
+
+    return result;
+  }
 }
 
 export default new FolderService();

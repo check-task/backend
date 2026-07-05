@@ -58,6 +58,41 @@ class FolderController {
       next(err);
     }
   };
-}
+
+  updateFolderPriority = async (req, res, next) => {
+    try {
+      const userId = req.user.id;
+      const { orderedFolders } = req.body; 
+
+      await folderService.updateFolderPriority(userId, orderedFolders);
+
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "폴더 순서가 일괄 변경되었습니다.",
+        data: null,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // 4. 폴더 상세 페이지 조회
+  getFolderDetail = async (req, res, next) => {
+    try {
+      const userId = req.user.id;
+      const { folderId } = req.params;
+
+      const result = await folderService.getFolderDetail(userId, folderId);
+
+      res.status(200).json({
+        resultType: "SUCCESS",
+        message: "폴더 상세 정보 및 과제 목록 조회 성공",
+        data: result,
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+};
 
 export const folderController = new FolderController();

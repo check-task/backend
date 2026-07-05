@@ -89,6 +89,61 @@ class FolderRepository {
     });
     return deletedFolder;
   }
+
+  // 4. 폴더 순서 업데이트
+  async updateFolderPriority(userId, orderedFolders) {
+    // orderedFolders 예시: [{ folderId: 1, rank: 1 }, { folderId: 2, rank: 2 }]
+    
+    const queries = orderedFolders.map((folder) =>
+      prisma.folder.updateMany({
+        where: {
+          id: parseInt(folder.folderId),
+          userId: userId,
+        },
+        data: {
+          rank: folder.rank,
+        },
+      })
+    );
+
+    return await prisma.$transaction(queries);
+  }
+
+  // 5. 폴더 상세 조회 (Task, SubTask 포함)
+  async getFolderDetailTasks(userId, folderId) {
+    const folder = await prisma.folder.findFirst({
+      where: {
+        id: parseInt(folderId),
+        userId: userId,
+      },
+    });
+
+    if (!folder) return null; 
+
+    const membersInFolder = await prisma.member.findMany({
+      where: {
+        userId: userId,
+        folderId: parseInt(folderId),
+      },
+      include: {
+        task: {
+          include: {
+            subTasks: {
+              orderBy: { id: "asc" }, 
+            },
+          },
+        },
+      },
+      orderBy: {
+        task: { deadline: "asc" }, 
+      },
+    });
+
+    return {
+      folderInfo: folder,
+      tasks: membersInFolder.map((member) => member.task),
+    };
+  }
 }
 
 export const folderRepository = new FolderRepository();

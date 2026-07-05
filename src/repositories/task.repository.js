@@ -117,12 +117,11 @@ class TaskRepository {
         members: {
           some: {
             userId: userId,
-            ...(folderId ? {
-              OR: [
-                { folderId: parseInt(folderId) },
-                { folderId: null }
-              ]
-            } : {})
+            ...(folderId 
+              ? (folderId === 'null' || folderId === 'undefined'
+                ? { folderId: null }
+                : { folderId: parseInt(folderId) }) 
+              : {})
           }
         },
         ...(type ? { type: type === "TEAM" ? "TEAM" : "PERSONAL" } : {}),
