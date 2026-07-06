@@ -113,7 +113,7 @@ class FolderService {
   }
 
   // 3. 폴더 삭제
-  async deleteFolder(userId, folderId) {
+  async deleteFolder(userId, folderId, isMoveTasks = false) {
     const folder = await folderRepository.getFolderById(folderId);
     if (!folder)
       throw new NotFoundError(
@@ -132,10 +132,22 @@ class FolderService {
 
     const assignedTaskCount = await folderRepository.countAssignedTasksByFolderId(folderId);
     if (assignedTaskCount > 0) {
-      throw new BadRequestError(
-        "FOLDER_NOT_EMPTY",
-        "폴더 내부에 과제(완료된 과제 포함)가 존재하여 삭제할 수 없습니다."
-      );
+      if (!isMoveTasks) {
+        throw new BadRequestError(
+          "FOLDER_NOT_EMPTY",
+          "폴더 내부에 과제(완료된 과제 포함)가 존재하여 삭제할 수 없습니다."
+        );
+        } else {
+        const defaultFolder = await folderRepository.findByUserAndTitle(userId, "지정안함");
+        
+        if (!defaultFolder) {
+          throw new InternalServerError(
+            "DEFAULT_FOLDER_NOT_FOUND",
+            "'지정안함' 기본 폴더를 찾을 수 없어 과제를 이동할 수 없습니다."
+          );
+        }
+        await folderRepository.moveTasksToFolder(userId, folderId, defaultFolder.id);
+      }
     }
 
     await folderRepository.removeFolder(userId, folderId);

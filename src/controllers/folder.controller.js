@@ -47,12 +47,14 @@ class FolderController {
     try {
       const userId = req.user.id;
       const { folderId } = req.params;
+      const { moveTasks } = req.query; 
+      const isMoveTasks = moveTasks === 'true';
 
-      await folderService.deleteFolder(userId, folderId);
+      await folderService.deleteFolder(userId, folderId, isMoveTasks);
 
       res.status(200).json({
         resultType: "SUCCESS",
-        message: "폴더 삭제 성공",
+        message: isMoveTasks ? "과제 이동 및 폴더 삭제 성공" : "폴더 삭제 성공",
       });
     } catch (err) {
       next(err);

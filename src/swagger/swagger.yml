@@ -3873,7 +3873,10 @@ paths:
       tags:
         - Folder
       summary: 폴더 삭제
-      description: 폴더를 삭제합니다.
+      description: |
+        폴더를 삭제합니다. 
+        폴더 내부에 과제가 있는 경우 기본적으로 삭제가 거부됩니다.
+        이때 `moveTasks=true` 쿼리를 포함하여 재요청하면, 내부 과제들을 '지정안함' 폴더로 일괄 이동시킨 후 폴더를 삭제합니다.
       security:
         - bearerAuth: []
       parameters:
@@ -3882,6 +3885,13 @@ paths:
           required: true
           schema:
             type: integer
+          description: 삭제할 폴더 ID
+        - in: query
+          name: moveTasks
+          required: false
+          schema:
+            type: boolean
+          description: "폴더 내 과제를 '지정안함' 폴더로 이동 후 삭제할지 여부"
       responses:
         '200':
           description: 삭제 성공
@@ -3895,7 +3905,7 @@ paths:
                     example: "SUCCESS"
                   message:
                     type: string
-                    example: "폴더 삭제 성공"
+                    example: "과제 이동 및 폴더 삭제 성공"
                   data:
                     type: object
                     nullable: true

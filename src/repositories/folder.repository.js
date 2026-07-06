@@ -144,6 +144,19 @@ class FolderRepository {
       tasks: membersInFolder.map((member) => member.task),
     };
   }
+
+  // 6. 폴더 삭제 시 과제 일괄 이동
+  async moveTasksToFolder(userId, oldFolderId, newFolderId) {
+    return await prisma.member.updateMany({
+      where: {
+        userId: userId,
+        folderId: parseInt(oldFolderId),
+      },
+      data: {
+        folderId: parseInt(newFolderId),
+      },
+    });
+  }
 }
 
 export const folderRepository = new FolderRepository();
