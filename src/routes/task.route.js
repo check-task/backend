@@ -4,7 +4,7 @@ import multer from "multer";
 import taskController from "../controllers/task.controller.js";
 import authenticate from "../middlewares/authenticate.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
-import { validateTaskType } from "../middlewares/taskAuthorization.middleware.js";
+import { validateTaskType, validateTaskMembership } from "../middlewares/taskAuthorization.middleware.js";
 import {
   createTaskSchema,
   getTasksSchema,
@@ -18,6 +18,7 @@ import {
   updateSubTaskStatusSchema,
   updateSubTaskDeadlineSchema,
   setSubTaskAssigneeSchema,
+  convertTaskToTeamSchema,
   generateInviteCodeSchema,
   joinTaskSchema,
   patchSubTaskSchema,
@@ -76,6 +77,14 @@ router.get("/", authenticate, validate(getTasksSchema), taskController.getTasks)
 // PATCH /api/v1/task/:taskId -- 과제 수정 (validate)
 router.patch( "/:taskId", authenticate, validateTaskType, validate(updateTaskSchema), taskController.updateTask);
 
+// PATCH /api/v1/task/:taskId/convert-to-team -- 개인 과제 → 팀 과제 변경
+router.patch(
+  "/:taskId/convert-to-team",
+  authenticate,
+  validateTaskMembership,
+  validate(convertTaskToTeamSchema),
+  taskController.convertTaskToTeam
+);
 
 // GET /api/v1/task/:taskId -- 과제 세부 사항 조회
 router.get(

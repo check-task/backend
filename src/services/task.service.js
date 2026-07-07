@@ -347,6 +347,45 @@ class TaskService {
     return { taskId: updatedTask.id };
   }
 
+  // 개인 과제 → 팀 과제 변경
+  async convertTaskToTeam(taskId, userId) {
+    const currentTask = await taskRepository.findTaskById(taskId);
+    if (!currentTask)
+      throw new NotFoundError(
+        "TASK_NOT_FOUND",
+        "변경하려는 과제가 존재하지 않습니다.",
+      );
+
+    const member = await taskRepository.findMemberInTask(taskId, userId);
+    if (!member) {
+      throw new ForbiddenError(
+        "FORBIDDEN_TASK",
+        "해당 과제를 변경할 권한이 없습니다.",
+      );
+    }
+
+    if (currentTask.type === "TEAM") {
+      throw new BadRequestError(
+        "ALREADY_TEAM_TASK",
+        "이미 팀 과제입니다.",
+      );
+    }
+
+    // 개인 과제는 소유자만 팀 과제로 변경 가능
+    if (member.role !== false) {
+      throw new ForbiddenError(
+        "FORBIDDEN_PERSONAL_TASK",
+        "개인 과제는 소유자만 팀 과제로 변경할 수 있습니다.",
+      );
+    }
+
+    const updatedTask = await taskRepository.updateTask(taskId, {
+      type: "TEAM",
+    });
+
+    return { taskId: updatedTask.id, type: updatedTask.type };
+  }
+
   // Task 마감일 변경 서비스
   async updateTaskDeadline(userId, taskId, deadline) {
     // 1. Task 존재 여부 확인
