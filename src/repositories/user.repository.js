@@ -1,42 +1,21 @@
 import { prisma } from "../db.config.js";
 
-const COLOR_GROUPS = [
-  ["#818892"],  
-  ["#F55757"], 
-  ["#FFC93F"], 
-  ["#6EC77B"],
-  ["#A177E2"],
-  ["#081221", "#B5BAC4"]
-];
-
-const getColorIndex = (colorHex) => {
-  const upperColor = colorHex.toUpperCase();
-  return COLOR_GROUPS.findIndex(group => 
-    group.some(c => c.toUpperCase() === upperColor)
-  );
-};
-
 class UserRepository {
   // 내 정보 조회
   async getUserData(userId) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { 
-        folders: { orderBy: { id: "asc" } }, 
+        folders: { 
+          orderBy: [
+            { rank: "asc" },
+            {id: "asc"} 
+          ]
+        }, 
         alarmSetting: true 
       },
     });
-
-    if (user && user.folders) {
-      user.folders.sort((a, b) => {
-        const indexA = getColorIndex(a.color);
-        const indexB = getColorIndex(b.color);
-
-        if (indexA === indexB) return a.id - b.id; 
-        return indexA - indexB;
-      });
-    }
-
+    
     return user;
   }
 
@@ -74,20 +53,15 @@ class UserRepository {
     const updatedUser = await prisma.user.findUnique({
       where: { id: userId },
       include: { 
-        folders: { orderBy: { id: "asc" } }, 
+        folders: { 
+          orderBy: [
+            { rank: "asc" },
+            { id: "asc" } 
+          ]
+        }, 
         alarmSetting: true 
       },
     });
-
-    if (updatedUser && updatedUser.folders) {
-      updatedUser.folders.sort((a, b) => {
-        const indexA = getColorIndex(a.color);
-        const indexB = getColorIndex(b.color);
-
-        if (indexA === indexB) return a.id - b.id;
-        return indexA - indexB;
-      });
-    }
 
     return updatedUser;
   }
