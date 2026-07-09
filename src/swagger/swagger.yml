@@ -3369,6 +3369,10 @@ paths:
                       profileImage:
                         type: string
                         example: "https://checktask.s3.ap-northeast-2.amazonaws.com/profile/1769334594965-S3TEST.jpg"
+                      loginType:
+                        type: string
+                        description: "로그인 타입 (LOCAL 또는 KAKAO)"
+                        example: "KAKAO"
                       deadlineAlarm:
                         type: integer
                         example: 24
@@ -3705,7 +3709,17 @@ paths:
                 message: "폴더 순서가 일괄 변경되었습니다."
                 data: null
         '400':
-          description: 데이터 형식 오류
+          description: 잘못된 데이터 형식
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "INVALID_DATA"
+                  reason: "순서 변경 데이터가 올바르지 않습니다."
+                  data: null
         '401':
           description: 인증 실패                                                                     
 
@@ -4044,6 +4058,7 @@ paths:
         '500':
           description: |
             - INTERNAL_SERVER_ERROR: 서버 내부 오류 발생.
+            - DEFAULT_FOLDER_NOT_FOUND: '지정안함' 기본 폴더를 찾을 수 없어 과제를 이동할 수 없습니다.
           content:
             application/json:
               schema:
@@ -4051,8 +4066,8 @@ paths:
                 example:
                   resultType: "FAIL"
                   code: 500
-                  errorCode: "INTERNAL_SERVER_ERROR"
-                  reason: "서버 내부 오류가 발생했습니다."
+                  errorCode: "INTERNAL_SERVER_ERROR | DEFAULT_FOLDER_NOT_FOUND"
+                  reason: "서버 내부 오류가 발생했습니다. | '지정안함' 기본 폴더를 찾을 수 없어 과제를 이동할 수 없습니다."
                   data: null                
 
   #완료 과제 조회 API  

@@ -17,6 +17,7 @@ export class UserDto {
       phoneNum: user.phoneNum,
       email: user.email,
       profileImage: user.profileImage,
+      loginType: user.provider || "LOCAL",
       deadlineAlarm: user.alarmSetting?.deadlineAlarm ?? 24,
       taskAlarm: user.alarmSetting?.taskAlarm ?? 24,
       folders: user.folders
