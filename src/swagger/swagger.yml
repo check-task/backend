@@ -3739,9 +3739,9 @@ paths:
           name: folderId
           required: true
           schema:
-            type: integer
+            type: string
           description: 상세 조회할 폴더의 ID (쉼표로 구분된 다중 ID 허용)
-          example: 27,28
+          example: "27,28"
       responses:
         '200':
           description: 폴더 상세 정보 및 과제 목록 조회 성공
