@@ -4077,8 +4077,17 @@ paths:
       summary: 완료된 과제 조회
       description: |
         마감일이 지난 과제를 조회합니다.
+        특정 폴더의 완료 과제만 필터링하려면 folderId를 쉼표(,)로 구분하여 전달. (예: ?folderId=27,28)
       security:
         - bearerAuth: []
+      parameters:
+        - in: query
+          name: folderId
+          required: false
+          schema:
+            type: string
+          description: 조회할 폴더의 ID (쉼표로 구분된 다중 ID 허용, 미전달 시 전체 완료 과제 조회)
+          example: "27,28"
       responses:
         '200':
           description: 조회 성공
