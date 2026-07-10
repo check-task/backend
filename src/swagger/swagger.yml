@@ -3730,7 +3730,8 @@ paths:
         - Folder
       summary: 폴더 상세 페이지 조회
       description: |
-        특정 폴더에 속한 과제 목록과 각 과제에 속한 세부 과제 목록을 한 번에 조회합니다.
+        특정 폴더에 속한 과제 목록과 각 과제에 속한 세부 과제 목록을 조회합니다.
+        여러 폴더를 동시에 조회하려면 쉼표(,)로 구분하여 ID 전달. (예: `/27,28`)
       security:
         - bearerAuth: []
       parameters:
@@ -3739,8 +3740,8 @@ paths:
           required: true
           schema:
             type: integer
-          description: 상세 조회할 폴더의 ID
-          example: 27
+          description: 상세 조회할 폴더의 ID (쉼표로 구분된 다중 ID 허용)
+          example: 27,28
       responses:
         '200':
           description: 폴더 상세 정보 및 과제 목록 조회 성공
@@ -3787,17 +3788,15 @@ paths:
                           createdAt: "2026-07-02T11:00:00.000Z"
                           updatedAt: null
         '400':
-          description: 잘못된 파라미터 요청
+          description: 잘못된 파라미터 요청 (숫자가 아닌 문자를 전달한 경우)
           content:
             application/json:
               example:
                 resultType: "FAIL"
                 code: 400
                 errorCode: "VALIDATION_ERROR"
-                reason: "요청값이 올바르지 않습니다."
-                data:
-                  - field: "path.folderId"
-                    message: "숫자 ID여야 합니다."
+                reason: "유효한 폴더 ID가 제공되지 않았습니다."
+                data: null
         '401':
           description: 인증 실패 (토큰 만료 또는 누락)
           content:

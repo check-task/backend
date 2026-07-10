@@ -166,10 +166,10 @@ class FolderService {
   }
 
   // 5. 폴더 상세 조회
-  async getFolderDetail(userId, folderId) {
-    const result = await folderRepository.getFolderDetailTasks(userId, folderId);
-    
-    if (!result) {
+  async getFolderDetail(userId, folderIds) {
+    const result = await folderRepository.getFolderDetailTasks(userId, folderIds);
+
+    if (!result || result.length === 0) {
       throw new NotFoundError(
         "FOLDER_NOT_FOUND",
         "해당 폴더를 찾을 수 없거나 접근 권한이 없습니다."
