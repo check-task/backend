@@ -110,20 +110,20 @@ class FolderRepository {
   }
 
   // 5. 폴더 상세 조회 (Task, SubTask 포함)
-  async getFolderDetailTasks(userId, folderId) {
-    const folder = await prisma.folder.findFirst({
+  async getFolderDetailTasks(userId, folderIds) {
+    const folders = await prisma.folder.findMany({
       where: {
-        id: parseInt(folderId),
+        id: { in: folderIds },
         userId: userId,
       },
     });
 
-    if (!folder) return null; 
+    if (!folders || folders.length === 0) return [];
 
-    const membersInFolder = await prisma.member.findMany({
+    const membersInFolders = await prisma.member.findMany({
       where: {
         userId: userId,
-        folderId: parseInt(folderId),
+        folderId: { in: folderIds },
       },
       include: {
         task: {
@@ -139,10 +139,18 @@ class FolderRepository {
       },
     });
 
-    return {
-      folderInfo: folder,
-      tasks: membersInFolder.map((member) => member.task),
-    };
+    const result = folders.map(folder => {
+      const tasksForFolder = membersInFolders
+        .filter(member => member.folderId === folder.id)
+        .map(member => member.task);
+
+      return {
+        folderInfo: folder,
+        tasks: tasksForFolder,
+      };
+    });
+
+    return result;
   }
 
   // 6. 폴더 삭제 시 과제 일괄 이동

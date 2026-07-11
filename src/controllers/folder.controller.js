@@ -1,4 +1,5 @@
 import folderService from "../services/folder.service.js";
+import { BadRequestError } from "../errors/custom.error.js";
 
 class FolderController {
   constructor() {
@@ -82,9 +83,19 @@ class FolderController {
   getFolderDetail = async (req, res, next) => {
     try {
       const userId = req.user.id;
-      const { folderId } = req.params;
+      const folderIds = req.params.folderId
+        .split(',')
+        .map(id => parseInt(id.trim(), 10))
+        .filter(id => !isNaN(id));
 
-      const result = await folderService.getFolderDetail(userId, folderId);
+        if (folderIds.length === 0) {
+        throw new BadRequestError(
+          "VALIDATION_ERROR", 
+          "유효한 폴더 ID가 제공되지 않았습니다."
+        );
+      }
+
+      const result = await folderService.getFolderDetail(userId, folderIds);
 
       res.status(200).json({
         resultType: "SUCCESS",
