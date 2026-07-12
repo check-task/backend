@@ -7,14 +7,17 @@ dayjs.extend(timezone);
 
 class TaskRepository {
   // 완료 과제 조회
-  async getCompletedTasks(userId) {
+  async getCompletedTasks(userId, folderIds = null) {
     return await prisma.task.findMany({
       where: {
-        members: { some: { userId: userId } },
-        deadline: {
-          lt: new Date(),
-        },
+      deadline: { lt: new Date() },
+      members: { 
+        some: { 
+          userId: userId,
+          ...(folderIds && { folderId: { in: folderIds } }) 
+        } 
       },
+    },
       include: {
         members: {
           where: { userId: userId },
@@ -74,7 +77,7 @@ class TaskRepository {
 
   // 과제 세부 사항 조회
   async findTaskDetail(taskId, userId) {
-    return await prisma.task.findUnique({
+    const task = await prisma.task.findUnique({
       where: { id: parseInt(taskId) },
       include: {
         members: {
@@ -82,6 +85,7 @@ class TaskRepository {
           include: { folder: true }
         },
         subTasks: {
+          orderBy: { endDate: 'asc' }, // 마감일 시간순 정렬
           include: {
             comments: {
               include: {
@@ -106,6 +110,16 @@ class TaskRepository {
         communications: true
       }
     });
+
+    if (!task) return task;
+
+    // 완료된 세부 과제는 목록 아래로 (각 그룹 내에서는 위에서 지정한 마감일 순서 유지 - stable sort)
+    return {
+      ...task,
+      subTasks: [...task.subTasks].sort(
+        (a, b) => (a.status === 'COMPLETED') - (b.status === 'COMPLETED'),
+      ),
+    };
   }
 
   // 과제 목록 조회
@@ -117,12 +131,11 @@ class TaskRepository {
         members: {
           some: {
             userId: userId,
-            ...(folderId ? {
-              OR: [
-                { folderId: parseInt(folderId) },
-                { folderId: null }
-              ]
-            } : {})
+            ...(folderId 
+              ? (folderId === 'null' || folderId === 'undefined'
+                ? { folderId: null }
+                : { folderId: parseInt(folderId) }) 
+              : {})
           }
         },
         ...(type ? { type: type === "TEAM" ? "TEAM" : "PERSONAL" } : {}),
@@ -132,7 +145,9 @@ class TaskRepository {
           where: { userId: userId },
           include: { folder: true }
         },
-        subTasks: true,
+        subTasks: {
+          orderBy: { endDate: 'asc' } // 마감일 시간순 정렬
+        },
         priorities: {
           where: { userId: userId }
         }

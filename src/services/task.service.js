@@ -14,7 +14,7 @@ import { CommentRepository } from "../repositories/comment.repository.js";
 
 class TaskService {
   // 완료 과제 조회
-  async getCompletedTasks(userId) {
+  async getCompletedTasks(userId, folderIds) {
     const user = await userRepository.getUserData(userId);
     if (!user) {
       throw new NotFoundError(
@@ -23,7 +23,7 @@ class TaskService {
       );
     }
 
-    return await taskRepository.getCompletedTasks(userId);
+    return await taskRepository.getCompletedTasks(userId, folderIds);
   }
 
   // 과제 목록 조회

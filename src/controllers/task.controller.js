@@ -9,8 +9,11 @@ class TaskController {
   async getCompletedTasks(req, res, next) {
     try {
       const userId = req.user.id;
+      const folderIds = req.query.folderId 
+      ? req.query.folderId.split(',').map(Number).filter(id => !isNaN(id))
+      : null;
 
-      const tasksRaw = await taskService.getCompletedTasks(userId);
+      const tasksRaw = await taskService.getCompletedTasks(userId, folderIds);
 
       res.status(200).json({
         resultType: "SUCCESS",

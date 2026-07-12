@@ -89,6 +89,82 @@ class FolderRepository {
     });
     return deletedFolder;
   }
+
+  // 4. 폴더 순서 업데이트
+  async updateFolderPriority(userId, orderedFolders) {
+    // orderedFolders 예시: [{ folderId: 1, rank: 1 }, { folderId: 2, rank: 2 }]
+    
+    const queries = orderedFolders.map((folder) =>
+      prisma.folder.updateMany({
+        where: {
+          id: parseInt(folder.folderId),
+          userId: userId,
+        },
+        data: {
+          rank: folder.rank,
+        },
+      })
+    );
+
+    return await prisma.$transaction(queries);
+  }
+
+  // 5. 폴더 상세 조회 (Task, SubTask 포함)
+  async getFolderDetailTasks(userId, folderIds) {
+    const folders = await prisma.folder.findMany({
+      where: {
+        id: { in: folderIds },
+        userId: userId,
+      },
+    });
+
+    if (!folders || folders.length === 0) return [];
+
+    const membersInFolders = await prisma.member.findMany({
+      where: {
+        userId: userId,
+        folderId: { in: folderIds },
+      },
+      include: {
+        task: {
+          include: {
+            subTasks: {
+              orderBy: { id: "asc" }, 
+            },
+          },
+        },
+      },
+      orderBy: {
+        task: { deadline: "asc" }, 
+      },
+    });
+
+    const result = folders.map(folder => {
+      const tasksForFolder = membersInFolders
+        .filter(member => member.folderId === folder.id)
+        .map(member => member.task);
+
+      return {
+        folderInfo: folder,
+        tasks: tasksForFolder,
+      };
+    });
+
+    return result;
+  }
+
+  // 6. 폴더 삭제 시 과제 일괄 이동
+  async moveTasksToFolder(userId, oldFolderId, newFolderId) {
+    return await prisma.member.updateMany({
+      where: {
+        userId: userId,
+        folderId: parseInt(oldFolderId),
+      },
+      data: {
+        folderId: parseInt(newFolderId),
+      },
+    });
+  }
 }
 
 export const folderRepository = new FolderRepository();
