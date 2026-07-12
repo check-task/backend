@@ -8,6 +8,7 @@ import {
   signupBody,
   loginBody,
   passwordChangeBody,
+  passwordVerifyBody,
   passwordResetConfirmBody,
 } from "../validators/auth.schema.js";
 
@@ -249,6 +250,30 @@ export class LoginController {
       return res.status(200).json({
         resultType: "SUCCESS",
         message: "비밀번호가 변경되었습니다. 다시 로그인해 주세요.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async verifyPassword(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new UnauthorizedError("UNAUTHORIZED", "인증 정보가 없습니다.");
+      }
+      const parsed = passwordVerifyBody.safeParse(req.body);
+      if (!parsed.success) {
+        throw new BadRequestError(
+          "INVALID_INPUT",
+          parsed.error.issues[0].message,
+        );
+      }
+
+      await this.loginService.verifyPassword(req.user.id, parsed.data.password);
+
+      return res.status(200).json({
+        resultType: "SUCCESS",
+        message: "비밀번호가 확인되었습니다.",
       });
     } catch (error) {
       next(error);

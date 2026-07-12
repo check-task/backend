@@ -267,7 +267,7 @@ export class LoginService {
     return { user: restoredUser, accessToken, refreshToken };
   }
 
-  async changePassword(userId, currentPassword, newPassword) {
+  async _getVerifiedLocalUser(userId, currentPassword) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
 
     if (!user || user.deletedAt) {
@@ -296,9 +296,19 @@ export class LoginService {
       );
     }
 
+    return user;
+  }
+
+  async verifyPassword(userId, currentPassword) {
+    await this._getVerifiedLocalUser(userId, currentPassword);
+  }
+
+  async changePassword(userId, currentPassword, newPassword) {
+    const user = await this._getVerifiedLocalUser(userId, currentPassword);
+
     const hashed = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
-      where: { id: userId },
+      where: { id: user.id },
       data: { password: hashed },
     });
 
