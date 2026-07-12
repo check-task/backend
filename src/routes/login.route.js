@@ -28,6 +28,11 @@ router.patch(
   loginController.changePassword.bind(loginController),
 );
 router.post(
+  "/password/verify",
+  authenticate,
+  loginController.verifyPassword.bind(loginController),
+);
+router.post(
   "/password/reset/send",
   loginController.sendPasswordResetCode.bind(loginController),
 );

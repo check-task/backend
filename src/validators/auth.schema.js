@@ -42,6 +42,10 @@ export const passwordChangeBody = z.object({
   newPassword: passwordSchema,
 });
 
+export const passwordVerifyBody = z.object({
+  password: z.string().min(1, { error: "비밀번호를 입력해 주세요." }),
+});
+
 export const passwordResetConfirmBody = z.object({
   resetToken: z.string().min(1, { error: "재설정 토큰이 필요합니다." }),
   newPassword: passwordSchema,
