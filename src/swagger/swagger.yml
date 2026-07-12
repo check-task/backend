@@ -5500,6 +5500,85 @@ paths:
                   reason: "서버 내부 오류가 발생했습니다."
                   data: null
 
+  # 현재 비밀번호 확인
+  /api/v1/auth/password/verify:
+    post:
+      tags:
+        - Auth
+      summary: 현재 비밀번호 확인
+      description: |
+        로그인 상태의 자체 회원이 비밀번호 변경 화면에 진입하기 전, 입력한 비밀번호가
+        본인의 현재 비밀번호와 일치하는지만 확인한다. 실제 비밀번호 변경은 이루어지지 않으며,
+        Refresh Token도 폐기되지 않는다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+                  example: "OldPass!23"
+      responses:
+        '200':
+          description: 비밀번호 일치
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "SUCCESS"
+                  message:
+                    type: string
+                    example: "비밀번호가 확인되었습니다."
+        '400':
+          description: |
+            - INVALID_INPUT: password 미입력 등 입력 검증 실패
+            - NOT_LOCAL_USER: 자체 회원이 아님(소셜 로그인 계정)
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "INVALID_INPUT | NOT_LOCAL_USER"
+                  reason: "비밀번호를 입력해 주세요. | 자체 회원이 아닙니다."
+                  data: null
+        '401':
+          description: |
+            - UNAUTHORIZED / TOKEN_NOT_FOUND / TOKEN_EXPIRED / TOKEN_INVALID: 인증 토큰 관련 오류
+            - INVALID_CREDENTIALS: 현재 비밀번호가 올바르지 않음
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 401
+                  errorCode: "INVALID_CREDENTIALS"
+                  reason: "현재 비밀번호가 올바르지 않습니다."
+                  data: null
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "INTERNAL_SERVER_ERROR"
+                  reason: "서버 내부 오류가 발생했습니다."
+                  data: null
+
   # 비밀번호 재설정 인증코드 발송
   /api/v1/auth/password/reset/send:
     post:
