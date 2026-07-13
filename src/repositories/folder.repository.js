@@ -43,11 +43,21 @@ class FolderRepository {
 
   // 1. 폴더 생성
   async addFolder(userId, data) {
+    // 새 폴더는 항상 맨 아래에 위치하도록 (현재 최대 rank + 1)
+    // 유저의 첫 폴더("지정안함")는 max가 null이므로 rank 0으로 생성됨
+    const maxRankResult = await prisma.folder.aggregate({
+      where: { userId: userId },
+      _max: { rank: true },
+    });
+    const nextRank =
+      maxRankResult._max.rank === null ? 0 : maxRankResult._max.rank + 1;
+
     const newFolder = await prisma.folder.create({
       data: {
         userId: userId,
         folderTitle: data.folderTitle,
         color: data.color,
+        rank: nextRank,
       },
       select: {
         id: true,
@@ -99,6 +109,8 @@ class FolderRepository {
         where: {
           id: parseInt(folder.folderId),
           userId: userId,
+          // "지정안함" 폴더는 항상 최상단(rank 0)에 고정 → 순서 변경 대상에서 제외
+          folderTitle: { not: "지정안함" },
         },
         data: {
           rank: folder.rank,
