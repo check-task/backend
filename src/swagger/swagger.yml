@@ -4250,9 +4250,13 @@ paths:
               schema:
                 type: string
             Location:
-              description: 프론트엔드 리다이렉트 URL
+              description: |
+                프론트엔드 리다이렉트 URL
+                - 신규 회원: /auth/kakao/callback?isNewUser=true
+                - 기존 회원: /auth/kakao/callback?isNewUser=false
               schema:
                 type: string
+                example: "https://checktask.kr/auth/kakao/callback?isNewUser=true"
         
         '400':
           description: 잘못된 요청
