@@ -4735,6 +4735,86 @@ paths:
                   errorCode: "INTERNAL_SERVER_ERROR"
                   reason: "서버 내부 오류가 발생했습니다."
                   data: null
+  
+  # 소셜 회원가입 시 이용약관 동의
+  /api/v1/auth/agreement:
+    post:
+      tags:
+        - Auth
+      summary: 소셜 로그인 약관 동의
+      description: |
+        소셜 로그인 최초 가입 시 약관 동의 정보를 저장한다.
+        필수 약관의 동의는 필수, 제 3자 제공 동의와 마케팅 수신 동의는 선택입니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - isTermsAgreed
+              properties:
+                isTermsAgreed:
+                  type: boolean
+                  description: 필수 약관 동의 여부
+                  example: true
+                isThirdParty:
+                  type: boolean
+                  description: 제 3자 제공 동의 여부 (선택)
+                  example: false
+                isMarketing:
+                  type: boolean
+                  description: 마케팅 정보 수신 동의 여부 (선택)
+                  example: true
+      responses:
+        '200':
+          description: 약관 동의 저장 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "SUCCESS"
+                  message: "약관 동의가 완료되었습니다."
+                  data: null
+        '400':
+          description: 필수 약관 미동의
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "TERMS_REQUIRED"
+                  reason: "필수 약관에 동의해야 합니다."
+                  data: null
+        '401':
+          description: 인증 정보 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 401
+                  errorCode: "UNAUTHORIZED"
+                  reason: "인증 정보가 없습니다."
+                  data: null
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "INTERNAL_SERVER_ERROR"
+                  reason: "서버 내부 오류가 발생했습니다."
+                  data: null
 
   # Access Token 재발급
   /api/v1/auth/refresh:

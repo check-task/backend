@@ -1,4 +1,4 @@
-import { KakaoAuthService } from "../services/auth.service.js";
+import { AgreementService, KakaoAuthService } from "../services/auth.service.js";
 import { LoginService } from "../services/login.service.js";
 import { BadRequestError, UnauthorizedError } from "../errors/custom.error.js";
 // import { prisma } from "../db.config.js";
@@ -7,6 +7,7 @@ export class AuthController{
     constructor(){
         this.kakaoAuthService = new KakaoAuthService();
         this.loginService = new LoginService();
+        this.agreementService = new AgreementService()
     }
 
     // 통합 회원 탈퇴 — provider 값으로 자체/카카오 자동 분기
@@ -149,6 +150,33 @@ export class AuthController{
         },
       });
 
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async agreement(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new UnauthorizedError("UNAUTHORIZED", "인증 정보가 없습니다.");
+      }
+
+      const { isTermsAgreed, isThirdParty = false, isMarketing = false } = req.body;
+
+      if (!isTermsAgreed) {
+        throw new BadRequestError("TERMS_REQUIRED", "필수 약관에 동의해야 합니다.");
+      }
+
+      await this.agreementService.saveAgreement(req.user.id, {
+        isThirdParty,
+        isMarketing,
+      });
+      
+      return res.status(200).json({
+        resultType: "SUCCESS",
+        message: "약관 동의가 완료되었습니다.",
+        data: null,
+      });
     } catch (error) {
       next(error);
     }
