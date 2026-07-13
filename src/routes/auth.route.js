@@ -54,7 +54,7 @@ router.get(
       return res.redirect(`${redirectBaseUrl}/login?status=withdrawn&token=${req.user.restoreToken}`);
     }
 
-    const { refreshToken } = req.user;
+    const { refreshToken, isNewUser } = req.user;
     const isSecure = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
 
     //refresh Token -> HttpOnly 쿠키에 저장
@@ -66,7 +66,7 @@ router.get(
       maxAge: 1000 * 60 * 60 * 24 * 14, // 14일
     });
 
-    return res.redirect(`${redirectBaseUrl}/auth/kakao/callback`);
+    return res.redirect(`${redirectBaseUrl}/auth/kakao/callback?isNewUser=${isNewUser}`);
   }
 );
 
