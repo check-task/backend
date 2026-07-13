@@ -95,5 +95,11 @@ router.post(
   authController.restore.bind(authController)
 );
 
+// 소셜 로그인 약관 동의
+router.post(
+  "/agreement",
+  passport.authenticate("jwt", { session: false }),
+  authController.agreement.bind(authController)
+);
 
 export default router;
