@@ -3732,6 +3732,7 @@ paths:
       description: |
         특정 폴더에 속한 과제 목록과 각 과제에 속한 세부 과제 목록을 조회합니다.
         여러 폴더를 동시에 조회하려면 쉼표(,)로 구분하여 ID 전달. (예: `/27,28`)
+        마감기한이 지난(완료된) 과제는 목록에서 자동으로 제외됩니다.
       security:
         - bearerAuth: []
       parameters:
@@ -3753,6 +3754,7 @@ paths:
                 data:
                   folderInfo:
                     id: 27
+                    userId: 22
                     folderTitle: "개인 프로젝트"
                     color: "#FF5733"
                     rank: 1
@@ -3760,7 +3762,7 @@ paths:
                   tasks:
                     - id: 14
                       title: "포트폴리오"
-                      deadline: "2026-07-11T23:59:16.000Z"
+                      deadline: "2026-07-16T23:59:16.000Z"
                       type: "PERSONAL"
                       status: "PROGRESS"
                       isAlarm: true
@@ -3768,6 +3770,7 @@ paths:
                       updatedAt: "2026-07-03T10:00:00.000Z"
                       inviteCode: null
                       inviteExpiredAt: null
+                      dDay: "D-2"
                       subTasks:
                         - id: 15
                           assigneeId: 1
