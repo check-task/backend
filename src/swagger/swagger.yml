@@ -4735,6 +4735,7 @@ paths:
                   errorCode: "INTERNAL_SERVER_ERROR"
                   reason: "서버 내부 오류가 발생했습니다."
                   data: null
+  
   # 소셜 회원가입 시 이용약관 동의
   /api/v1/auth/agreement:
     post:
@@ -4742,8 +4743,8 @@ paths:
         - Auth
       summary: 소셜 로그인 약관 동의
       description: |
-        소셜 로그인 최초 가입 시 약관 동의 정보를 저장합니다.
-        필수 약관은 반드시 동의해야 하며, 제 3자 제공 동의와 마케팅 수신 동의는 선택입니다.
+        소셜 로그인 최초 가입 시 약관 동의 정보를 저장한다.
+        필수 약관의 동의는 필수, 제 3자 제공 동의와 마케팅 수신 동의는 선택입니다.
       security:
         - bearerAuth: []
       requestBody:
