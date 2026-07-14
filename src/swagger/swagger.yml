@@ -5880,6 +5880,123 @@ paths:
                   errorCode: "INTERNAL_SERVER_ERROR"
                   reason: "서버 내부 오류가 발생했습니다."
                   data: null
+  # 애플 연동하기
+  /api/v1/auth/apple:
+    post:
+      tags:
+        - Auth
+      summary: Apple 연동하기
+      description: |
+        - Apple SDK에서 발급된 Identity Token을 검증하여 로그인 또는 신규 회원가입을 진행한다.
+        - 이름/이메일은 최초 로그인 시에만 Apple이 제공하며, user 필드는 선택값이다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - identityToken
+              properties:
+                identityToken:
+                  type: string
+                  description: Apple SDK에서 발급한 JWT
+                  example: "eyJraWQiOiJXNldjT0tCIiwiYWxnIjoiUlMyNTYifQ..."
+                user:
+                  type: object
+                  description: 최초 로그인 시에만 Apple이 제공 (이후 로그인 시 없음)
+                  properties:
+                    email:
+                      type: string
+                      example: "abc@privaterelay.appleid.com"
+                    name:
+                      type: object
+                      properties:
+                        firstName:
+                          type: string
+                          example: "길동"
+                        lastName:
+                          type: string
+                          example: "홍"
+      responses:
+        '200':
+          description: 로그인 성공
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                로그인_성공:
+                  summary: 일반 로그인
+                  value:
+                    resultType: "SUCCESS"
+                    message: "Apple 로그인이 완료되었습니다."
+                    data:
+                      accessToken: "eyJhbGciOiJIUzI1NiIs..."
+                      accessTokenExpireIn: 3600
+                      isNewUser: false
+                신규_회원가입:
+                  summary: 신규 회원 (약관 동의 필요)
+                  value:
+                    resultType: "SUCCESS"
+                    message: "Apple 로그인이 완료되었습니다."
+                    data:
+                      accessToken: "eyJhbGciOiJIUzI1NiIs..."
+                      accessTokenExpireIn: 3600
+                      isNewUser: true 
+                탈퇴_계정:
+                  summary: 탈퇴 처리된 계정
+                  value:
+                    resultType: "SUCCESS"
+                    message: "탈퇴 처리된 계정입니다. 복구 토큰을 사용해 복구할 수 있습니다."
+                    data:
+                      withdrawnUser: true
+                      restoreToken: "550e8400-e29b-41d4-a716-446655440000"
+        '400':
+          description: identityToken 누락
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "TOKEN_REQUIRED"
+                  reason: "identityToken이 필요합니다."
+                  data: null
+        '401':
+          description: 유효하지 않은 Apple 토큰
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                토큰_만료:
+                  value:
+                    resultType: "FAIL"
+                    code: 401
+                    errorCode: "APPLE_TOKEN_EXPIRED"
+                    reason: "Apple 토큰이 만료되었습니다."
+                    data: null
+                토큰_무효:
+                  value:
+                    resultType: "FAIL"
+                    code: 401
+                    errorCode: "INVALID_APPLE_TOKEN"
+                    reason: "유효하지 않은 Apple 토큰입니다."
+                    data: null
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "APPLE_AUTH_FAILED"
+                  reason: "Apple 인증 중 오류가 발생했습니다."
+                  data: null
 
 
   # -- 자료 API --
