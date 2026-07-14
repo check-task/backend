@@ -220,6 +220,7 @@ export class TaskResponseDTO extends TaskUtils {
         folderId: task.folderId,
         foldercolor: task.folder?.color || "#818892",
         folderTitle: task.folder?.folderTitle || "지정안함",
+        folderRank: task.folder?.rank ?? null,
         priority: task.priorities?.[0]?.rank ?? null,
         status: task.status || "PENDING",
         title: task.title,
