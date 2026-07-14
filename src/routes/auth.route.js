@@ -54,7 +54,7 @@ router.get(
       return res.redirect(`${redirectBaseUrl}/login?status=withdrawn&token=${req.user.restoreToken}`);
     }
 
-    const { refreshToken } = req.user;
+    const { refreshToken, isNewUser } = req.user;
     const isSecure = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
 
     //refresh Token -> HttpOnly 쿠키에 저장
@@ -62,11 +62,12 @@ router.get(
       httpOnly: true,
       secure: isSecure,
       sameSite: isSecure ? "none" : "lax",
+      domain: isSecure ? process.env.COOKIE_DOMAIN : undefined,
       path: "/",
       maxAge: 1000 * 60 * 60 * 24 * 14, // 14일
     });
 
-    return res.redirect(`${redirectBaseUrl}/auth/kakao/callback`);
+    return res.redirect(`${redirectBaseUrl}/auth/kakao/callback?isNewUser=${isNewUser}`);
   }
 );
 
@@ -95,5 +96,11 @@ router.post(
   authController.restore.bind(authController)
 );
 
+// 소셜 로그인 약관 동의
+router.post(
+  "/agreement",
+  passport.authenticate("jwt", { session: false }),
+  authController.agreement.bind(authController)
+);
 
 export default router;

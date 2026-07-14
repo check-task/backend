@@ -64,6 +64,7 @@ export class LoginController {
         httpOnly: true,
         secure: isSecure,
         sameSite: isSecure ? "none" : "lax",
+        domain: isSecure ? process.env.COOKIE_DOMAIN : undefined,
         path: "/",
         maxAge: 1000 * 60 * 60 * 24 * 14,
       });
@@ -98,6 +99,7 @@ export class LoginController {
         httpOnly: true,
         secure: isSecure,
         sameSite: isSecure ? "none" : "lax",
+        domain: isSecure ? process.env.COOKIE_DOMAIN : undefined,
         path: "/",
       });
 
@@ -125,6 +127,7 @@ export class LoginController {
         httpOnly: true,
         secure: isSecure,
         sameSite: isSecure ? "none" : "lax",
+        domain: isSecure ? process.env.COOKIE_DOMAIN : undefined,
         path: "/",
         maxAge: 1000 * 60 * 60 * 24 * 14,
       });
@@ -244,6 +247,7 @@ export class LoginController {
         httpOnly: true,
         secure: isSecure,
         sameSite: isSecure ? "none" : "lax",
+        domain: isSecure ? process.env.COOKIE_DOMAIN : undefined,
         path: "/",
       });
 

@@ -67,30 +67,6 @@ export class KakaoAuthService {
       : "전화번호를 입력해 주세요.";
 
     const providerId = profile.id.toString();
-    // console.log("카카오 프로필:", JSON.stringify(profile._json, null, 2));
-
-    // // 카카오 동의 항목 파싱 - service_terms는 별도 API 호출 필요
-    // let serviceTerm = [];
-    // try {
-    //   const response = await axios.get("https://kapi.kakao.com/v1/user/service/terms", {
-    //     headers: { Authorization: `Bearer ${kakaoAccessToken}` },
-    //   });
-    //   serviceTerm = response.data?.allowed_service_terms ?? [];
-    //   // console.log("service_terms 응답:", JSON.stringify(response.data, null, 2));
-    // } catch (error) {
-    //   console.error("service_terms 조회 실패:", error.message);
-    // }
-
-    // const getAgreedAt = (tag) => {
-    //   const term = serviceTerm.find(t => t.tag === tag);
-    //   return term ? new Date(term.agreed_at) : null;
-    // };
-    
-    const now = new Date();
-    const termsAgreedAt = now; // getAgreedAt("termsAgreedAt");
-    const pushUpdatedAt = now; // getAgreedAt("pushUpdatedAt");
-    const thirdPartyUpdatedAt = now; // getAgreedAt("thirdPartyUpdatedAt");
-    const marketingUpdatedAt = now; // getAgreedAt("marketingUpdatedAt");
 
     try {
       //기존 사용자 조회
@@ -144,22 +120,6 @@ export class KakaoAuthService {
 
         await prisma.userAlarmSetting.create({
           data: { userId: user.id },
-        });
-
-        // 동의 항목 저장
-        await prisma.userAgreement.upsert({
-          where: { userId: user.id },
-          create: {
-            userId: user.id,
-            termsAgreedAt: termsAgreedAt ?? new Date(),
-            pushUpdatedAt,
-            isPush: !!pushUpdatedAt,
-            thirdPartyUpdatedAt,
-            isThirdParty: !!thirdPartyUpdatedAt,
-            marketingUpdatedAt,
-            isMarketing: !!marketingUpdatedAt,
-          },
-          update: {}, // 재로그인 시 덮어쓰지 않게 설정
         });
 
       }
@@ -355,3 +315,31 @@ export class KakaoAuthService {
   }
 }
 
+export class AgreementService {
+  async saveAgreement(userId, { isThirdParty, isMarketing }) {
+    const now = new Date();
+    
+    await prisma.userAgreement.upsert({
+      where: { userId },
+      
+      create: {
+        userId,
+        termsAgreedAt: now,
+        thirdPartyUpdatedAt: isThirdParty ? now : null,
+        isThirdParty,
+        marketingUpdatedAt: isMarketing ? now : null,
+        isMarketing,
+        pushUpdatedAt: null,
+        isPush: false,
+      },
+      
+      update: {
+        termsAgreedAt: now,
+        thirdPartyUpdatedAt: isThirdParty ? now : null,
+        isThirdParty,
+        marketingUpdatedAt: isMarketing ? now : null,
+        isMarketing,
+      },
+    });
+  }
+}
