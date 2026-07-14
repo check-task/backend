@@ -167,10 +167,14 @@ export class AuthController{
         throw new UnauthorizedError("UNAUTHORIZED", "인증 정보가 없습니다.");
       }
 
-      const { isTermsAgreed, isThirdParty = false, isMarketing = false } = req.body;
+      const { isTermsAgreed, isThirdParty, isMarketing = false } = req.body;
 
       if (!isTermsAgreed) {
         throw new BadRequestError("TERMS_REQUIRED", "필수 약관에 동의해야 합니다.");
+      }
+
+      if (!isThirdParty) {
+        throw new BadRequestError("THIRD_PARTY_REQUIRED", "제3자 제공 동의는 필수입니다.");
       }
 
       await this.agreementService.saveAgreement(req.user.id, {

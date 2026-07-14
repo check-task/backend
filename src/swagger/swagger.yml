@@ -4753,7 +4753,7 @@ paths:
       summary: 소셜 로그인 약관 동의
       description: |
         소셜 로그인 최초 가입 시 약관 동의 정보를 저장한다.
-        필수 약관의 동의는 필수, 제 3자 제공 동의와 마케팅 수신 동의는 선택입니다.
+        필수 약관의 동의와 제 3자 제공 동의는 필수, 마케팅 수신 동의는 선택.
       security:
         - bearerAuth: []
       requestBody:
@@ -4764,19 +4764,20 @@ paths:
               type: object
               required:
                 - isTermsAgreed
+                - isThirdParty
               properties:
                 isTermsAgreed:
                   type: boolean
-                  description: 필수 약관 동의 여부
+                  description: 필수 약관 동의 여부 (필수)
                   example: true
                 isThirdParty:
                   type: boolean
-                  description: 제 3자 제공 동의 여부 (선택)
-                  example: false
+                  description: 제 3자 제공 동의 여부 (필수)
+                  example: true
                 isMarketing:
                   type: boolean
                   description: 마케팅 정보 수신 동의 여부 (선택)
-                  example: true
+                  example: false
       responses:
         '200':
           description: 약관 동의 저장 성공
@@ -4789,7 +4790,9 @@ paths:
                   message: "약관 동의가 완료되었습니다."
                   data: null
         '400':
-          description: 필수 약관 미동의
+          description: |
+            - TERMS_REQUIRED: 필수 약관 미동의
+            - THIRD_PARTY_REQUIRED: 제3자 제공 동의 미동의
           content:
             application/json:
               schema:
@@ -4797,8 +4800,8 @@ paths:
                 example:
                   resultType: "FAIL"
                   code: 400
-                  errorCode: "TERMS_REQUIRED"
-                  reason: "필수 약관에 동의해야 합니다."
+                  errorCode: "TERMS_REQUIRED | THIRD_PARTY_REQUIRED"
+                  reason: "필수 약관에 동의해야 합니다. | 제3자 제공 동의는 필수입니다."
                   data: null
         '401':
           description: 인증 정보 없음
