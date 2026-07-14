@@ -1484,6 +1484,7 @@ paths:
                         folderId: 2
                         foldercolor: "#111111"
                         folderTitle: "프로그래밍"
+                        folderRank: 1
                         priority: 1
                         status: "PENDING"
                         title: "데이터베이스 설계 프로젝트 (수정본)"
@@ -1495,6 +1496,7 @@ paths:
                         folderId: null
                         foldercolor: "값 없음"
                         folderTitle: "미지정"
+                        folderRank: null
                         priority: 2
                         status: "PENDING"
                         title: "자바 Swing 과제 제출"
