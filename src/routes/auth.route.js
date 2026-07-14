@@ -103,4 +103,7 @@ router.post(
   authController.agreement.bind(authController)
 );
 
+// Apple 로그인
+router.post("/apple", authController.appleLogin.bind(authController));
+
 export default router;
