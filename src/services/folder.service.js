@@ -1,5 +1,6 @@
 import { folderRepository } from "../repositories/folder.repository.js";
 import { FolderDto } from "../dtos/folder.dto.js";
+import { TaskResponseDTO } from "../dtos/task.dto.js";
 import {
   NotFoundError,
   ForbiddenError,
@@ -176,7 +177,18 @@ class FolderService {
       );
     }
 
-    return result;
+    return result.map(item => ({
+      folderInfo: item.folderInfo,
+      tasks: item.tasks.map(task => {
+        const { subTasks, ...taskInfo } = task; 
+
+        return {
+          ...taskInfo,
+          dDay: TaskResponseDTO.calculateDDay(taskInfo.deadline),
+          subTasks
+        };
+      })
+    }));
   }
 }
 

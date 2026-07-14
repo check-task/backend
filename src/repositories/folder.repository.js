@@ -123,6 +123,7 @@ class FolderRepository {
 
   // 5. 폴더 상세 조회 (Task, SubTask 포함)
   async getFolderDetailTasks(userId, folderIds) {
+    const now = new Date();
     const folders = await prisma.folder.findMany({
       where: {
         id: { in: folderIds },
@@ -136,6 +137,12 @@ class FolderRepository {
       where: {
         userId: userId,
         folderId: { in: folderIds },
+        task: {
+          // 마감 기한이 현재보다 이후인(즉, 완료되지 않은) 과제만 조회
+          deadline: {
+            gte: now 
+          }
+        }
       },
       include: {
         task: {
