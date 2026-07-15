@@ -5004,6 +5004,7 @@ paths:
           description: |
             - INVALID_EMAIL: 유효한 이메일 형식이 아님
             - EMAIL_DUPLICATE: 이미 가입된 이메일
+            - EMAIL_WITHDRAWN: 탈퇴한 회원의 이메일
             - CODE_ALREADY_SENT: 이미 발송된 인증코드가 있음 (2분 대기)
           content:
             application/json:
@@ -5012,8 +5013,8 @@ paths:
                 example:
                   resultType: "FAIL"
                   code: 400
-                  errorCode: "INVALID_EMAIL | EMAIL_DUPLICATE | CODE_ALREADY_SENT"
-                  reason: "유효한 이메일 형식이 아닙니다. | 이미 가입된 이메일입니다. | 이미 발송된 인증코드가 있습니다. 만료 후 다시 시도해 주세요."
+                  errorCode: "INVALID_EMAIL | EMAIL_DUPLICATE | EMAIL_WITHDRAWN | CODE_ALREADY_SENT"
+                  reason: "유효한 이메일 형식이 아닙니다. | 이미 가입된 이메일입니다. | 이메일 전송에 실패했습니다. | 이미 발송된 인증코드가 있습니다. 만료 후 다시 시도해 주세요."
                   data: null
         '500':
           description: EMAIL_SEND_FAILED - 이메일 발송 실패
@@ -5073,6 +5074,7 @@ paths:
             - INVALID_EMAIL: 유효한 이메일 형식이 아님
             - RESEND_TOO_SOON: 재발송 쿨다운 중 (2분 대기)
             - EMAIL_DUPLICATE: 이미 가입된 이메일
+            - EMAIL_WITHDRAWN: 탈퇴한 회원의 이메일
           content:
             application/json:
               schema:
@@ -5080,8 +5082,8 @@ paths:
                 example:
                   resultType: "FAIL"
                   code: 400
-                  errorCode: "INVALID_EMAIL | RESEND_TOO_SOON | EMAIL_DUPLICATE"
-                  reason: "유효한 이메일 형식이 아닙니다. | 2분 후에 재발송할 수 있습니다. | 이미 가입된 이메일입니다."
+                  errorCode: "INVALID_EMAIL | RESEND_TOO_SOON | EMAIL_DUPLICATE | EMAIL_WITHDRAWN"
+                  reason: "유효한 이메일 형식이 아닙니다. | 2분 후에 재발송할 수 있습니다. | 이미 가입된 이메일입니다. | 이메일 전송에 실패했습니다."
                   data: null
         '500':
           description: EMAIL_SEND_FAILED - 이메일 발송 실패
