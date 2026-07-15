@@ -26,6 +26,12 @@ export class LoginService {
   async sendVerificationCode(email) {
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
+      if (existingUser.deletedAt) {
+        throw new BadRequestError(
+          "EMAIL_WITHDRAWN",
+          "이메일 전송에 실패했습니다.",
+        );
+      }
       throw new BadRequestError("EMAIL_DUPLICATE", "이미 가입된 이메일입니다.");
     }
 
