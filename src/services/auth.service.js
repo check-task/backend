@@ -10,6 +10,7 @@ import {
   generateRefreshToken as generateRefreshTokenUtil,
   saveRefreshToken as saveRefreshTokenUtil,
 } from "./token.service.js";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 
 export class KakaoAuthService {
   constructor(){
@@ -341,5 +342,108 @@ export class AgreementService {
         isMarketing,
       },
     });
+  }
+}
+
+// APPLE 연동 서비스
+export class AppleAuthService {
+  constructor() {
+    this.APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys"; // Apple 공개키 URL
+    this.APPLE_ISSUER = "https://appleid.apple.com"; // 토큰 발급자 확인용
+    this.clientId = process.env.APPLE_CLIENT_ID; // 채택 Bundle ID
+  }
+
+  // 토큰 검증
+  async verifyAppleToken(identityToken) {
+    try {
+      const JWKS = createRemoteJWKSet(new URL(this.APPLE_JWKS_URL));
+      const { payload } = await jwtVerify(identityToken, JWKS, {
+        issuer: this.APPLE_ISSUER,
+        audience: this.clientId,
+      });
+      return payload;
+
+    } catch (error) {
+      if (error.code === "ERR_JWT_EXPIRED") {
+        throw new UnauthorizedError("APPLE_TOKEN_EXPIRED", "Apple 토큰이 만료되었습니다.");
+      }
+      if (
+        error.code === "ERR_JWS_SIGNATURE_VERIFICATION_FAILED" ||
+        error.code === "ERR_JWT_CLAIM_VALIDATION_FAILED"
+      ) {
+        throw new UnauthorizedError("INVALID_APPLE_TOKEN", "유효하지 않은 Apple 토큰입니다.");
+      }
+      throw new InternalServerError("APPLE_AUTH_FAILED", "Apple 인증 중 오류가 발생했습니다.");
+    }
+  }
+
+  // Apple 로그인 처리
+  async handleAppleLogin(identityToken, appleUser) {
+    try {
+      const payload = await this.verifyAppleToken(identityToken);
+
+      // 토큰에서 사용자 정보를 추출함
+      const sub = payload.sub; // Apple -> Provider ID
+      // 이메일은 최초 로그인 시 payload에 있거나 appleUser로 전달됨
+      const email = payload.email ?? appleUser?.email ?? null;
+      const nickname = appleUser?.name?.firstName // 최초 로그인 시에만 이름 제공 없으면 Apple 유저 고용
+        ? `${appleUser.name.firstName}${appleUser.name.lastName ?? ""}`
+        : "Apple유저";
+
+      let isNewUser = false;
+
+      // 기존 유저인지 조회
+      let user = await prisma.user.findFirst({
+        where: { provider: "APPLE", providerId: sub },
+      });
+
+      // 탈퇴 사용자 처리
+      if (user && user.deletedAt) {
+        const restoreToken = crypto.randomUUID();
+        await redis.set(`restore_token:${restoreToken}`, sub, "EX", 60 * 5);
+        return { withdrawnUser: true, restoreToken };
+      }
+
+      // 신규 사용자 생성
+      if (!user) {
+        isNewUser = true;
+        user = await prisma.user.create({
+          data: {
+            nickname,
+            email,
+            phoneNum: "전화번호를 입력해 주세요.",
+            password: "",
+            provider: "APPLE",
+            providerId: sub,
+            role: "USER",
+          },
+        });
+
+        await folderRepository.addFolder(user.id, {
+          folderTitle: "지정안함",
+          color: "#818892",
+        });
+
+        await prisma.userAlarmSetting.create({
+          data: { userId: user.id },
+        });
+      }
+
+      // Access Token 생성
+      const accessToken = generateAccessTokenUtil(user);
+
+      // Refresh Token 생성
+      const { refreshToken, tokenId } = generateRefreshTokenUtil(user);
+
+      // Redis에 저장
+      await saveRefreshTokenUtil(tokenId, user.id);
+
+      return { user, accessToken, refreshToken, isNewUser };
+    } catch (error) {
+      if (error instanceof UnauthorizedError || error instanceof BadRequestError) {
+        throw error;
+      }
+      throw new InternalServerError("INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다.");
+    }
   }
 }

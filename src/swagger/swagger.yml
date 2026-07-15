@@ -4753,7 +4753,7 @@ paths:
       summary: 소셜 로그인 약관 동의
       description: |
         소셜 로그인 최초 가입 시 약관 동의 정보를 저장한다.
-        필수 약관의 동의는 필수, 제 3자 제공 동의와 마케팅 수신 동의는 선택입니다.
+        필수 약관의 동의와 제 3자 제공 동의는 필수, 마케팅 수신 동의는 선택.
       security:
         - bearerAuth: []
       requestBody:
@@ -4764,19 +4764,20 @@ paths:
               type: object
               required:
                 - isTermsAgreed
+                - isThirdParty
               properties:
                 isTermsAgreed:
                   type: boolean
-                  description: 필수 약관 동의 여부
+                  description: 필수 약관 동의 여부 (필수)
                   example: true
                 isThirdParty:
                   type: boolean
-                  description: 제 3자 제공 동의 여부 (선택)
-                  example: false
+                  description: 제 3자 제공 동의 여부 (필수)
+                  example: true
                 isMarketing:
                   type: boolean
                   description: 마케팅 정보 수신 동의 여부 (선택)
-                  example: true
+                  example: false
       responses:
         '200':
           description: 약관 동의 저장 성공
@@ -4789,7 +4790,9 @@ paths:
                   message: "약관 동의가 완료되었습니다."
                   data: null
         '400':
-          description: 필수 약관 미동의
+          description: |
+            - TERMS_REQUIRED: 필수 약관 미동의
+            - THIRD_PARTY_REQUIRED: 제3자 제공 동의 미동의
           content:
             application/json:
               schema:
@@ -4797,8 +4800,8 @@ paths:
                 example:
                   resultType: "FAIL"
                   code: 400
-                  errorCode: "TERMS_REQUIRED"
-                  reason: "필수 약관에 동의해야 합니다."
+                  errorCode: "TERMS_REQUIRED | THIRD_PARTY_REQUIRED"
+                  reason: "필수 약관에 동의해야 합니다. | 제3자 제공 동의는 필수입니다."
                   data: null
         '401':
           description: 인증 정보 없음
@@ -5879,6 +5882,123 @@ paths:
                   code: 500
                   errorCode: "INTERNAL_SERVER_ERROR"
                   reason: "서버 내부 오류가 발생했습니다."
+                  data: null
+  # 애플 연동하기
+  /api/v1/auth/apple:
+    post:
+      tags:
+        - Auth
+      summary: Apple 연동하기
+      description: |
+        - Apple SDK에서 발급된 Identity Token을 검증하여 로그인 또는 신규 회원가입을 진행한다.
+        - 이름/이메일은 최초 로그인 시에만 Apple이 제공하며, user 필드는 선택값이다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - identityToken
+              properties:
+                identityToken:
+                  type: string
+                  description: Apple SDK에서 발급한 JWT
+                  example: "eyJraWQiOiJXNldjT0tCIiwiYWxnIjoiUlMyNTYifQ..."
+                user:
+                  type: object
+                  description: 최초 로그인 시에만 Apple이 제공 (이후 로그인 시 없음)
+                  properties:
+                    email:
+                      type: string
+                      example: "abc@privaterelay.appleid.com"
+                    name:
+                      type: object
+                      properties:
+                        firstName:
+                          type: string
+                          example: "길동"
+                        lastName:
+                          type: string
+                          example: "홍"
+      responses:
+        '200':
+          description: 로그인 성공
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                로그인_성공:
+                  summary: 일반 로그인
+                  value:
+                    resultType: "SUCCESS"
+                    message: "Apple 로그인이 완료되었습니다."
+                    data:
+                      accessToken: "eyJhbGciOiJIUzI1NiIs..."
+                      accessTokenExpireIn: 3600
+                      isNewUser: false
+                신규_회원가입:
+                  summary: 신규 회원 (약관 동의 필요)
+                  value:
+                    resultType: "SUCCESS"
+                    message: "Apple 로그인이 완료되었습니다."
+                    data:
+                      accessToken: "eyJhbGciOiJIUzI1NiIs..."
+                      accessTokenExpireIn: 3600
+                      isNewUser: true 
+                탈퇴_계정:
+                  summary: 탈퇴 처리된 계정
+                  value:
+                    resultType: "SUCCESS"
+                    message: "탈퇴 처리된 계정입니다. 복구 토큰을 사용해 복구할 수 있습니다."
+                    data:
+                      withdrawnUser: true
+                      restoreToken: "550e8400-e29b-41d4-a716-446655440000"
+        '400':
+          description: identityToken 누락
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 400
+                  errorCode: "TOKEN_REQUIRED"
+                  reason: "identityToken이 필요합니다."
+                  data: null
+        '401':
+          description: 유효하지 않은 Apple 토큰
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                토큰_만료:
+                  value:
+                    resultType: "FAIL"
+                    code: 401
+                    errorCode: "APPLE_TOKEN_EXPIRED"
+                    reason: "Apple 토큰이 만료되었습니다."
+                    data: null
+                토큰_무효:
+                  value:
+                    resultType: "FAIL"
+                    code: 401
+                    errorCode: "INVALID_APPLE_TOKEN"
+                    reason: "유효하지 않은 Apple 토큰입니다."
+                    data: null
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "APPLE_AUTH_FAILED"
+                  reason: "Apple 인증 중 오류가 발생했습니다."
                   data: null
 
 
