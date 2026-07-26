@@ -87,6 +87,65 @@ class MemberService {
       };
     });
   }
+
+  async getMemberProfile(taskId, userId, requestingUserId) {
+    if (isNaN(parseInt(taskId))) {
+      throw new NotFoundError(
+        "INVALID_TASK_ID",
+        "유효하지 않은 과제 ID입니다.",
+      );
+    }
+
+    const task = await prisma.task.findUnique({
+      where: { id: parseInt(taskId) },
+    });
+
+    if (!task) {
+      throw new NotFoundError(
+        "TASK_NOT_FOUND",
+        "존재하지 않는 과제입니다."
+      );
+    }
+
+    const requestingMember = await taskRepository.findMemberInTask(taskId, requestingUserId);
+    if (!requestingMember) {
+      throw new ForbiddenError(
+        "FORBIDDEN_TASK",
+        "해당 과제에 접근할 권한이 없습니다."
+      );
+    }
+
+    const member = await prisma.member.findFirst({
+      where: {
+        taskId: parseInt(taskId),
+        userId: parseInt(userId),
+      },
+      include: {
+        user: {
+          select: {
+            nickname: true,
+            phoneNum: true,
+            email: true,
+            profileImage: true,
+          }
+        },
+      }
+    });
+
+    if (!member) {
+      throw new NotFoundError(
+        "MEMBER_NOT_FOUND",
+        "해당 팀원을 찾을 수 없습니다."
+      );
+    }
+
+    return {
+      nickname: member.user.nickname,
+      phoneNum: member.user.phoneNum,
+      email: member.user.email,
+      profileImage: member.user.profileImage,
+    };
+  }
 }
 
 export default new MemberService();

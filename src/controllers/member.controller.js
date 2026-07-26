@@ -35,3 +35,20 @@ export const getTaskMembers = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getMemberProfile = async (req, res, next) => {
+  try {
+    const { taskId, userId } = req.params;
+    const requestingUserId = req.user.id;
+
+    const profile = await memberService.getMemberProfile(taskId, userId, requestingUserId);
+
+    return res.status(200).json({
+      resultType: "SUCCESS",
+      message: "팀원 프로필 조회에 성공했습니다.",
+      data: profile,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
