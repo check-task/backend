@@ -14,3 +14,11 @@ export const deleteMemberSchema = z.object({
     taskId: idParam,
   }),
 });
+
+// ─── 팀원 상세 프로필 조회 ─────────────────────────────────────────
+export const getMemberProfileSchema = z.object({
+  params: z.object({
+    taskId: idParam,
+    userId: idParam,
+  }),
+});
