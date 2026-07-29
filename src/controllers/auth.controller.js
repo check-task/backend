@@ -17,7 +17,6 @@ export class AuthController{
             if (!req.user) {
                 throw new UnauthorizedError("UNAUTHORIZED", "인증 정보가 없습니다.");
             }
-
             const provider = req.user.provider ?? null;
 
             if (provider === null) {
@@ -39,12 +38,11 @@ export class AuthController{
             }
 
             if (provider === "KAKAO") {
-                await this.kakaoAuthService.withdrawKakaoUser(req.user);
-
-                return res.status(200).json({
-                    resultType: "SUCCESS",
-                    message: "카카오 회원 탈퇴가 완료되었습니다.",
-                });
+              await this.kakaoAuthService.withdrawKakaoUser(req.user);
+              return res.status(200).json({
+                  resultType: "SUCCESS",
+                  message: "카카오 회원 탈퇴가 완료되었습니다.",
+              });
             }
 
             throw new BadRequestError("UNSUPPORTED_PROVIDER", "지원하지 않는 로그인 방식입니다.");
@@ -53,25 +51,7 @@ export class AuthController{
         }
     }
 
-    // @deprecated — /api/v1/auth/withdraw 사용 권장
-    async kakaoWithdraw(req, res, next){
-        try{
-            if(!req.user){
-                throw new UnauthorizedError("UNAUTHORIZED","인증 정보가 없습니다");
-            }
-            
-            await this.kakaoAuthService.withdrawKakaoUser(req.user);
-
-            return res.status(200).json({
-                resultType: "SUCCESS",
-                message: "카카오 회원 탈퇴가 완료되었습니다."
-            });
-        }catch (error){
-            next(error);
-        }
-    }
-
-    //카카오 로그아웃
+    // 통합 로그아웃
     async logout(req, res, next) {
     try {
       const refreshToken =
@@ -82,7 +62,7 @@ export class AuthController{
       }
       const isSecure = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
       
-      //refresh token 쿠키 삭제
+      // refresh token 쿠키 삭제
       res.clearCookie("refreshToken",{
         httpOnly: true,
         secure: isSecure,
