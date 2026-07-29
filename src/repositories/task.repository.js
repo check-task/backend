@@ -85,7 +85,7 @@ class TaskRepository {
           include: { folder: true }
         },
         subTasks: {
-          orderBy: { endDate: 'asc' }, // 마감일 시간순 정렬
+          orderBy: { endDate: { sort: 'asc', nulls: 'last' } }, // 마감일 시간순 정렬 (미지정은 맨 뒤)
           include: {
             comments: {
               include: {
@@ -146,7 +146,7 @@ class TaskRepository {
           include: { folder: true }
         },
         subTasks: {
-          orderBy: { endDate: 'asc' } // 마감일 시간순 정렬
+          orderBy: { endDate: { sort: 'asc', nulls: 'last' } } // 마감일 시간순 정렬 (미지정은 맨 뒤)
         },
         priorities: {
           where: { userId: userId }

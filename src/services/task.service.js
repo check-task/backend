@@ -210,11 +210,15 @@ class TaskService {
         });
 
         const resolvedSubRows = subTasks.map((st) => {
-          const endDate = st.endDate;
-          if (!(endDate instanceof Date) || isNaN(endDate.getTime())) {
+          // 마감일은 선택 사항 — 값이 없으면 미지정(null)으로 저장됩니다.
+          const endDate = st.endDate ?? null;
+          if (
+            endDate !== null &&
+            (!(endDate instanceof Date) || isNaN(endDate.getTime()))
+          ) {
             throw new BadRequestError(
-              "SUBTASK_END_DATE_REQUIRED",
-              "세부 과제 마감일이 필요합니다.",
+              "INVALID_DATE",
+              "유효하지 않은 날짜 형식입니다.",
             );
           }
 
@@ -239,8 +243,10 @@ class TaskService {
         });
 
         for (const subTask of createdSubTasksList) {
+          // 마감일이 미지정이면 알림 시각을 계산할 수 없으므로 알림을 만들지 않습니다.
           if (
             subTask.isAlarm &&
+            subTask.endDate &&
             subTask.assigneeId &&
             subTask.assignee?.userId
           ) {
@@ -427,6 +433,9 @@ class TaskService {
     });
 
     for (const subTask of subTasks) {
+      // 마감일 미지정 세부 과제는 비교 대상에서 제외
+      if (!subTask.endDate) continue;
+
       // Date 객체끼리 비교
       if (new Date(subTask.endDate) > newDeadline) {
         throw new BadRequestError(
@@ -558,6 +567,7 @@ class TaskService {
               deadline: true,
             },
           },
+          assignee: { include: { user: { include: { alarmSetting: true } } } },
         },
       });
 
@@ -580,31 +590,72 @@ class TaskService {
         );
       }
 
-      const newDeadline = new Date(deadline);
-      const parentEndDate = new Date(existingTask.task.deadline);
+      // 마감일 미지정(null)으로 되돌리는 것도 허용합니다.
+      const newDeadline =
+        deadline === null || deadline === undefined || deadline === ""
+          ? null
+          : new Date(deadline);
+
+      if (newDeadline && Number.isNaN(newDeadline.getTime())) {
+        throw new BadRequestError(
+          "INVALID_DATE",
+          "유효하지 않은 날짜 형식입니다.",
+        );
+      }
 
       // 부모 태스크의 마감일을 초과하는지 확인
-      if (newDeadline > parentEndDate) {
-        const error = new Error("부모 Task의 마감일을 초과할 수 없습니다.");
-        error.statusCode = 400;
-        throw error;
+      if (newDeadline && existingTask.task.deadline) {
+        const parentEndDate = new Date(existingTask.task.deadline);
+        if (newDeadline > parentEndDate) {
+          const error = new Error("부모 Task의 마감일을 초과할 수 없습니다.");
+          error.statusCode = 400;
+          throw error;
+        }
       }
+
+      const parsedSubTaskId = parseInt(subTaskId);
 
       return await prisma.$transaction(async (tx) => {
         // 마감일 업데이트
         const updatedTask = await tx.subTask.update({
-          where: { id: parseInt(subTaskId) },
+          where: { id: parsedSubTaskId },
           data: {
             endDate: newDeadline,
             updatedAt: new Date(),
           },
         });
 
-        await alarmRepository.updateAlarmsForSubTaskDeadline(
-          parseInt(subTaskId),
-          newDeadline,
+        if (!newDeadline) {
+          // 마감일이 사라지면 알림 시각을 계산할 수 없으므로 기존 알림을 제거합니다.
+          await alarmRepository.deleteAlarmsBySubTaskIds([parsedSubTaskId], tx);
+          return updatedTask;
+        }
+
+        const existingAlarm = await taskRepository.findAlarmBySubTaskId(
+          parsedSubTaskId,
           tx,
         );
+
+        if (existingAlarm) {
+          await alarmRepository.updateAlarmsForSubTaskDeadline(
+            parsedSubTaskId,
+            newDeadline,
+            tx,
+          );
+        } else if (updatedTask.isAlarm && existingTask.assignee?.userId) {
+          // 마감일이 미지정이라 알림이 없던 세부 과제 → 마감일이 생겼으므로 알림을 새로 만듭니다.
+          const alarmHours =
+            existingTask.assignee.user?.alarmSetting?.taskAlarm ?? 24;
+
+          await alarmRepository.createSubTaskAlarm(
+            existingTask.assignee.userId,
+            updatedTask.taskId,
+            updatedTask.id,
+            updatedTask.title,
+            calculateAlarmDate(newDeadline, alarmHours),
+            tx,
+          );
+        }
 
         return updatedTask;
       });
@@ -754,9 +805,11 @@ class TaskService {
           include: { task: true },
         });
 
+        // 마감일이 미지정이면 알림 시각을 계산할 수 없으므로 알림을 만들지 않습니다.
         if (
           nextAssigneeMemberId != null &&
           updatedTask.isAlarm &&
+          updatedTask.endDate &&
           memberIdChanged
         ) {
           const newMember = await tx.member.findFirst({
@@ -1096,25 +1149,27 @@ class TaskService {
       );
     }
 
+    // 마감일은 선택 사항입니다. 값이 없으면 미지정(null)으로 생성됩니다.
     const endDateRaw = createData.endDate ?? createData.deadline;
-    const endDate =
-      endDateRaw instanceof Date
-        ? endDateRaw
-        : endDateRaw
-          ? calculateAlarmDate(
+    let endDate = null;
+    if (endDateRaw !== undefined && endDateRaw !== null && endDateRaw !== "") {
+      endDate =
+        endDateRaw instanceof Date
+          ? endDateRaw
+          : calculateAlarmDate(
               endDateRaw,
               member?.user?.alarmSetting?.taskAlarm,
-            )
-          : null;
-    if (!endDate || Number.isNaN(endDate.getTime())) {
-      throw new BadRequestError(
-        "SUBTASK_END_DATE_REQUIRED",
-        "세부 과제 마감일(deadline)이 필요합니다.",
-      );
+            );
+      if (Number.isNaN(endDate.getTime())) {
+        throw new BadRequestError(
+          "INVALID_DATE",
+          "유효하지 않은 날짜 형식입니다.",
+        );
+      }
     }
 
     // 부모 과제의 마감일이 설정되어 있으면, 세부 과제 마감일은 부모 마감일보다 늦을 수 없습니다.
-    if (parentTask.deadline) {
+    if (endDate && parentTask.deadline) {
       const parentDeadline = new Date(parentTask.deadline);
       if (
         isNaN(parentDeadline.getTime()) === false &&
@@ -1164,8 +1219,10 @@ class TaskService {
         tx,
       );
 
+      // 마감일이 미지정이면 알림 시각을 계산할 수 없으므로 알림을 만들지 않습니다.
       if (
         newSubTask.isAlarm &&
+        newSubTask.endDate &&
         newSubTask.assigneeId &&
         newSubTask.assignee?.userId
       ) {
@@ -1240,8 +1297,14 @@ class TaskService {
           tx,
         );
 
+        // 마감일이 미지정이면 알림 시각을 계산할 수 없어 alarmDate는 null로 둡니다.
+        // (아래에서 기존 알림이 있으면 제거되고, 마감일이 다시 생기면 알림도 다시 생성됩니다.)
         let alarmDate = null;
-        if (updatedSubTask.isAlarm && updatedSubTask.assigneeId) {
+        if (
+          updatedSubTask.isAlarm &&
+          updatedSubTask.endDate &&
+          updatedSubTask.assigneeId
+        ) {
           const alarmHours =
             updatedSubTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
 

@@ -25,11 +25,19 @@ class TaskHandler {
 
   buildUpdateSubTaskDeadlineParams({ userId, subTaskId, endDate }) {
     if (!subTaskId) {throw new BadRequestError("INVALID_SUBTASK_ID", "서브태스크 ID가 필요합니다.");}
-    if (!endDate) {throw new BadRequestError("INVALID_DATE", "마감일이 필요합니다.");}
-  
+
+    // 마감일은 미지정(null)으로 되돌릴 수 있습니다.
+    if (endDate === null || endDate === undefined || endDate === "") {
+      return {
+        subTaskId: Number(subTaskId),
+        endDate: null,
+        userId,
+      };
+    }
+
     const deadlineDate = new Date(endDate);
     if (isNaN(deadlineDate.getTime())) {throw new BadRequestError("INVALID_DATE", "유효하지 않은 날짜 형식입니다.");}
-  
+
     return {
       subTaskId: Number(subTaskId),
       endDate: deadlineDate,

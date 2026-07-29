@@ -6,6 +6,7 @@ import {
   updateTaskPrioritiesSchema,
   joinTaskSchema,
   addSubTaskSchema,
+  updateSubTaskDeadlineSchema,
   updateTeamMemberSchema,
   taskIdParamSchema,
 } from "../../src/validators/task.schema.js";
@@ -216,6 +217,59 @@ describe("addSubTaskSchema", () => {
       body: { title: "세부과제", endDate: "2026-12-31" },
     });
     expect(result.success).toBe(true);
+  });
+
+  it("deadline을 생략하면 마감일 미지정으로 통과한다", () => {
+    const result = addSubTaskSchema.safeParse({
+      params: { taskId: "1" },
+      body: { title: "세부과제" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("deadline이 null이면 마감일 미지정으로 통과한다", () => {
+    const result = addSubTaskSchema.safeParse({
+      params: { taskId: "1" },
+      body: { title: "세부과제", deadline: null },
+    });
+    expect(result.success).toBe(true);
+    expect(result.data.body.deadline).toBeNull();
+  });
+});
+
+describe("updateSubTaskDeadlineSchema", () => {
+  it("날짜 문자열을 통과시킨다", () => {
+    const result = updateSubTaskDeadlineSchema.safeParse({
+      params: { subTaskId: "10" },
+      body: { endDate: "2026-12-31" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("endDate가 null이면 마감일 미지정으로 통과한다", () => {
+    const result = updateSubTaskDeadlineSchema.safeParse({
+      params: { subTaskId: "10" },
+      body: { endDate: null },
+    });
+    expect(result.success).toBe(true);
+    expect(result.data.body.endDate).toBeNull();
+  });
+
+  it("endDate가 빈 문자열이면 null로 변환된다", () => {
+    const result = updateSubTaskDeadlineSchema.safeParse({
+      params: { subTaskId: "10" },
+      body: { endDate: "" },
+    });
+    expect(result.success).toBe(true);
+    expect(result.data.body.endDate).toBeNull();
+  });
+
+  it("endDate 필드 자체가 없으면 실패한다", () => {
+    const result = updateSubTaskDeadlineSchema.safeParse({
+      params: { subTaskId: "10" },
+      body: {},
+    });
+    expect(result.success).toBe(false);
   });
 });
 

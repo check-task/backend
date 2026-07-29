@@ -669,6 +669,22 @@ describe("PATCH /api/v1/task/subtask/:subTaskId/deadline — 세부 과제 마�
     expect(res.body.data).toMatchObject({ sub_task_id: 10 });
   });
 
+  it("200: endDate null → 마감일 미지정으로 변경되고 end_date가 null로 응답된다", async () => {
+    taskService.updateSubTaskDeadline.mockResolvedValue({
+      id: 10,
+      endDate: null,
+    });
+
+    const res = await supertest(app)
+      .patch("/api/v1/task/subtask/10/deadline")
+      .set("Authorization", AUTH)
+      .send({ endDate: null });
+
+    expect(res.status).toBe(200);
+    expect(res.body.resultType).toBe("SUCCESS");
+    expect(res.body.data).toMatchObject({ sub_task_id: 10, end_date: null });
+  });
+
   it("400: endDate 없음 → VALIDATION_ERROR", async () => {
     const res = await supertest(app)
       .patch("/api/v1/task/subtask/10/deadline")

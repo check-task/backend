@@ -296,6 +296,15 @@ class AlarmService {
         );
       }
 
+      // 마감일이 미지정이면 알림 시각을 계산할 수 없습니다.
+      // isAlarm 설정만 켜둔 채 알림 생성은 건너뛰고, 이후 마감일이 지정되면 그때 알림이 만들어집니다.
+      if (!updatedSubTask.endDate) {
+        await this.alarmRepository.deleteAlarmsBySubTaskIds([
+          updatedSubTask.id,
+        ]);
+        return updateSubtaskAlarmStatusDto(updatedSubTask);
+      }
+
       const alarmHours = subTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
       const alarmDate = calculateAlarmDate(updatedSubTask.endDate, alarmHours);
 
