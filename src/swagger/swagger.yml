@@ -3148,6 +3148,93 @@ paths:
                   reason: "서버 내부 오류가 발생했습니다."
                   data: null
 
+  # 팀과제 특정 팀원 프로필 조회
+  /api/v1/task/{taskId}/members/{userId}:
+    get:
+      tags:
+        - Task
+      summary: 팀과제 특정 팀원 프로필 조회
+      description: 팀 과제에 초대된 특정 팀원의 프로필 정보를 조회합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+          description: 과제 ID
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+          description: 팀원 유저 ID
+      responses:
+        '200':
+          description: 팀원 프로필 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "SUCCESS"
+                  message: "팀원 프로필 조회에 성공했습니다."
+                  data:
+                    nickname: "닉네임"
+                    phoneNum: "010-0000-0000"
+                    email: "test@test.ac.kr"
+                    profileImage: "https://example.com/profile.jpg"
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 401
+                  errorCode: "TOKEN_NOT_FOUND | TOKEN_EXPIRED | TOKEN_INVALID"
+                  reason: "인증 토큰이 없습니다. | 토큰이 만료되었습니다. | 토큰이 유효하지 않습니다."
+                  data: null
+        '403':
+          description: 권한 없음 (초대받지 않은 사용자)
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 403
+                  errorCode: "FORBIDDEN_TASK"
+                  reason: "해당 과제에 접근할 권한이 없습니다."
+                  data: null
+        '404':
+          description: 과제 또는 팀원을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 404
+                  errorCode: "TASK_NOT_FOUND | MEMBER_NOT_FOUND"
+                  reason: "존재하지 않는 과제입니다. | 해당 팀원을 찾을 수 없습니다."
+                  data: null
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  resultType: "FAIL"
+                  code: 500
+                  errorCode: "INTERNAL_SERVER_ERROR"
+                  reason: "서버 내부 오류가 발생했습니다."
+                  data: null
+
+
 
   # 댓글 관련 API
   /api/v1/task/subtask/{subTaskId}/comments:
@@ -5004,6 +5091,7 @@ paths:
           description: |
             - INVALID_EMAIL: 유효한 이메일 형식이 아님
             - EMAIL_DUPLICATE: 이미 가입된 이메일
+            - EMAIL_WITHDRAWN: 탈퇴한 회원의 이메일
             - CODE_ALREADY_SENT: 이미 발송된 인증코드가 있음 (2분 대기)
           content:
             application/json:
@@ -5012,8 +5100,8 @@ paths:
                 example:
                   resultType: "FAIL"
                   code: 400
-                  errorCode: "INVALID_EMAIL | EMAIL_DUPLICATE | CODE_ALREADY_SENT"
-                  reason: "유효한 이메일 형식이 아닙니다. | 이미 가입된 이메일입니다. | 이미 발송된 인증코드가 있습니다. 만료 후 다시 시도해 주세요."
+                  errorCode: "INVALID_EMAIL | EMAIL_DUPLICATE | EMAIL_WITHDRAWN | CODE_ALREADY_SENT"
+                  reason: "유효한 이메일 형식이 아닙니다. | 이미 가입된 이메일입니다. | 이메일 전송에 실패했습니다. | 이미 발송된 인증코드가 있습니다. 만료 후 다시 시도해 주세요."
                   data: null
         '500':
           description: EMAIL_SEND_FAILED - 이메일 발송 실패
@@ -5073,6 +5161,7 @@ paths:
             - INVALID_EMAIL: 유효한 이메일 형식이 아님
             - RESEND_TOO_SOON: 재발송 쿨다운 중 (2분 대기)
             - EMAIL_DUPLICATE: 이미 가입된 이메일
+            - EMAIL_WITHDRAWN: 탈퇴한 회원의 이메일
           content:
             application/json:
               schema:
@@ -5080,8 +5169,8 @@ paths:
                 example:
                   resultType: "FAIL"
                   code: 400
-                  errorCode: "INVALID_EMAIL | RESEND_TOO_SOON | EMAIL_DUPLICATE"
-                  reason: "유효한 이메일 형식이 아닙니다. | 2분 후에 재발송할 수 있습니다. | 이미 가입된 이메일입니다."
+                  errorCode: "INVALID_EMAIL | RESEND_TOO_SOON | EMAIL_DUPLICATE | EMAIL_WITHDRAWN"
+                  reason: "유효한 이메일 형식이 아닙니다. | 2분 후에 재발송할 수 있습니다. | 이미 가입된 이메일입니다. | 이메일 전송에 실패했습니다."
                   data: null
         '500':
           description: EMAIL_SEND_FAILED - 이메일 발송 실패
