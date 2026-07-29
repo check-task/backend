@@ -1153,13 +1153,7 @@ class TaskService {
     const endDateRaw = createData.endDate ?? createData.deadline;
     let endDate = null;
     if (endDateRaw !== undefined && endDateRaw !== null && endDateRaw !== "") {
-      endDate =
-        endDateRaw instanceof Date
-          ? endDateRaw
-          : calculateAlarmDate(
-              endDateRaw,
-              member?.user?.alarmSetting?.taskAlarm,
-            );
+      endDate = endDateRaw instanceof Date ? endDateRaw : new Date(endDateRaw);
       if (Number.isNaN(endDate.getTime())) {
         throw new BadRequestError(
           "INVALID_DATE",
