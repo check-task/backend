@@ -19,7 +19,7 @@ export class AuthController{
                 throw new UnauthorizedError("UNAUTHORIZED", "인증 정보가 없습니다.");
             }
             const provider = req.user.provider ?? null;
-
+            await this.commonAuthService.revokeAllUserTokens(req.user.id);
             // 추후 분기 없이 통합으로 수정 필요
             if (provider === null) {
                 await this.loginService.withdrawLocalUser(req.user.id);

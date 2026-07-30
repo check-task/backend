@@ -35,7 +35,7 @@ export class CommonAuthService {
       throw new BadRequestError("INVALID_REFRESH_TOKEN", "유효하지 않은 토큰입니다.");
     }
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({ where: { id: userId, deletedAt: null } });
     if (!user) {
       throw new BadRequestError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
     }
@@ -54,6 +54,25 @@ export class CommonAuthService {
     }
   }
   
+  // 회원 탈퇴 시 Refresh Token 폐기
+  async revokeAllUserTokens(userId) {
+    let cursor = "0";
+    const keysToDelete = [];
+    do {
+      const result = await redis.scan(cursor, "MATCH", "refresh_token:*", "COUNT", 100);
+      cursor = result[0];
+      for (const key of result[1]) {
+        const storedUserId = await redis.get(key);
+        if (storedUserId === String(userId)) {
+          keysToDelete.push(key);
+        }
+      }
+    } while (cursor !== "0");
+    if (keysToDelete.length > 0) {
+      await redis.del(...keysToDelete);
+    }
+  }
+
   // 탈퇴 회원 복구
   async restoreUser(restoreToken) {
     if (!restoreToken) {
