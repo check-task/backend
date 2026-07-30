@@ -11,6 +11,7 @@ import {
   saveRefreshToken as saveRefreshTokenUtil,
 } from "./token.service.js";
 import { createRemoteJWKSet, jwtVerify } from "jose";
+import { cidrv4 } from "zod";
 
 // 로그인 공통 서비스 로직
 export class CommonAuthService {
@@ -20,25 +21,25 @@ export class CommonAuthService {
 
   //Refresh Token 검증 및 Access Token 재발급
   async refreshAccessToken(refreshToken){
-    try{
-      const payload = jwt.verify(refreshToken, this.secret);
-      const { id: userId, tokenId } = payload;
-
-      const storedUserId = await redis.get(`refresh_token:${tokenId}`);
-
-      if (!storedUserId || storedUserId !== String(userId)) {
-        throw new BadRequestError("INVALID_REFRESH_TOKEN", "유효하지 않은 토큰입니다.");
-      }
-
-      const user = await prisma.user.findUnique({ where: { id: userId } });
-      if (!user) {
-        throw new BadRequestError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
-      }
-
-      return generateAccessTokenUtil(user);
-    }catch(err){
+    let payload;
+    try {
+      payload = jwt.verify(refreshToken, this.secret);
+    } catch {
       throw new BadRequestError("REFRESH_TOKEN_EXPIRED", "Refresh Token이 만료되었습니다.");
     }
+
+    const { id: userId, tokenId } = payload;
+
+    const storedUserId = await redis.get(`refresh_token:${tokenId}`);
+    if (!storedUserId || storedUserId !== String(userId)) {
+      throw new BadRequestError("INVALID_REFRESH_TOKEN", "유효하지 않은 토큰입니다.");
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new BadRequestError("USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
+    }
+    return generateAccessTokenUtil(user);
   }
 
   // 로그아웃 시 Refresh Token 폐기
@@ -60,14 +61,15 @@ export class CommonAuthService {
     }
 
     const userId = await redis.get(`restore_token:${restoreToken}`);
+    const parsedUserId = Number.parseInt(userId, 10);
 
-    if (!userId) {
+    if (!userId || Number.isNaN(parsedUserId)) {
       throw new BadRequestError("INVALID_TOKEN", "유효하지 않거나 만료된 토큰입니다.");
     }
 
     const user = await prisma.user.findFirst({
       where: {
-        id: parseInt(userId),
+        id: parsedUserId,
         deletedAt: { not: null },
       },
     });
@@ -113,24 +115,28 @@ export class CommonAuthService {
         },
       });
       console.log(`삭제 대상 유저 수: ${users.length}`);
+      const tokenKeysMap = new Map();
+      let cursor = "0";
+      do {
+        const result = await redis.scan(cursor, "MATCH", "refresh_token:*", "COUNT", 100);
+        cursor = result[0];
+        const keys = result[1];
+        for (const key of keys) {
+          const storedUserId = await redis.get(key);
+          if (storedUserId) {
+            const existing = tokenKeysMap.get(storedUserId) || [];
+            existing.push(key);
+            tokenKeysMap.set(storedUserId, existing);
+          }
+        }
+      } while (cursor !== "0");
+
       for (const user of users) {
         const userId = user.id
-        
-        // Redis SCAN으로 Refresh Token 정리
-        let cursor = "0";
-        do {
-          const result = await redis.scan(cursor, "MATCH", "refresh_token:*", "COUNT", 100);
-          cursor = result[0];
-          const keys = result[1];
-
-          for (const key of keys) {
-            const storedUserId = await redis.get(key);
-            if (storedUserId === String(userId)) {
-              await redis.del(key);
-            }
-          }
-        } while (cursor !== "0");
-
+        const keysToDelete = tokenKeysMap.get(String(userId)) || [];
+        if (keysToDelete.length > 0) {
+          await redis.del(...keysToDelete);
+        }
         // 카카오 연결 해제 (카카오 가입자에 한해)
         if (user.provider === "KAKAO" && user.providerId) {
           try {

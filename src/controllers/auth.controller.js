@@ -204,11 +204,18 @@ export class AuthController{
       const REDIRECT_URL_MAP = { local: process.env.FRONTEND_LOCAL, prod: process.env.FRONTEND_VERCEL };
       const redirectBaseUrl = REDIRECT_URL_MAP[state] ?? REDIRECT_URL_MAP["prod"];
 
+      if (!redirectBaseUrl) { return res.status(500).send("리다이렉트 URL이 설정되지 않았습니다."); }
+
       if (error || !code || !id_token) {
         return res.redirect(`${redirectBaseUrl}/login?status=failed`);
       }
 
-      const appleUser = appleUserJson ? JSON.parse(appleUserJson) : null;
+      let appleUser = null;
+      try {
+        appleUser = appleUserJson ? JSON.parse(appleUserJson) : null;
+      } catch {
+        appleUser = null;
+      }
       const result = await this.appleAuthService.handleAppleLogin(id_token, appleUser);
 
       // 탈퇴 회원 분기
