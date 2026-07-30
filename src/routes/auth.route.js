@@ -105,9 +105,15 @@ router.post(
 );
 
 // Apple 로그인
-router.post(
+router.get(
   "/apple", 
   authController.appleLogin.bind(authController)
+);
+
+// Apple 콜백
+router.post(
+  "/apple/callback",
+  authController.appleCallback.bind(authController)
 );
 
 export default router;
