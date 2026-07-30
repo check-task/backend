@@ -13,6 +13,7 @@ datasource db {
 //소셜로그인 Provider
 enum Provider {
   KAKAO
+  APPLE
   // 필요한 소셜 로그인 추가
 }
 
