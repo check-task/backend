@@ -37,20 +37,29 @@ class TaskHandler {
     };
   }
 
-  buildUpdateSubTaskAssigneeParams({ userId, subTaskId, assigneeId }) {
+  buildUpdateSubTaskAssigneeParams({ userId, subTaskId, assigneeId, assigneeIds }) {
     if (!subTaskId) {throw new BadRequestError("INVALID_SUBTASK_ID", "서브태스크 ID가 필요합니다.");}
   
     let normalizedAssigneeId = null;
     if (assigneeId !== undefined && assigneeId !== null && assigneeId !== "") {
       normalizedAssigneeId = Number(assigneeId);
   
-      if (isNaN(normalizedAssigneeId)) {throw new BadRequestError("INVALID_ASSIGNEE_ID", "유효하지 않은 담당자 ID입니다.");}
+      if (isNaN(normalizedAssigneeId)) {
+        throw new BadRequestError("INVALID_ASSIGNEE_ID", "유효하지 않은 담당자 ID입니다.");
+      }
     }
+
+    const normalizedAssigneeIds = Array.isArray(assigneeIds)
+      ? assigneeIds
+          .map((id) => Number(id))
+          .filter((id) => !Number.isNaN(id) && id > 0)
+      : undefined;
   
     return {
       subTaskId: Number(subTaskId),
       userId,
       assigneeId: normalizedAssigneeId,
+      assigneeIds: normalizedAssigneeIds,
     };
   }
 

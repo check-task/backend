@@ -93,9 +93,13 @@ class TaskRepository {
               },
               orderBy: { createdAt: 'asc' } // 오래된 순으로 정렬
             },
-            assignee: {
+            subTaskAssignees: {
               include: {
-                user: { select: { id: true, nickname: true, profileImage: true } }
+                member: {
+                  include: {
+                    user: { select: { id: true, nickname: true, profileImage: true } }
+                  }
+                }
               }
             },
             _count: {
@@ -292,25 +296,56 @@ class TaskRepository {
   async findSubTaskById(id, tx) {
     return await tx.subTask.findUnique({
       where: { id },
-      include: { assignee: true }
+      include: {
+        subTaskAssignees: {
+          include: {
+            member: {
+              include: {
+                user: {
+                  include: {
+                    alarmSetting: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
   }
 
   // 세부 과제 생성 
   async createSubTask(data, tx = prisma) {
     return await tx.subTask.create({
-      data,
-      include: {
-        assignee: {
-          include: {
-            user: {
-              include: {
-                alarmSetting: true
-              }
+      data: {
+        title: data.title,
+        endDate: data.endDate,
+        status: data.status ?? "PENDING",
+        isAlarm: data.isAlarm ?? true,
+        taskId: data.taskId,
+        ...(Array.isArray(data.assigneeMemberIds) && data.assigneeMemberIds.length > 0
+          ? {
+              subTaskAssignees: {
+                create: data.assigneeMemberIds.map((memberId) => ({ memberId })),
+              },
             }
-          }
-        }
-      }
+          : {}),
+      },
+      include: {
+        subTaskAssignees: {
+          include: {
+            member: {
+              include: {
+                user: {
+                  include: {
+                    alarmSetting: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -320,17 +355,31 @@ class TaskRepository {
       where: { id },
       data,
       include: {
-        assignee: {
+        subTaskAssignees: {
           include: {
-            user: {
+            member: {
               include: {
-                alarmSetting: true
-              }
-            }
-          }
-        }
-      }
+                user: {
+                  include: {
+                    alarmSetting: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
+  }
+
+  async replaceSubTaskAssignees(subTaskId, memberIds, tx = prisma) {
+    await tx.subTaskAssignee.deleteMany({ where: { subTaskId } });
+    if (!Array.isArray(memberIds) || memberIds.length === 0) {
+      return [];
+    }
+    const data = memberIds.map((memberId) => ({ subTaskId, memberId }));
+    await tx.subTaskAssignee.createMany({ data });
+    return data;
   }
   
   // 세부 과제 알림 찾기

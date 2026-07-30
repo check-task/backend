@@ -242,9 +242,13 @@ class AlarmService {
       where: { id: subTaskId },
       include: {
         task: { include: { members: true } },
-        assignee: {
+        subTaskAssignees: {
           include: {
-            user: { include: { alarmSetting: true } },
+            member: {
+              include: {
+                user: { include: { alarmSetting: true } },
+              },
+            },
           },
         },
       },
@@ -282,44 +286,32 @@ class AlarmService {
       );
     }
 
-    const notifyUserId =
-      subTask.assignee?.userId ??
-      (subTask.assigneeId != null
-        ? subTask.task.members.find((m) => m.id === subTask.assigneeId)?.userId
-        : null);
+    const assignments = subTask.subTaskAssignees || [];
+    const notifyAssignments = assignments.filter(
+      (assignment) => assignment.member?.user?.id != null,
+    );
 
     if (updatedSubTask.isAlarm === true) {
-      if (!updatedSubTask.assigneeId || !notifyUserId) {
+      if (notifyAssignments.length === 0) {
         throw new BadRequestError(
           "SUBTASK_NO_ASSIGNEE",
           "담당자가 지정된 세부과제만 알림을 켤 수 있습니다.",
         );
       }
 
-      const alarmHours = subTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
-      const alarmDate = calculateAlarmDate(updatedSubTask.endDate, alarmHours);
+      await this.alarmRepository.deleteAlarmsBySubTaskIds([updatedSubTask.id]);
 
-      const existingAlarm = await prisma.userAlarm.findFirst({
-        where: { subTaskId: updatedSubTask.id, type: AlarmType.SUBTASK },
-      });
+      for (const assignment of notifyAssignments) {
+        const assignee = assignment.member;
+        const alarmHours =
+          assignee.user?.alarmSetting?.taskAlarm ?? 24;
+        const alarmDate = calculateAlarmDate(
+          updatedSubTask.endDate,
+          alarmHours,
+        );
 
-      const alarmContent = `'현재 ${subTask?.status === "COMPLETED" ? "완료" : "진행 중"} 상태에요. 빨리 끝내고 쉬어요!`;
-      const alarmTitle = `'${updatedSubTask.title}'의 마감까지 ${alarmHours}시간 남았어요!`;
-
-      if (existingAlarm && existingAlarm.userId === notifyUserId) {
-        await this.alarmRepository.updateAlarm(existingAlarm.id, {
-          title: alarmTitle,
-          alarmContent,
-          alarmDate,
-        });
-      } else {
-        if (existingAlarm) {
-          await this.alarmRepository.deleteAlarmsBySubTaskIds([
-            updatedSubTask.id,
-          ]);
-        }
         await this.alarmRepository.createSubTaskAlarm(
-          notifyUserId,
+          assignee.user.id,
           updatedSubTask.taskId,
           updatedSubTask.id,
           updatedSubTask.title,

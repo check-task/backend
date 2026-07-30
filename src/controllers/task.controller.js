@@ -286,12 +286,13 @@ class TaskController {
   async setSubTaskAssignee(req, res, next) {
     try {
       const { subTaskId } = req.params;
-      const { assigneeId } = req.body;
+      const { assigneeId, assigneeIds } = req.body;
       const userId = req.user.id;
 
       const result = await taskService.setSubTaskAssignee(
         subTaskId,
         assigneeId,
+        assigneeIds,
         userId,
       );
 
@@ -300,7 +301,7 @@ class TaskController {
         message: "담당자가 지정되었습니다.",
         data: {
           sub_task_id: result.subTaskId,
-          assignee_id: result.assigneeId,
+          assignees: result.assignees || [],
         },
       });
     } catch (error) {
