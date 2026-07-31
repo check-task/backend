@@ -279,7 +279,7 @@ describe("updateSubTaskDeadline — 마감일 해제/재지정", () => {
       title: "세부과제",
       isAlarm: true,
       endDate: new Date(Date.UTC(2026, 5, 20)),
-      task: { deadline: new Date(Date.UTC(2026, 6, 1)) },
+      task: { deadline: new Date(Date.UTC(2026, 11, 31)) },
       assignee: { userId: 7, user: { alarmSetting: { taskAlarm: 5 } } },
       ...overrides,
     });
