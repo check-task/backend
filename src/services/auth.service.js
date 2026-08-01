@@ -414,9 +414,9 @@ export class AppleAuthService {
       const sub = payload.sub; // Apple -> Provider ID
       // 이메일은 최초 로그인 시 payload에 있거나 appleUser로 전달됨
       const email = payload.email ?? appleUser?.email ?? null;
-      const nickname = appleUser?.name?.firstName // 최초 로그인 시에만 이름 제공 없으면 Apple 유저 고용
-        ? `${appleUser.name.firstName}${appleUser.name.lastName ?? ""}`
-        : "Apple유저";
+      const nickname = (appleUser?.name?.lastName && appleUser?.name?.firstName) // 최초 로그인 시에만 이름 제공 없으면 Apple 유저
+        ? `${appleUser.name.lastName}${appleUser.name.firstName}`
+        : "Apple 유저";
 
       let isNewUser = false;
 
