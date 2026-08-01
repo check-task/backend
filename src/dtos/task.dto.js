@@ -146,7 +146,9 @@ export class TaskRequestDTO {
     }
     const endDateRaw = data.endDate !== undefined ? data.endDate : data.deadline;
     if (endDateRaw !== undefined) {
-      result.endDate = new Date(endDateRaw);
+      // null / 빈 문자열이면 마감일 미지정으로 되돌립니다.
+      result.endDate =
+        endDateRaw === null || endDateRaw === "" ? null : new Date(endDateRaw);
     }
     if (data.isAlarm !== undefined) {
       result.isAlarm = Boolean(data.isAlarm);

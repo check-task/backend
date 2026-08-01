@@ -274,7 +274,9 @@ class TaskController {
         message: "마감 기한이 변경되었습니다.",
         data: {
           sub_task_id: updatedTask.id,
-          end_date: updatedTask.endDate.toISOString().split("T")[0],
+          end_date: updatedTask.endDate
+            ? updatedTask.endDate.toISOString().split("T")[0]
+            : null,
         },
       });
     } catch (error) {

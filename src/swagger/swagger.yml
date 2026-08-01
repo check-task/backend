@@ -2204,6 +2204,7 @@ paths:
         특정 과제 내에 세부 과제를 하나 추가합니다.
         - 상태(status): PENDING 자동 지정
         - 담당자(assigneeId): 팀 과제는 NULL, 개인 과제는 본인 자동 지정
+        - 마감일(deadline): 선택 사항. 생략하거나 null이면 마감일 미지정으로 생성되며, 이 경우 마감 알림은 생성되지 않습니다.
       security:
         - bearerAuth: []
       parameters:
@@ -2218,7 +2219,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [title, deadline]
+              required: [title]
               properties:
                 title:
                   type: string
@@ -2226,6 +2227,8 @@ paths:
                 deadline:
                   type: string
                   format: date
+                  nullable: true
+                  description: 마감일. 생략하거나 null이면 마감일 미지정으로 생성됩니다.
                   example: "2026-05-30"
                 isAlarm:
                   type: boolean
@@ -2572,7 +2575,10 @@ paths:
       tags:
         - Task
       summary: 세부 TASK 마감일 변경
-      description: 세부 TASK의 마감일을 변경합니다. 부모 Task의 마감일을 초과할 수 없습니다.
+      description: |
+        세부 TASK의 마감일을 변경합니다. 부모 Task의 마감일을 초과할 수 없습니다.
+        endDate를 null로 보내면 마감일 미지정 상태로 되돌아가며, 해당 세부 TASK의 마감 알림도 함께 삭제됩니다.
+        미지정 상태에서 마감일을 다시 지정하면 알림이 자동으로 재생성됩니다.
       security:
         - bearerAuth: []
       parameters:
@@ -2594,7 +2600,8 @@ paths:
                 endDate:
                   type: string
                   format: date
-                  description: 변경할 마감일 (YYYY-MM-DD 형식)
+                  nullable: true
+                  description: 변경할 마감일 (YYYY-MM-DD 형식). null이면 마감일 미지정으로 되돌립니다.
                   example: "2026-01-31"
       responses:
         '200':
@@ -2619,6 +2626,8 @@ paths:
                       end_date:
                         type: string
                         format: date
+                        nullable: true
+                        description: 변경된 마감일. 미지정 상태이면 null입니다.
                         example: "2026-01-31"
         '400':
           description: 부모 Task의 마감일을 초과할 수 없습니다.
@@ -4570,14 +4579,14 @@ paths:
         '401':
           description: "카카오 토큰 만료 또는 위조 (INVALID_KAKAO_TOKEN)"
   
-  # 로그아웃 (자체/카카오 공용)
+  # 로그아웃 (자체/카카오/애플 공용)
   /api/v1/auth/logout:
     post:
       tags:
         - Auth
-      summary: 로그아웃
+      summary: 통합 로그아웃
       description: |
-        자체 로그인 및 카카오 로그인 사용자 모두의 로그아웃을 처리합니다.
+        자체 로그인 및 소셜 로그인 사용자 모두의 로그아웃을 처리합니다.
         Refresh Token을 폐기하여 이후 Access Token 재발급을 차단하며, refreshToken 쿠키도 제거됩니다.
 
         해당 API는 Access Token 인증을 사용하지 않으며,
@@ -4620,12 +4629,13 @@ paths:
     delete:
       tags:
         - Auth
-      summary: 회원 탈퇴 (통합)
+      summary: 통합 회원 탈퇴
       description: |
         자체 회원 및 카카오 회원 모두 사용하는 통합 회원 탈퇴 API.
         JWT 토큰의 provider 값에 따라 자동 분기된다.
         - provider null (자체 회원): Refresh Token 즉시 폐기 및 쿠키 삭제.
         - provider "KAKAO": soft-delete 처리. 스케줄러가 7일 후 영구 삭제 및 카카오 연동 해제.
+        - provider "APPLE": soft-delete 처리. 스케줄러가 7일 후 영구 삭제. (Apple 연동 해제는 추후 구현 예정)
         탈퇴 후 7일 이내 복구 가능.
       security:
         - bearerAuth: []
@@ -4685,82 +4695,6 @@ paths:
                   reason: "회원 탈퇴 처리 중 오류가 발생했습니다."
                   data: null
 
-  # @deprecated — /api/v1/auth/withdraw 사용 권장
-  /api/v1/auth/kakao/unlink:
-    delete:
-      tags:
-        - Auth
-      summary: "[deprecated] 카카오 회원탈퇴 - /api/v1/auth/withdraw 사용 권장"
-      description: |
-        카카오 0Atuh를 통해 로그인한 사용자의 회원 탈퇴를 처리한다.
-        탈퇴 요청 시 즉시 삭제되지 않으며, deleted_at이 현재 시각으로 업데이트 된다.
-        탈퇴 후 7일이 지난 계정은 스케줄러에 의해 DB에서 영구적으로 삭제 및 카카오 연동 해제된다.
-        탈퇴 후 7일 이내에는 재로그인 시 계정 복구가 가능하다.
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: false
-      responses:
-        '200':
-          description: 회원 탈퇴 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  message:
-                    type: string
-                    example: "카카오 회원 탈퇴가 완료되었습니다."
-                  data:
-                    type: "null"
-                    example: null
-
-        '400':
-          description: |
-            - INVALID_USER: 유효하지 않은 사용자
-            - ALREADY_WITHDRAWN: 이미 탈퇴 처리된 사용자
-          content:
-            application/json:
-              schema:
-                type: object
-                example:
-                  resultType: "FAIL"
-                  code: 400
-                  errorCode: "INVALID_USER | ALREADY_WITHDRAWN"
-                  reason: "유효하지 않은 사용자입니다. | 이미 탈퇴 처리된 사용자입니다."
-                  data: null
-
-        '401':
-          description: |
-            - UNAUTHORIZED: 인증 정보 없음 또는 유효하지 않은 토큰
-          content:
-            application/json:
-              schema:
-                type: object
-                example:
-                  resultType: "FAIL"
-                  code: 401
-                  errorCode: "UNAUTHORIZED"
-                  reason: "인증 정보가 없습니다"
-                  data: null
-
-        '500':
-          description: |
-            - USER_WITHDRAW_FAILED: 회원 탈퇴 처리 중 오류
-          content:
-            application/json:
-              schema:
-                type: object
-                example:
-                  resultType: "FAIL"
-                  code: 500
-                  errorCode: "USER_WITHDRAW_FAILED"
-                  reason: "회원 탈퇴 처리 중 오류가 발생했습니다"
-                  data: null
-  
   # 탈퇴 계정 복구
   /api/v1/auth/restore:
     post:
@@ -5974,78 +5908,27 @@ paths:
                   data: null
   # 애플 연동하기
   /api/v1/auth/apple:
-    post:
+    get:
       tags:
         - Auth
       summary: Apple 연동하기
       description: |
-        - Apple SDK에서 발급된 Identity Token을 검증하여 로그인 또는 신규 회원가입을 진행한다.
-        - 이름/이메일은 최초 로그인 시에만 Apple이 제공하며, user 필드는 선택값이다.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - identityToken
-              properties:
-                identityToken:
-                  type: string
-                  description: Apple SDK에서 발급한 JWT
-                  example: "eyJraWQiOiJXNldjT0tCIiwiYWxnIjoiUlMyNTYifQ..."
-                user:
-                  type: object
-                  description: 최초 로그인 시에만 Apple이 제공 (이후 로그인 시 없음)
-                  properties:
-                    email:
-                      type: string
-                      example: "abc@privaterelay.appleid.com"
-                    name:
-                      type: object
-                      properties:
-                        firstName:
-                          type: string
-                          example: "길동"
-                        lastName:
-                          type: string
-                          example: "홍"
+        Apple OAuth 로그인 페이지로 리다이렉트합니다.
+        state 파라미터로 로컬/배포 환경을 구분하며, 콜백 후 해당 환경의 프론트엔드로 리다이렉트됩니다.
+      parameters:
+        - in: query
+          name: state
+          schema:
+            type: string
+            enum: [local, prod]
+            default: prod
+          required: false
+          description: 환경 구분값 (기본값 prod)
       responses:
-        '200':
-          description: 로그인 성공
-          content:
-            application/json:
-              schema:
-                type: object
-              examples:
-                로그인_성공:
-                  summary: 일반 로그인
-                  value:
-                    resultType: "SUCCESS"
-                    message: "Apple 로그인이 완료되었습니다."
-                    data:
-                      accessToken: "eyJhbGciOiJIUzI1NiIs..."
-                      accessTokenExpireIn: 3600
-                      isNewUser: false
-                신규_회원가입:
-                  summary: 신규 회원 (약관 동의 필요)
-                  value:
-                    resultType: "SUCCESS"
-                    message: "Apple 로그인이 완료되었습니다."
-                    data:
-                      accessToken: "eyJhbGciOiJIUzI1NiIs..."
-                      accessTokenExpireIn: 3600
-                      isNewUser: true 
-                탈퇴_계정:
-                  summary: 탈퇴 처리된 계정
-                  value:
-                    resultType: "SUCCESS"
-                    message: "탈퇴 처리된 계정입니다. 복구 토큰을 사용해 복구할 수 있습니다."
-                    data:
-                      withdrawnUser: true
-                      restoreToken: "550e8400-e29b-41d4-a716-446655440000"
+        '302':
+          description: Apple OAuth 페이지로 리다이렉트
         '400':
-          description: identityToken 누락
+          description: 잘못된 state 값
           content:
             application/json:
               schema:
@@ -6053,9 +5936,63 @@ paths:
                 example:
                   resultType: "FAIL"
                   code: 400
-                  errorCode: "TOKEN_REQUIRED"
-                  reason: "identityToken이 필요합니다."
+                  errorCode: "INVALID_STATE"
+                  reason: "잘못된 state값입니다."
                   data: null
+
+  # 애플 콜백
+  /api/v1/auth/apple/callback:
+    post:
+      tags:
+        - Auth
+      summary: Apple 콜백
+      description: |
+        Apple이 form_post 방식으로 전달하는 콜백을 처리합니다.
+        로그인 성공 시 refreshToken을 HttpOnly 쿠키에 저장하고 프론트엔드로 리다이렉트합니다.
+
+        리다이렉트 결과:
+        - 로그인 성공: /auth/apple/callback?isNewUser=false
+        - 신규 가입 (약관 동의 필요): /auth/apple/callback?isNewUser=true
+        - 탈퇴 계정: /login?status=withdrawn&token={restoreToken}
+        - 로그인 실패: /login?status=failed
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - code
+                - id_token
+              properties:
+                code:
+                  type: string
+                  description: Apple 인증 코드
+                  example: "c1234abc..."
+                id_token:
+                  type: string
+                  description: Apple Identity Token (JWT)
+                  example: "eyJraWQiOiJXNldjT0tCIiwiYWxnIjoiUlMyNTYifQ..."
+                user:
+                  type: string
+                  description: |
+                    <선택>
+                    최초 로그인 시에만 Apple이 전달하는 사용자 정보 (JSON 문자열)
+                    이후 로그인에서는 전달되지 않음
+                  example: '{"name":{"firstName":"길동","lastName":"홍"},"email":"abc@privaterelay.appleid.com"}'
+                state:
+                  type: string
+                  description: <선택> 연동 요청 시 전달한 state 값
+                  example: "prod"
+                error:
+                  type: string
+                  description: <선택>사용자가 로그인 취소 시 Apple이 전달하는 에러값
+                  example: "user_cancelled_authorize"
+      responses:
+        '302':
+          description: |
+            처리 결과에 따라 프론트엔드로 리다이렉트
+            - 성공 시 refreshToken이 HttpOnly 쿠키(14일)에 저장됨
         '401':
           description: 유효하지 않은 Apple 토큰
           content:

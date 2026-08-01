@@ -16,7 +16,8 @@ const jsonArray = (inner) =>
 
 const subTaskSchema = z.object({
   title: z.string().trim().min(1, "세부 과제 제목은 필수입니다."),
-  endDate: z.string().optional(),
+  // 마감일은 선택 사항 — 생략하거나 null이면 미지정으로 생성됩니다.
+  endDate: z.string().nullable().optional(),
   status: z.enum(["PENDING", "COMPLETED"]).optional(),
   /** 해당 과제 멤버의 User.id */
   assigneeId: z.coerce.number().int().positive().optional(),
@@ -134,7 +135,8 @@ export const addSubTaskSchema = z.object({
   }),
   body: z.object({
     title: z.string().trim().min(1, "세부 과제 제목은 필수입니다."),
-    deadline: z.string().optional(),
+    // 마감일은 선택 사항 — 생략하거나 null이면 미지정으로 생성됩니다.
+    deadline: z.string().nullable().optional(),
     isAlarm: z.boolean().optional(),
     /** 담당자 User.id (서버에서 Member.id로 변환) */
     assigneeId: z.coerce.number().int().positive().optional(),
@@ -159,9 +161,11 @@ export const updateSubTaskDeadlineSchema = z.object({
     subTaskId: idParam,
   }),
   body: z.object({
-    endDate: z
-      .string({ required_error: "마감일은 필수입니다." })
-      .min(1, "마감일은 빈 값일 수 없습니다."),
+    // null / 빈 문자열이면 마감일 미지정으로 되돌립니다.
+    endDate: z.preprocess(
+      (val) => (val === "" ? null : val),
+      z.string().min(1).nullable(),
+    ),
   }),
 });
 
@@ -219,8 +223,9 @@ export const patchSubTaskSchema = z.object({
       z.object({
         subTaskId: z.union([z.string().regex(/^\d+$/), z.number()]),
         title: z.string().optional(),
-        deadline: z.string().optional(),
-        endDate: z.string().optional(),
+        // null이면 마감일 미지정으로 되돌립니다.
+        deadline: z.string().nullable().optional(),
+        endDate: z.string().nullable().optional(),
         isAlarm: z.boolean().optional(),
         status: z.enum(["COMPLETED", "PENDING"]).optional(),
       })
