@@ -2258,6 +2258,14 @@ paths:
                     errorCode: "INVALID_DEADLINE"
                     reason: "세부 과제의 마감일은 부모 과제의 마감일보다 늦을 수 없습니다."
                     data: null
+                task_deadline_expired:
+                  summary: "부모 과제의 마감일이 이미 지난 경우"
+                  value:
+                    resultType: "FAIL"
+                    code: 400
+                    errorCode: "TASK_DEADLINE_EXPIRED"
+                    reason: "이미 마감일이 지난 과제에는 세부 과제를 추가할 수 없습니다."
+                    data: null
                 subtask_end_date_required:
                   summary: "세부 과제 마감일이 전달되지 않은 경우"
                   value:
@@ -2630,15 +2638,26 @@ paths:
                         description: 변경된 마감일. 미지정 상태이면 null입니다.
                         example: "2026-01-31"
         '400':
-          description: 부모 Task의 마감일을 초과할 수 없습니다.
+          description: 마감일 설정 오류
           content:
             application/json:
-              example:
-                resultType: "FAIL"
-                code: 400
-                errorCode: "INTERNAL_SERVER_ERROR"
-                reason: "부모 Task의 마감일을 초과할 수 없습니다."
-                data: null
+              examples:
+                invalid_deadline:
+                  summary: "부모 Task의 마감일을 초과하는 경우"
+                  value:
+                    resultType: "FAIL"
+                    code: 400
+                    errorCode: "INVALID_DEADLINE"
+                    reason: "부모 Task의 마감일을 초과할 수 없습니다."
+                    data: null
+                task_deadline_expired:
+                  summary: "부모 과제의 마감일이 이미 지난 경우"
+                  value:
+                    resultType: "FAIL"
+                    code: 400
+                    errorCode: "TASK_DEADLINE_EXPIRED"
+                    reason: "이미 마감일이 지난 과제의 세부 과제 마감일은 변경할 수 없습니다."
+                    data: null
         '403':
           description: 권한 없음
           content:
@@ -2992,6 +3011,27 @@ paths:
                           deadline:
                             type: string
                             format: date-time
+          '400':
+            description: 마감일 설정 오류
+            content:
+              application/json:
+                examples:
+                  invalid_deadline:
+                    summary: "세부 과제 마감일이 부모 마감일을 초과하는 경우"
+                    value:
+                      resultType: "FAIL"
+                      code: 400
+                      errorCode: "INVALID_DEADLINE"
+                      reason: "세부 과제의 마감일은 부모 과제의 마감일보다 늦을 수 없습니다."
+                      data: null
+                  task_deadline_expired:
+                    summary: "부모 과제의 마감일이 이미 지난 경우"
+                    value:
+                      resultType: "FAIL"
+                      code: 400
+                      errorCode: "TASK_DEADLINE_EXPIRED"
+                      reason: "이미 마감일이 지난 과제의 세부 과제 마감일은 변경할 수 없습니다."
+                      data: null
           '404':
             description: 세부 과제가 존재하지 않습니다.
             content:
