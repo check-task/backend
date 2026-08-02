@@ -552,6 +552,7 @@ export class AppleAuthService {
       throw new InternalServerError("INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다.");
     }
     }
+
     // 애플 회원 탈퇴
     async withdrawAppleUser(user) {
     if (!user) {
@@ -565,6 +566,15 @@ export class AppleAuthService {
         where: { id: user.id },
         data: { deletedAt: new Date() },
       });
+
+      const appleRefreshToken = await redis.get(`apple_refresh_token:${user.id}`);
+      if (appleRefreshToken) {
+        const DELETE_AFTER_DAYS = Number(process.env.DELETE_AFTER_DAYS || 7);
+        await redis.expire(
+          `apple_refresh_token:${user.id}`,
+          (DELETE_AFTER_DAYS + 1) * 24 * 60 * 60
+        );
+      }
     } catch (error) {
       throw new InternalServerError("USER_WITHDRAW_FAILED", "회원 탈퇴 처리 중 오류가 발생했습니다.");
     }
