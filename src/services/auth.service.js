@@ -539,8 +539,8 @@ export class AppleAuthService {
               (DELETE_AFTER_DAYS + 1) * 24 * 60 * 60
             );
           }
-        } catch (err) {
-          console.warn(`Apple token 교환 실패 (userId: ${user.id})`, err.message);
+        } catch (error) {
+          console.warn(`Apple token 교환 실패 (userId: ${user.id})`, error.message);
         }
       }
 
@@ -566,7 +566,12 @@ export class AppleAuthService {
         where: { id: user.id },
         data: { deletedAt: new Date() },
       });
+    } catch (error) {
+      throw new InternalServerError("USER_WITHDRAW_FAILED", "회원 탈퇴 처리 중 오류가 발생했습니다.");
+    }
 
+    // Redis TTL 갱신 실패해도 탈퇴는 성공 처리
+    try {
       const appleRefreshToken = await redis.get(`apple_refresh_token:${user.id}`);
       if (appleRefreshToken) {
         const DELETE_AFTER_DAYS = Number(process.env.DELETE_AFTER_DAYS || 7);
@@ -576,8 +581,7 @@ export class AppleAuthService {
         );
       }
     } catch (error) {
-      throw new InternalServerError("USER_WITHDRAW_FAILED", "회원 탈퇴 처리 중 오류가 발생했습니다.");
+      console.warn(`애플 탈퇴 Redis TTL 갱신 실패 (userId: ${user.id})`, error.message);
     }
   }
-
 }
