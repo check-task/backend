@@ -10,8 +10,7 @@ import {
   generateRefreshToken as generateRefreshTokenUtil,
   saveRefreshToken as saveRefreshTokenUtil,
 } from "./token.service.js";
-import { createRemoteJWKSet, jwtVerify } from "jose";
-import { cidrv4 } from "zod";
+import { createRemoteJWKSet, importPKCS8, jwtVerify, SignJWT } from "jose";
 
 // 로그인 공통 서비스 로직
 export class CommonAuthService {
@@ -121,10 +120,8 @@ export class CommonAuthService {
   // 만료된 사용자 삭제
   async deleteExpiredUsers() {
     try {
-      const DELETE_AFTER_DAYS = Number(process.env.DELETE_AFTER_DAYS || 7); //DB 삭제 기준 = 일주일
-      
+      const DELETE_AFTER_DAYS = Number(process.env.DELETE_AFTER_DAYS || 7); //DB 삭제 기준 = 일주일  
       const deleteThresholdDate = new Date(Date.now() - DELETE_AFTER_DAYS * 24 * 60 * 60 * 1000);
-
       const users = await prisma.user.findMany({
         where: {
           deletedAt: {
@@ -133,7 +130,9 @@ export class CommonAuthService {
           },
         },
       });
+
       console.log(`삭제 대상 유저 수: ${users.length}`);
+
       const tokenKeysMap = new Map();
       let cursor = "0";
       do {
@@ -156,6 +155,7 @@ export class CommonAuthService {
         if (keysToDelete.length > 0) {
           await redis.del(...keysToDelete);
         }
+
         // 카카오 연결 해제 (카카오 가입자에 한해)
         if (user.provider === "KAKAO" && user.providerId) {
           try {
@@ -168,6 +168,31 @@ export class CommonAuthService {
             console.warn(`카카오 연동 해제 실패 (userId: ${user.id})`, err.response?.data ?? err.message);
           }
         }
+
+        // 애플 연결 해제 (애플 가입자에 한해)
+        if (user.provider === "APPLE") {
+          const appleRefreshToken = await redis.get(`apple_refresh_token:${user.id}`);
+          if (appleRefreshToken) {
+            try {
+              const appleService = new AppleAuthService();
+              const clientSecret = await appleService.generateAppleClientSecret();
+              await axios.post(
+                'https://appleid.apple.com/auth/revoke',
+                new URLSearchParams({
+                  client_id: process.env.APPLE_CLIENT_ID,
+                  client_secret: clientSecret,
+                  token: appleRefreshToken,
+                  token_type_hint: 'refresh_token',
+                }),
+                { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+              );
+              await redis.del(`apple_refresh_token:${user.id}`);
+            } catch(err) {
+              console.warn(`애플 연동 해제 실패 (userId: ${user.id})`, err.message);
+            }
+          }
+        }
+
         await prisma.$transaction(async (tx) => {
           await tx.comment.deleteMany({ where: { userId } });
           await tx.userAlarm.deleteMany({ where: { userId } });
@@ -381,6 +406,38 @@ export class AppleAuthService {
     return `https://appleid.apple.com/auth/authorize?${params.toString()}`;
   }
 
+  // 애플 Client_secret JWT 생성
+  async generateAppleClientSecret() {
+    const privateKey = Buffer.from(process.env.APPLE_PRIVATE_KEY, 'base64').toString('utf-8');
+    const key = await importPKCS8(privateKey, 'ES256');
+    
+    return new SignJWT({})
+      .setProtectedHeader({ alg: 'ES256', kid: process.env.APPLE_KEY_ID })
+      .setIssuer(process.env.APPLE_TEAM_ID)
+      .setIssuedAt()
+      .setExpirationTime('180d')
+      .setAudience('https://appleid.apple.com')
+      .setSubject(process.env.APPLE_CLIENT_ID)
+      .sign(key);
+  }
+
+  // code → Apple refresh_token 교환
+  async exchangeCodeForTokens(code) {
+    const clientSecret = await this.generateAppleClientSecret();
+    const response = await axios.post(
+      'https://appleid.apple.com/auth/token',
+      new URLSearchParams({
+        client_id: process.env.APPLE_CLIENT_ID,
+        client_secret: clientSecret,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: process.env.APPLE_REDIRECT_URI,
+      }),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
+    return response.data;
+  }
+
   // 토큰 검증
   async verifyAppleToken(identityToken) {
     try {
@@ -406,7 +463,7 @@ export class AppleAuthService {
   }
 
   // Apple 로그인 처리
-  async handleAppleLogin(identityToken, appleUser) {
+  async handleAppleLogin(identityToken, appleUser, code) {
     try {
       const payload = await this.verifyAppleToken(identityToken);
 
@@ -468,6 +525,24 @@ export class AppleAuthService {
       const { refreshToken, tokenId } = generateRefreshTokenUtil(user);
       // Redis에 저장
       await saveRefreshTokenUtil(tokenId, user.id);
+      
+      // Redis 저장 (탈퇴 후 연동 해제용, TTL 8일)
+      if (code) {
+        try {
+          const appleTokens = await this.exchangeCodeForTokens(code);
+          if (appleTokens.refresh_token) {
+            const DELETE_AFTER_DAYS = Number(process.env.DELETE_AFTER_DAYS || 7);
+            await redis.set(
+              `apple_refresh_token:${user.id}`,
+              appleTokens.refresh_token,
+              'EX',
+              (DELETE_AFTER_DAYS + 1) * 24 * 60 * 60
+            );
+          }
+        } catch (error) {
+          console.warn(`Apple token 교환 실패 (userId: ${user.id})`, error.message);
+        }
+      }
 
       return { user, accessToken, refreshToken, isNewUser };
     } catch (error) {
@@ -477,6 +552,7 @@ export class AppleAuthService {
       throw new InternalServerError("INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다.");
     }
     }
+
     // 애플 회원 탈퇴
     async withdrawAppleUser(user) {
     if (!user) {
@@ -493,6 +569,19 @@ export class AppleAuthService {
     } catch (error) {
       throw new InternalServerError("USER_WITHDRAW_FAILED", "회원 탈퇴 처리 중 오류가 발생했습니다.");
     }
-  }
 
+    // Redis TTL 갱신 실패해도 탈퇴는 성공 처리
+    try {
+      const appleRefreshToken = await redis.get(`apple_refresh_token:${user.id}`);
+      if (appleRefreshToken) {
+        const DELETE_AFTER_DAYS = Number(process.env.DELETE_AFTER_DAYS || 7);
+        await redis.expire(
+          `apple_refresh_token:${user.id}`,
+          (DELETE_AFTER_DAYS + 1) * 24 * 60 * 60
+        );
+      }
+    } catch (error) {
+      console.warn(`애플 탈퇴 Redis TTL 갱신 실패 (userId: ${user.id})`, error.message);
+    }
+  }
 }

@@ -216,7 +216,7 @@ export class AuthController{
       } catch {
         appleUser = null;
       }
-      const result = await this.appleAuthService.handleAppleLogin(id_token, appleUser);
+      const result = await this.appleAuthService.handleAppleLogin(id_token, appleUser, code);
 
       // 탈퇴 회원 분기
       if (result.withdrawnUser) {
