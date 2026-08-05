@@ -4675,7 +4675,7 @@ paths:
         JWT 토큰의 provider 값에 따라 자동 분기된다.
         - provider null (자체 회원): Refresh Token 즉시 폐기 및 쿠키 삭제.
         - provider "KAKAO": soft-delete 처리. 스케줄러가 7일 후 영구 삭제 및 카카오 연동 해제.
-        - provider "APPLE": soft-delete 처리. 스케줄러가 7일 후 영구 삭제. (Apple 연동 해제는 추후 구현 예정)
+        - provider "APPLE": soft-delete 처리. 스케줄러가 7일 후 영구 삭제 및 애플 연동 해제.
         탈퇴 후 7일 이내 복구 가능.
       security:
         - bearerAuth: []
