@@ -605,7 +605,11 @@ class TaskService {
               deadline: true,
             },
           },
-          assignee: { include: { user: { include: { alarmSetting: true } } } },
+          subTaskAssignees: {
+            include: {
+              member: { include: { user: { include: { alarmSetting: true } } } },
+            },
+          },
         },
       });
 
@@ -688,19 +692,24 @@ class TaskService {
             newDeadline,
             tx,
           );
-        } else if (updatedTask.isAlarm && existingTask.assignee?.userId) {
+        } else if (updatedTask.isAlarm) {
           // 마감일이 미지정이라 알림이 없던 세부 과제 → 마감일이 생겼으므로 알림을 새로 만듭니다.
-          const alarmHours =
-            existingTask.assignee.user?.alarmSetting?.taskAlarm ?? 24;
+          for (const assignment of existingTask.subTaskAssignees ?? []) {
+            const assignee = assignment.member;
+            if (!assignee?.userId) continue;
 
-          await alarmRepository.createSubTaskAlarm(
-            existingTask.assignee.userId,
-            updatedTask.taskId,
-            updatedTask.id,
-            updatedTask.title,
-            calculateAlarmDate(newDeadline, alarmHours),
-            tx,
-          );
+            const alarmHours =
+              assignee.user?.alarmSetting?.taskAlarm ?? 24;
+
+            await alarmRepository.createSubTaskAlarm(
+              assignee.userId,
+              updatedTask.taskId,
+              updatedTask.id,
+              updatedTask.title,
+              calculateAlarmDate(newDeadline, alarmHours),
+              tx,
+            );
+          }
         }
 
         return updatedTask;

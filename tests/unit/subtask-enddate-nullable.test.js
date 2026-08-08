@@ -301,7 +301,9 @@ describe("updateSubTaskDeadline — 마감일 해제/재지정", () => {
       isAlarm: true,
       endDate: new Date(Date.UTC(2026, 5, 20)),
       task: { deadline: new Date(Date.UTC(2026, 11, 31)) },
-      assignee: { userId: 7, user: { alarmSetting: { taskAlarm: 5 } } },
+      subTaskAssignees: [
+        { member: { userId: 7, user: { alarmSetting: { taskAlarm: 5 } } } },
+      ],
       ...overrides,
     });
     taskRepository.findMemberInTask.mockResolvedValue({ id: 7 });
@@ -370,7 +372,7 @@ describe("updateSubTaskDeadline — 마감일 해제/재지정", () => {
   });
 
   it("null → 마감일 지정: 담당자가 없으면 알림을 만들지 않는다", async () => {
-    arrangeSubTask({ endDate: null, assignee: null });
+    arrangeSubTask({ endDate: null, subTaskAssignees: [] });
     taskRepository.findAlarmBySubTaskId.mockResolvedValue(null);
     mockTx.subTask.update.mockResolvedValue({
       id: 50,

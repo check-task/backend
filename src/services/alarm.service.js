@@ -16,7 +16,6 @@ import prisma from "../db.config.js";
 import alarmRepository from "../repositories/alarm.repository.js";
 import { checkDeletedUser } from "../repositories/user.repository.js";
 import { calculateAlarmDate } from "../utils/calculateAlarmDate.js";
-import { AlarmType } from "../constants/alarmType.js";
 import { redis } from "../config/redis.config.js";
 import { getMessaging } from "firebase-admin/messaging";
 
@@ -308,12 +307,8 @@ class AlarmService {
         return updateSubtaskAlarmStatusDto(updatedSubTask);
       }
 
-      const alarmHours = subTask.assignee?.user?.alarmSetting?.taskAlarm ?? 24;
-      const alarmDate = calculateAlarmDate(updatedSubTask.endDate, alarmHours);
-
-      const existingAlarm = await prisma.userAlarm.findFirst({
-        where: { subTaskId: updatedSubTask.id, type: AlarmType.SUBTASK },
-      });
+      // 재생성 전 기존 알림을 지워 중복 생성을 막습니다.
+      await this.alarmRepository.deleteAlarmsBySubTaskIds([updatedSubTask.id]);
 
       for (const assignment of notifyAssignments) {
         const assignee = assignment.member;
