@@ -609,17 +609,15 @@ class TaskService {
         if (newDeadline > parentEndDate) {
           // 부모 과제의 마감일이 이미 지난 경우 전용 에러 코드로 안내합니다.
           if (parentEndDate < new Date()) {
-            const error = new Error(
+            throw new BadRequestError(
+              "TASK_DEADLINE_EXPIRED",
               "이미 마감일이 지난 과제의 세부 과제 마감일은 변경할 수 없습니다.",
             );
-            error.statusCode = 400;
-            error.errorCode = "TASK_DEADLINE_EXPIRED";
-            throw error;
           }
-          const error = new Error("부모 Task의 마감일을 초과할 수 없습니다.");
-          error.statusCode = 400;
-          error.errorCode = "INVALID_DEADLINE";
-          throw error;
+          throw new BadRequestError(
+            "INVALID_DEADLINE",
+            "부모 Task의 마감일을 초과할 수 없습니다.",
+          );
         }
       }
 

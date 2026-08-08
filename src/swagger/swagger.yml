@@ -2194,109 +2194,6 @@ paths:
         '500':
           description: 서버 내부 오류 (트랜잭션 실패 등)
   
-  # 세부 과제 생성
-  /api/v1/task/{taskId}/subTask:
-    post:
-      tags:
-        - Task
-      summary: 단일 세부 과제 추가
-      description: |
-        특정 과제 내에 세부 과제를 하나 추가합니다.
-        - 상태(status): PENDING 자동 지정
-        - 담당자(assigneeId): 팀 과제는 NULL, 개인 과제는 본인 자동 지정
-        - 마감일(deadline): 선택 사항. 생략하거나 null이면 마감일 미지정으로 생성되며, 이 경우 마감 알림은 생성되지 않습니다.
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: taskId
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [title]
-              properties:
-                title:
-                  type: string
-                  example: "세부과제1"
-                deadline:
-                  type: string
-                  format: date
-                  nullable: true
-                  description: 마감일. 생략하거나 null이면 마감일 미지정으로 생성됩니다.
-                  example: "2026-05-30"
-                isAlarm:
-                  type: boolean
-                  example: true
-      responses:
-        '200':
-          description: 생성 성공
-          content:
-            application/json:
-              example:
-                resultType: "SUCCESS"
-                message: "세부 Task가 성공적으로 추가되었습니다."
-                data:
-                  subTaskId: 12
-                  title: "세부과제1"
-                  deadline: "2026-05-30T00:00:00.000Z"
-        '400':
-          description: 마감일 설정 오류
-          content:
-            application/json:
-              examples:
-                invalid_deadline:
-                  summary: "세부 과제 마감일이 부모 마감일을 초과하는 경우"
-                  value:
-                    resultType: "FAIL"
-                    code: 400
-                    errorCode: "INVALID_DEADLINE"
-                    reason: "세부 과제의 마감일은 부모 과제의 마감일보다 늦을 수 없습니다."
-                    data: null
-                task_deadline_expired:
-                  summary: "부모 과제의 마감일이 이미 지난 경우"
-                  value:
-                    resultType: "FAIL"
-                    code: 400
-                    errorCode: "TASK_DEADLINE_EXPIRED"
-                    reason: "이미 마감일이 지난 과제에는 세부 과제를 추가할 수 없습니다."
-                    data: null
-                subtask_end_date_required:
-                  summary: "세부 과제 마감일이 전달되지 않은 경우"
-                  value:
-                    resultType: "FAIL"
-                    code: 400
-                    errorCode: "SUBTASK_END_DATE_REQUIRED"
-                    reason: "세부 과제 마감일(deadline)이 필요합니다."
-                    data: null
-        '403':
-          description: 권한 없음
-          content:
-            application/json:
-              example:
-                resultType: "FAIL"
-                code: 403
-                errorCode: "FORBIDDEN_TASK"
-                reason: "해당 과제에 접근할 권한이 없습니다."
-                data: null
-        '404':
-          description: 부모 과제를 찾을 수 없음
-          content:
-            application/json:
-              example:
-                resultType: "FAIL"
-                code: 404
-                errorCode: "TASK_NOT_FOUND"
-                reason: "존재하지 않는 과제입니다."
-                data: null
-        '500':
-          description: 서버 내부 오류
-
   # 팀원 정보(역할) 수정
   /api/v1/task/{taskId}/member/{userId}:
     patch:
@@ -2897,6 +2794,47 @@ paths:
                       deadline:
                         type: string
                         format: date-time
+        '400':
+          description: 마감일 설정 오류
+          content:
+            application/json:
+              examples:
+                invalid_deadline:
+                  summary: "세부 과제 마감일이 부모 마감일을 초과하는 경우"
+                  value:
+                    resultType: "FAIL"
+                    code: 400
+                    errorCode: "INVALID_DEADLINE"
+                    reason: "세부 과제의 마감일은 부모 과제의 마감일보다 늦을 수 없습니다."
+                    data: null
+                task_deadline_expired:
+                  summary: "부모 과제의 마감일이 이미 지난 경우"
+                  value:
+                    resultType: "FAIL"
+                    code: 400
+                    errorCode: "TASK_DEADLINE_EXPIRED"
+                    reason: "이미 마감일이 지난 과제에는 세부 과제를 추가할 수 없습니다."
+                    data: null
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN_TASK"
+                reason: "해당 과제에 접근할 권한이 없습니다."
+                data: null
+        '404':
+          description: 부모 과제를 찾을 수 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 404
+                errorCode: "TASK_NOT_FOUND"
+                reason: "존재하지 않는 과제입니다."
+                data: null
     delete:
       tags:
         - Task
