@@ -607,9 +607,17 @@ class TaskService {
       if (newDeadline && existingTask.task.deadline) {
         const parentEndDate = new Date(existingTask.task.deadline);
         if (newDeadline > parentEndDate) {
-          const error = new Error("부모 Task의 마감일을 초과할 수 없습니다.");
-          error.statusCode = 400;
-          throw error;
+          // 부모 과제의 마감일이 이미 지난 경우 전용 에러 코드로 안내합니다.
+          if (parentEndDate < new Date()) {
+            throw new BadRequestError(
+              "TASK_DEADLINE_EXPIRED",
+              "이미 마감일이 지난 과제의 세부 과제 마감일은 변경할 수 없습니다.",
+            );
+          }
+          throw new BadRequestError(
+            "INVALID_DEADLINE",
+            "부모 Task의 마감일을 초과할 수 없습니다.",
+          );
         }
       }
 
@@ -1165,10 +1173,14 @@ class TaskService {
     // 부모 과제의 마감일이 설정되어 있으면, 세부 과제 마감일은 부모 마감일보다 늦을 수 없습니다.
     if (endDate && parentTask.deadline) {
       const parentDeadline = new Date(parentTask.deadline);
-      if (
-        isNaN(parentDeadline.getTime()) === false &&
-        endDate > parentDeadline
-      ) {
+      if (isNaN(parentDeadline.getTime()) === false && endDate > parentDeadline) {
+        // 부모 과제의 마감일이 이미 지난 경우 전용 에러 코드로 안내합니다.
+        if (parentDeadline < new Date()) {
+          throw new BadRequestError(
+            "TASK_DEADLINE_EXPIRED",
+            "이미 마감일이 지난 과제에는 세부 과제를 추가할 수 없습니다.",
+          );
+        }
         throw new BadRequestError(
           "INVALID_DEADLINE",
           "세부 과제의 마감일은 부모 과제의 마감일보다 늦을 수 없습니다.",
@@ -1265,6 +1277,27 @@ class TaskService {
         "FORBIDDEN_PERSONAL_TASK",
         "개인 과제의 세부 과제는 소유자만 수정할 수 있습니다.",
       );
+    }
+
+    // 세부 과제 마감일은 부모 과제의 마감일보다 늦을 수 없습니다.
+    if (parentTask.deadline) {
+      const parentDeadline = new Date(parentTask.deadline);
+      if (!isNaN(parentDeadline.getTime())) {
+        for (const { endDate } of subTaskUpdates) {
+          if (endDate && new Date(endDate) > parentDeadline) {
+            if (parentDeadline < new Date()) {
+              throw new BadRequestError(
+                "TASK_DEADLINE_EXPIRED",
+                "이미 마감일이 지난 과제의 세부 과제 마감일은 변경할 수 없습니다.",
+              );
+            }
+            throw new BadRequestError(
+              "INVALID_DEADLINE",
+              "세부 과제의 마감일은 부모 과제의 마감일보다 늦을 수 없습니다.",
+            );
+          }
+        }
+      }
     }
 
     return await prisma.$transaction(async (tx) => {

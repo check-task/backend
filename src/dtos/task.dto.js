@@ -4,29 +4,27 @@ class TaskUtils {
   static calculateDDay(deadline) {
     if (!deadline) return null;
 
-    // 서버 시간(UTC)을 한국 시간(+9)으로 변환
-    const now = new Date();
-    const kstNow = new Date(now.getTime());
-    // 한국 날짜의 '0시 0분 0초'로 세팅
-    const today = new Date(
-      kstNow.getFullYear(),
-      kstNow.getMonth(),
-      kstNow.getDate(),
+    const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+    // 서버 시간(UTC)을 한국 시간(+9)으로 변환 후 UTC getter로 날짜만 추출
+    // (local getter를 쓰면 서버 프로세스의 타임존 설정에 따라 결과가 달라짐)
+    const kstNow = new Date(Date.now() + KST_OFFSET_MS);
+    const today = Date.UTC(
+      kstNow.getUTCFullYear(),
+      kstNow.getUTCMonth(),
+      kstNow.getUTCDate(),
     );
 
-    // 마감일(UTC)을 한국 시간(+9)으로 변환
-    const dDate = new Date(deadline);
-    const kstDeadline = new Date(dDate.getTime());
-    // 마감 날짜의 '0시 0분 0초'로 세팅
-    const targetDay = new Date(
-      kstDeadline.getFullYear(),
-      kstDeadline.getMonth(),
-      kstDeadline.getDate(),
+    // 마감일(UTC)을 한국 시간(+9)으로 변환 후 UTC getter로 날짜만 추출
+    const kstDeadline = new Date(new Date(deadline).getTime() + KST_OFFSET_MS);
+    const targetDay = Date.UTC(
+      kstDeadline.getUTCFullYear(),
+      kstDeadline.getUTCMonth(),
+      kstDeadline.getUTCDate(),
     );
 
     // 두 날짜의 차이 계산
-    const diffTime = targetDay - today + 1;
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.round((targetDay - today) / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return "D-Day";
     return diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
