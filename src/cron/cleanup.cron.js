@@ -1,7 +1,7 @@
 import cron from "node-cron";
-import { KakaoAuthService } from "../services/auth.service.js";
+import { CommonAuthService } from "../services/auth.service.js";
 
-const service = new KakaoAuthService();
+const service = new CommonAuthService();
 
 // 매일 새벽 3시 실행
 cron.schedule("0 3 * * *", async () => {

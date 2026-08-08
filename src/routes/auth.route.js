@@ -2,13 +2,15 @@ import { Router } from "express";
 import passport from "passport";
 import { kakaoMiddleware } from "../middlewares/auth.middleware.js";
 import { AuthController } from "../controllers/auth.controller.js";
+import { LoginController } from "../controllers/login.controller.js";
 import { BadRequestError } from "../errors/custom.error.js";
 import { redis } from "../config/redis.config.js";
 
 const router = Router();
 const authController = new AuthController();
+const loginController = new LoginController();
 
-//카카오 로그인 요청
+//카카오 연동하기
 router.get("/kakao",
   (req, res, next) => {
     const state = req.query.state || "prod";
@@ -22,6 +24,7 @@ router.get("/kakao",
   }
 );
 
+// 카카오 로그인 콜백
 router.get(
   "/kakao/callback",
   passport.authenticate("kakao", { session: false }),
@@ -71,26 +74,26 @@ router.get(
   }
 );
 
-
-// 통합 회원 탈퇴 (자체/카카오 공용)
+// 통합 회원 탈퇴
 router.delete(
   "/withdraw",
   passport.authenticate("jwt", { session: false }),
   authController.withdraw.bind(authController)
 );
 
-// @deprecated — /api/v1/auth/withdraw 사용 권장
-router.delete(
-  "/kakao/unlink",
-  passport.authenticate("jwt", { session: false }),
-  authController.kakaoWithdraw.bind(authController)
+// 통합 로그아웃
+router.post(
+  "/logout", 
+  authController.logout.bind(authController)
 );
 
-//카카오 로그아웃
-router.post("/logout", authController.logout.bind(authController));
-//Access Token 발급
-router.post("/refresh", authController.refresh.bind(authController));
-//재가입시 복구
+// Access Token 발급
+router.post(
+  "/refresh", 
+  authController.refresh.bind(authController)
+);
+
+// 재가입시 복구
 router.post(
   "/restore",
   authController.restore.bind(authController)
@@ -104,6 +107,21 @@ router.post(
 );
 
 // Apple 로그인
-router.post("/apple", authController.appleLogin.bind(authController));
+router.get(
+  "/apple", 
+  authController.appleLogin.bind(authController)
+);
+
+// Apple 콜백
+router.post(
+  "/apple/callback",
+  authController.appleCallback.bind(authController)
+);
+
+// 앱 애플 로그인
+router.post(
+  "/app/signin/apple",
+  loginController.appAppleLogin.bind(loginController)
+);
 
 export default router;
