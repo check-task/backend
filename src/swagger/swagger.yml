@@ -4589,6 +4589,7 @@ paths:
                 oneOf:
                   - type: object
                     description: "정상 로그인 성공 응답"
+                    required: [resultType, message, data]
                     properties:
                       resultType:
                         type: string
@@ -4598,6 +4599,7 @@ paths:
                         example: "애플 앱 로그인이 완료되었습니다."
                       data:
                         type: object
+                        required: [accessToken, refreshToken, isNewUser, user]
                         properties:
                           accessToken:
                             type: string
@@ -4622,6 +4624,7 @@ paths:
                                 example: "홍길동"
                   - type: object
                     description: "탈퇴 처리된 계정으로 로그인 시도한 경우의 응답"
+                    required: [resultType, message, data]
                     properties:
                       resultType:
                         type: string
@@ -4631,6 +4634,7 @@ paths:
                         example: "탈퇴 처리된 애플 계정입니다."
                       data:
                         type: object
+                        required: [withdrawnUser, restoreToken]
                         properties:
                           withdrawnUser:
                             type: boolean
