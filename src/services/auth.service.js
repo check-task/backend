@@ -549,6 +549,7 @@ export class AppleAuthService {
       if (error instanceof UnauthorizedError || error instanceof BadRequestError) {
         throw error;
       }
+      console.error("🍎 Service 계층 진짜 에러 원인:", error);
       throw new InternalServerError("INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다.");
     }
     }
