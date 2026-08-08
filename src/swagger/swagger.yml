@@ -4608,38 +4608,58 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "SUCCESS"
-                  message:
-                    type: string
-                    example: "애플 앱 로그인이 완료되었습니다."
-                  data:
-                    type: object
+                oneOf:
+                  - type: object
+                    description: "정상 로그인 성공 응답"
                     properties:
-                      accessToken:
+                      resultType:
                         type: string
-                        example: "eyJhbGciOiJIUzI1Ni..."
-                      refreshToken:
+                        example: "SUCCESS"
+                      message:
                         type: string
-                        example: "8c9d0e11-d3c4..."
-                      isNewUser:
-                        type: boolean
-                        example: false
-                      user:
+                        example: "애플 앱 로그인이 완료되었습니다."
+                      data:
                         type: object
                         properties:
-                          id:
-                            type: number
-                            example: 3
-                          email:
+                          accessToken:
                             type: string
-                            example: "test@apple.com"
-                          nickname:
+                            example: "eyJhbGciOiJIUzI1Ni..."
+                          refreshToken:
                             type: string
-                            example: "홍길동"
+                            example: "8c9d0e11-d3c4..."
+                          isNewUser:
+                            type: boolean
+                            example: false
+                          user:
+                            type: object
+                            properties:
+                              id:
+                                type: number
+                                example: 3
+                              email:
+                                type: string
+                                example: "test@apple.com"
+                              nickname:
+                                type: string
+                                example: "홍길동"
+                  - type: object
+                    description: "탈퇴 처리된 계정으로 로그인 시도한 경우의 응답"
+                    properties:
+                      resultType:
+                        type: string
+                        example: "SUCCESS"
+                      message:
+                        type: string
+                        example: "탈퇴 처리된 애플 계정입니다."
+                      data:
+                        type: object
+                        properties:
+                          withdrawnUser:
+                            type: boolean
+                            example: true
+                          restoreToken:
+                            type: string
+                            example: "b3a1c2d4-e5f6-7890-abcd-ef1234567890"
         '400':
           description: "토큰 누락 (TOKEN_REQUIRED) 또는 잘못된 형식의 데이터 요청 (JSON 파싱 에러 등)"
           content:
@@ -4681,28 +4701,6 @@ paths:
                   reason:
                     type: string
                     example: "유효하지 않은 토큰입니다."
-                  data:
-                    nullable: true
-                    example: null
-        '409':
-          description: "이미 가입된 이메일 계정 존재 (이메일 중복 제약 조건 위반)"
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: "FAIL"
-                  code:
-                    type: number
-                    example: 409
-                  errorCode:
-                    type: string
-                    example: "EMAIL_ALREADY_EXISTS"
-                  reason:
-                    type: string
-                    example: "이미 가입된 이메일입니다."
                   data:
                     nullable: true
                     example: null

@@ -433,17 +433,17 @@ export class LoginController {
   async appAppleLogin(req, res, next) { 
   try {
       const { identityToken, user: appleUserJson } = req.body;
-      
-      if (!identityToken) {
-        throw new BadRequestError("TOKEN_REQUIRED", "Apple identityToken이 필요합니다.");
+
+      if (typeof identityToken !== "string" || identityToken.trim() === "") {
+        throw new BadRequestError("INVALID_INPUT", "Apple identityToken은 문자열이어야 합니다.");
       }
 
       let appleUser = null;
-      if (appleUserJson) {
+      if (appleUserJson !== undefined && appleUserJson !== null) {
         try {
           appleUser = typeof appleUserJson === "string" ? JSON.parse(appleUserJson) : appleUserJson;
         } catch {
-          appleUser = null;
+          throw new BadRequestError("INVALID_INPUT", "Apple user 정보는 유효한 JSON이어야 합니다.");
         }
       }
 
