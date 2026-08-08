@@ -66,8 +66,18 @@ class TaskHandler {
         );
       }
       normalizedAssigneeIds = assigneeIds.map((id) => {
-        const parsed = Number(id);
-        if (Number.isNaN(parsed) || parsed <= 0) {
+        const isPositiveIntegerFormat =
+          typeof id === "number"
+            ? Number.isInteger(id)
+            : typeof id === "string" && /^\d+$/.test(id);
+
+        const parsed = isPositiveIntegerFormat ? Number(id) : NaN;
+
+        if (
+          !isPositiveIntegerFormat ||
+          !Number.isSafeInteger(parsed) ||
+          parsed <= 0
+        ) {
           throw new BadRequestError(
             "INVALID_ASSIGNEE_ID",
             "유효하지 않은 담당자 ID입니다.",
