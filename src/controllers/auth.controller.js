@@ -1,10 +1,11 @@
-import { AgreementService, AppleAuthService, KakaoAuthService } from "../services/auth.service.js";
+import { AgreementService, AppleAuthService, CommonAuthService, KakaoAuthService } from "../services/auth.service.js";
 import { LoginService } from "../services/login.service.js";
 import { BadRequestError, UnauthorizedError } from "../errors/custom.error.js";
 // import { prisma } from "../db.config.js";
 
 export class AuthController{
     constructor(){
+        this.commonAuthService = new CommonAuthService();
         this.kakaoAuthService = new KakaoAuthService();
         this.loginService = new LoginService();
         this.agreementService = new AgreementService();
@@ -17,9 +18,9 @@ export class AuthController{
             if (!req.user) {
                 throw new UnauthorizedError("UNAUTHORIZED", "인증 정보가 없습니다.");
             }
-
             const provider = req.user.provider ?? null;
-
+            await this.commonAuthService.revokeAllUserTokens(req.user.id);
+            // 추후 분기 없이 통합으로 수정 필요
             if (provider === null) {
                 await this.loginService.withdrawLocalUser(req.user.id);
 
@@ -39,50 +40,38 @@ export class AuthController{
             }
 
             if (provider === "KAKAO") {
-                await this.kakaoAuthService.withdrawKakaoUser(req.user);
-
-                return res.status(200).json({
-                    resultType: "SUCCESS",
-                    message: "카카오 회원 탈퇴가 완료되었습니다.",
-                });
+              await this.kakaoAuthService.withdrawKakaoUser(req.user);
+              return res.status(200).json({
+                  resultType: "SUCCESS",
+                  message: "카카오 회원 탈퇴가 완료되었습니다.",
+              });
             }
 
+            if (provider === "APPLE") {
+              await this.appleAuthService.withdrawAppleUser(req.user);
+              return res.status(200).json({
+                  resultType: "SUCCESS",
+                  message: "애플 회원 탈퇴가 완료되었습니다.",
+              });
+            }
             throw new BadRequestError("UNSUPPORTED_PROVIDER", "지원하지 않는 로그인 방식입니다.");
         } catch (error) {
             next(error);
         }
     }
 
-    // @deprecated — /api/v1/auth/withdraw 사용 권장
-    async kakaoWithdraw(req, res, next){
-        try{
-            if(!req.user){
-                throw new UnauthorizedError("UNAUTHORIZED","인증 정보가 없습니다");
-            }
-            
-            await this.kakaoAuthService.withdrawKakaoUser(req.user);
-
-            return res.status(200).json({
-                resultType: "SUCCESS",
-                message: "카카오 회원 탈퇴가 완료되었습니다."
-            });
-        }catch (error){
-            next(error);
-        }
-    }
-
-    //카카오 로그아웃
+    // 통합 로그아웃
     async logout(req, res, next) {
     try {
       const refreshToken =
         req.cookies?.refreshToken ||
         req.headers.authorization?.replace("Bearer ", "");
       if (refreshToken){
-        await this.kakaoAuthService.revokeRefreshToken(refreshToken);
+        await this.commonAuthService.revokeRefreshToken(refreshToken);
       }
       const isSecure = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
       
-      //refresh token 쿠키 삭제
+      // refresh token 쿠키 삭제
       res.clearCookie("refreshToken",{
         httpOnly: true,
         secure: isSecure,
@@ -107,7 +96,7 @@ export class AuthController{
         req.headers.authorization?.replace("Bearer ", "");
       if(!refreshToken){throw new UnauthorizedError("UNAUTHORIZED","Refresh Token이 없습니다.");}
       
-      const newAccessToken = await this.kakaoAuthService.refreshAccessToken(refreshToken);
+      const newAccessToken = await this.commonAuthService.refreshAccessToken(refreshToken);
 
       return res.status(200).json({
         resultType: "SUCCESS",
@@ -132,7 +121,7 @@ export class AuthController{
       }
 
       const { accessToken, refreshToken } =
-        await this.kakaoAuthService.restoreKakaoUser(token);
+        await this.commonAuthService.restoreUser(token);
 
       const isSecure = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
 
@@ -193,29 +182,50 @@ export class AuthController{
   }
 
   // APPLE 연동하기
-  async appleLogin(req, res, next){
+  async appleLogin(req, res, next) {
     try {
-      const { identityToken, user: appleUser } = req.body;
-      if (!identityToken) {
-        throw new BadRequestError("TOKEN_REQUIRED", "identityToken 필요합니다.");
+      const state = req.query.state || "prod";
+      const ALLOWED_STATES = ["local", "prod"];
+      if (!ALLOWED_STATES.includes(state)) {
+        throw new BadRequestError("INVALID_STATE", "잘못된 state값입니다.");
+      }
+      const url = this.appleAuthService.getAppleAuthUrl(state);
+      return res.redirect(url);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // APLLE 콜백 처리
+  async appleCallback(req, res, next) {
+    try {
+      const { code, id_token, user: appleUserJson, state, error } = req.body;
+
+      const REDIRECT_URL_MAP = { local: process.env.FRONTEND_LOCAL, prod: process.env.FRONTEND_VERCEL };
+      const redirectBaseUrl = REDIRECT_URL_MAP[state] ?? REDIRECT_URL_MAP["prod"];
+
+      if (!redirectBaseUrl) { return res.status(500).send("리다이렉트 URL이 설정되지 않았습니다."); }
+
+      if (error || !code || !id_token) {
+        return res.redirect(`${redirectBaseUrl}/login?status=failed`);
       }
 
-      const result = await this.appleAuthService.handleAppleLogin(identityToken, appleUser);
+      let appleUser = null;
+      try {
+        appleUser = appleUserJson ? JSON.parse(appleUserJson) : null;
+      } catch {
+        appleUser = null;
+      }
+      const result = await this.appleAuthService.handleAppleLogin(id_token, appleUser, code);
 
+      // 탈퇴 회원 분기
       if (result.withdrawnUser) {
-        return res.status(200).json({
-          resultType: "SUCCESS",
-          message: "탈퇴 처리된 계정입니다.",
-          data: {
-            withdrawAppleUser: true,
-            restoreToken: result.restoreToken,
-          },
-        });
+        return res.redirect(`${redirectBaseUrl}/login?status=withdrawn&token=${result.restoreToken}`);
       }
 
       const { accessToken, refreshToken, isNewUser } = result;
-
       const isSecure = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test";
+
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         secure: isSecure,
@@ -224,17 +234,9 @@ export class AuthController{
         path: "/",
         maxAge: 1000 * 60 * 60 * 24 * 14,
       });
-      
-      return res.status(200).json({
-        resultType: "SUCCESS",
-        message: "Apple 로그인이 완료되었습니다.",
-        data: {
-          accessToken,
-          accessTokenExpireIn: 3600,
-          isNewUser,
-        },
-      });
-    } catch (error){
+
+      return res.redirect(`${redirectBaseUrl}/auth/apple/callback?isNewUser=${isNewUser}`);
+    } catch (error) {
       next(error);
     }
   }

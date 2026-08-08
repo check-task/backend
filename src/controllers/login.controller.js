@@ -1,5 +1,5 @@
 import { LoginService} from "../services/login.service.js";
-import { KakaoAuthService } from "../services/auth.service.js";
+import { KakaoAuthService, AppleAuthService } from "../services/auth.service.js";
 import { BadRequestError, UnauthorizedError } from "../errors/custom.error.js";
 import {
   emailQuery,
@@ -16,6 +16,7 @@ export class LoginController {
   constructor() {
     this.loginService = new LoginService();
     this.kakaoAuthService = new KakaoAuthService();
+    this.appleAuthService = new AppleAuthService();
   }
 
   async signup(req, res, next) {
@@ -424,6 +425,56 @@ export class LoginController {
         },
       });
     } catch (error) {
+      next(error);
+    }
+  }
+  
+  // 앱 애플 로그인
+  async appAppleLogin(req, res, next) { 
+  try {
+      const { identityToken, user: appleUserJson } = req.body;
+
+      if (typeof identityToken !== "string" || identityToken.trim() === "") {
+        throw new BadRequestError("INVALID_INPUT", "Apple identityToken은 문자열이어야 합니다.");
+      }
+
+      let appleUser = null;
+      if (appleUserJson !== undefined && appleUserJson !== null) {
+        try {
+          appleUser = typeof appleUserJson === "string" ? JSON.parse(appleUserJson) : appleUserJson;
+        } catch {
+          throw new BadRequestError("INVALID_INPUT", "Apple user 정보는 유효한 JSON이어야 합니다.");
+        }
+      }
+
+      const result = await this.appleAuthService.handleAppleLogin(identityToken, appleUser);
+
+      // 탈퇴 유저 분기 처리
+      if (result.withdrawnUser) {
+        return res.status(200).json({
+          resultType: "SUCCESS",
+          message: "탈퇴 처리된 애플 계정입니다.",
+          data: { withdrawnUser: true, restoreToken: result.restoreToken },
+        });
+      }
+
+      // 정상 로그인 성공 처리
+      return res.status(200).json({
+        resultType: "SUCCESS",
+        message: "애플 앱 로그인이 완료되었습니다.",
+        data: {
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+          isNewUser: result.isNewUser,
+          user: {
+            id: result.user.id,
+            email: result.user.email,
+            nickname: result.user.nickname,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("🍎 애플 로그인 에러 원인:", error);
       next(error);
     }
   }
