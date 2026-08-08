@@ -70,13 +70,17 @@ class TaskService {
   ) {
     const isPersonal = parentTask.type === "PERSONAL";
     const normalizedUserIds = Array.isArray(assigneeUserIds)
-      ? assigneeUserIds
-          .map((id) => Number(id))
-          .filter((id) => !Number.isNaN(id) && id > 0)
+      ? [
+          ...new Set(
+            assigneeUserIds
+              .map((id) => Number(id))
+              .filter((id) => !Number.isNaN(id) && id > 0),
+          ),
+        ]
       : [];
 
     if (normalizedUserIds.length > 0) {
-      const memberIds = normalizedUserIds.map((userId) => {
+      const assigneeMembers = normalizedUserIds.map((userId) => {
         const member = members.find((x) => x.userId === userId);
         if (!member) {
           throw new BadRequestError(
@@ -89,7 +93,7 @@ class TaskService {
 
       if (isPersonal) {
         const owner = members.find((mem) => mem.role === false);
-        const invalidOwner = memberIds.some(
+        const invalidOwner = assigneeMembers.some(
           (member) => !owner || owner.userId !== member.userId,
         );
         if (invalidOwner) {
@@ -100,7 +104,7 @@ class TaskService {
         }
       }
 
-      return memberIds.map((member) => member.id);
+      return assigneeMembers.map((member) => member.id);
     }
 
     if (isPersonal) {
@@ -673,6 +677,7 @@ class TaskService {
       if (isNaN(parsedSubTaskId)) {
         const error = new Error("유효하지 않은 세부 태스크 ID입니다.");
         error.statusCode = 400;
+        error.errorCode = "BAD_REQUEST";
         throw error;
       }
 
@@ -687,6 +692,7 @@ class TaskService {
       ) {
         const error = new Error("유효하지 않은 담당자(User) ID입니다.");
         error.statusCode = 400;
+        error.errorCode = "BAD_REQUEST";
         throw error;
       }
 
@@ -1220,32 +1226,24 @@ class TaskService {
         tx,
       );
 
-      if (!newSubTask.isAlarm || !newSubTask.subTaskAssignees?.length) {
-        return {
-          subTaskId: newSubTask.id,
-          title: newSubTask.title,
-          deadline: newSubTask.endDate,
-          status: newSubTask.status,
-          assignees: [],
-        };
-      }
+      if (newSubTask.isAlarm) {
+        for (const assignment of newSubTask.subTaskAssignees ?? []) {
+          const assignee = assignment.member;
+          if (!assignee?.userId) continue;
 
-      for (const assignment of newSubTask.subTaskAssignees) {
-        const assignee = assignment.member;
-        if (!assignee?.userId) continue;
+          const alarmHours =
+            assignee.user?.alarmSetting?.taskAlarm ?? 24;
+          const alarmDate = calculateAlarmDate(newSubTask.endDate, alarmHours);
 
-        const alarmHours =
-          assignee.user?.alarmSetting?.taskAlarm ?? 24;
-        const alarmDate = calculateAlarmDate(newSubTask.endDate, alarmHours);
-
-        await alarmRepository.createSubTaskAlarm(
-          assignee.userId,
-          newSubTask.taskId,
-          newSubTask.id,
-          newSubTask.title,
-          alarmDate,
-          tx,
-        );
+          await alarmRepository.createSubTaskAlarm(
+            assignee.userId,
+            newSubTask.taskId,
+            newSubTask.id,
+            newSubTask.title,
+            alarmDate,
+            tx,
+          );
+        }
       }
 
       return {
@@ -1288,6 +1286,7 @@ class TaskService {
 
     return await prisma.$transaction(async (tx) => {
       const results = [];
+      let taskMembers = null;
       for (const { subTaskId, ...updateData } of subTaskUpdates) {
         if (Object.keys(updateData).length === 0) {
           throw new Error("수정할 값이 없습니다.");
@@ -1318,10 +1317,15 @@ class TaskService {
           updateData.assigneeIds !== undefined;
 
         if (assignmentChangeRequested) {
+          if (taskMembers === null) {
+            taskMembers = await tx.member.findMany({
+              where: { taskId: Number(taskId) },
+            });
+          }
           const assigneeMemberIds = normalizedAssignmentUserIds.length > 0
             ? this.resolveSubTaskAssigneeMemberIds(
                 parentTask,
-                await prisma.member.findMany({ where: { taskId } }),
+                taskMembers,
                 normalizedAssignmentUserIds,
                 userId,
               )

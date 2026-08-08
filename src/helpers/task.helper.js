@@ -49,12 +49,26 @@ class TaskHandler {
       }
     }
 
-    const normalizedAssigneeIds = Array.isArray(assigneeIds)
-      ? assigneeIds
-          .map((id) => Number(id))
-          .filter((id) => !Number.isNaN(id) && id > 0)
-      : undefined;
-  
+    let normalizedAssigneeIds;
+    if (assigneeIds !== undefined && assigneeIds !== null) {
+      if (!Array.isArray(assigneeIds)) {
+        throw new BadRequestError(
+          "INVALID_ASSIGNEE_IDS",
+          "assigneeIds는 배열이어야 합니다.",
+        );
+      }
+      normalizedAssigneeIds = assigneeIds.map((id) => {
+        const parsed = Number(id);
+        if (Number.isNaN(parsed) || parsed <= 0) {
+          throw new BadRequestError(
+            "INVALID_ASSIGNEE_ID",
+            "유효하지 않은 담당자 ID입니다.",
+          );
+        }
+        return parsed;
+      });
+    }
+
     return {
       subTaskId: Number(subTaskId),
       userId,

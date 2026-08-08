@@ -372,12 +372,20 @@ class TaskRepository {
     });
   }
 
-  async replaceSubTaskAssignees(subTaskId, memberIds, tx = prisma) {
+  async replaceSubTaskAssignees(subTaskId, memberIds, tx) {
+    if (!tx) {
+      return await prisma.$transaction((innerTx) =>
+        this.replaceSubTaskAssignees(subTaskId, memberIds, innerTx),
+      );
+    }
     await tx.subTaskAssignee.deleteMany({ where: { subTaskId } });
-    if (!Array.isArray(memberIds) || memberIds.length === 0) {
+    const uniqueMemberIds = Array.isArray(memberIds)
+      ? [...new Set(memberIds)]
+      : [];
+    if (uniqueMemberIds.length === 0) {
       return [];
     }
-    const data = memberIds.map((memberId) => ({ subTaskId, memberId }));
+    const data = uniqueMemberIds.map((memberId) => ({ subTaskId, memberId }));
     await tx.subTaskAssignee.createMany({ data });
     return data;
   }
