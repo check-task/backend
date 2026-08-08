@@ -21,6 +21,7 @@ const subTaskSchema = z.object({
   status: z.enum(["PENDING", "COMPLETED"]).optional(),
   /** 해당 과제 멤버의 User.id */
   assigneeId: z.coerce.number().int().positive().optional(),
+  assigneeIds: z.array(z.coerce.number().int().positive()).optional(),
   isAlarm: z.boolean().optional(),
 });
 
@@ -140,6 +141,7 @@ export const addSubTaskSchema = z.object({
     isAlarm: z.boolean().optional(),
     /** 담당자 User.id (서버에서 Member.id로 변환) */
     assigneeId: z.coerce.number().int().positive().optional(),
+    assigneeIds: z.array(z.coerce.number().int().positive()).optional(),
   }),
 });
 
@@ -179,9 +181,10 @@ export const setSubTaskAssigneeSchema = z.object({
       (val) => val === "" || val === null ? null : val,
       z.union([
         z.null(),
-        z.coerce.number().int().positive("담당자는 해당 과제 멤버의 User.id(양의 정수)여야 합니다.")
-      ])
-    ),
+        z.coerce.number().int().positive("담당자는 해당 과제 멤버의 User.id(양의 정수)여야 합니다."),
+      ]),
+    ).optional(),
+    assigneeIds: z.array(z.coerce.number().int().positive()).optional(),
   }),
 });
 
@@ -228,6 +231,8 @@ export const patchSubTaskSchema = z.object({
         endDate: z.string().nullable().optional(),
         isAlarm: z.boolean().optional(),
         status: z.enum(["COMPLETED", "PENDING"]).optional(),
+        assigneeId: z.coerce.number().int().positive().optional(),
+        assigneeIds: z.array(z.coerce.number().int().positive()).optional(),
       })
     ).min(1, "수정할 세부 과제를 최소 1개 이상 선택해야 합니다."),
   }),

@@ -107,8 +107,15 @@ describe("createSingleSubTask — 마감일 미지정 생성", () => {
       title: "마감일 없는 세부과제",
       endDate: null,
       isAlarm: true,
-      assigneeId: 1,
-      assignee: { userId: 1, user: { alarmSetting: { taskAlarm: 6 } } },
+      subTaskAssignees: [
+        {
+          member: {
+            id: 1,
+            userId: 1,
+            user: { id: 1, nickname: "u1", alarmSetting: { taskAlarm: 6 } },
+          },
+        },
+      ],
     });
 
     const result = await taskService.createSingleSubTask(1, 5, {
@@ -129,8 +136,15 @@ describe("createSingleSubTask — 마감일 미지정 생성", () => {
       title: "세부과제",
       endDate: null,
       isAlarm: true,
-      assigneeId: 1,
-      assignee: { userId: 1, user: { alarmSetting: { taskAlarm: 6 } } },
+      subTaskAssignees: [
+        {
+          member: {
+            id: 1,
+            userId: 1,
+            user: { id: 1, nickname: "u1", alarmSetting: { taskAlarm: 6 } },
+          },
+        },
+      ],
     });
 
     await taskService.createSingleSubTask(1, 5, {
@@ -151,7 +165,7 @@ describe("createSingleSubTask — 마감일 미지정 생성", () => {
       title: "세부과제",
       endDate: null,
       isAlarm: true,
-      assigneeId: null,
+      subTaskAssignees: [],
     });
 
     await taskService.createSingleSubTask(1, 5, {
@@ -171,7 +185,7 @@ describe("createSingleSubTask — 마감일 미지정 생성", () => {
       title: "세부과제",
       endDate: null,
       isAlarm: true,
-      assigneeId: null,
+      subTaskAssignees: [],
     });
 
     await expect(
@@ -217,28 +231,35 @@ describe("registerTask — 마감일 지정/미지정 세부과제 혼재", () =
     taskRepository.createMember.mockResolvedValue({ id: 3 });
     taskRepository.findMaxRank.mockResolvedValue(0);
     taskRepository.upsertTaskPriority.mockResolvedValue({});
-    taskRepository.addSubTasks.mockResolvedValue({});
     mockTx.member.findMany.mockResolvedValue([{ id: 3, userId: 1 }]);
-    mockTx.subTask.findMany.mockResolvedValue([
-      {
-        id: 401,
-        taskId: 40,
-        title: "마감일 있음",
-        endDate: stEnd,
-        isAlarm: true,
-        assigneeId: 3,
-        assignee: { userId: 1, user: { alarmSetting: { taskAlarm: 8 } } },
+
+    const assigneeMock = {
+      member: {
+        id: 3,
+        userId: 1,
+        user: { id: 1, nickname: "u1", alarmSetting: { taskAlarm: 8 } },
       },
-      {
+    };
+    taskRepository.createSubTask.mockImplementation(async (row) => {
+      if (row.title === "마감일 있음") {
+        return {
+          id: 401,
+          taskId: 40,
+          title: "마감일 있음",
+          endDate: stEnd,
+          isAlarm: true,
+          subTaskAssignees: [assigneeMock],
+        };
+      }
+      return {
         id: 402,
         taskId: 40,
         title: "마감일 없음",
         endDate: null,
         isAlarm: true,
-        assigneeId: 3,
-        assignee: { userId: 1, user: { alarmSetting: { taskAlarm: 8 } } },
-      },
-    ]);
+        subTaskAssignees: [assigneeMock],
+      };
+    });
 
     await taskService.registerTask(1, {
       title: "과제",
@@ -251,9 +272,9 @@ describe("registerTask — 마감일 지정/미지정 세부과제 혼재", () =
       ],
     });
 
-    const [, rows] = taskRepository.addSubTasks.mock.calls[0];
-    expect(rows[0].endDate).toEqual(stEnd);
-    expect(rows[1].endDate).toBeNull();
+    const createCalls = taskRepository.createSubTask.mock.calls;
+    expect(createCalls[0][0].endDate).toEqual(stEnd);
+    expect(createCalls[1][0].endDate).toBeNull();
 
     // 마감일이 있는 세부과제 1건에 대해서만 알림 생성
     expect(alarmRepository.createSubTaskAlarm).toHaveBeenCalledTimes(1);
@@ -280,7 +301,9 @@ describe("updateSubTaskDeadline — 마감일 해제/재지정", () => {
       isAlarm: true,
       endDate: new Date(Date.UTC(2026, 5, 20)),
       task: { deadline: new Date(Date.UTC(2026, 11, 31)) },
-      assignee: { userId: 7, user: { alarmSetting: { taskAlarm: 5 } } },
+      subTaskAssignees: [
+        { member: { userId: 7, user: { alarmSetting: { taskAlarm: 5 } } } },
+      ],
       ...overrides,
     });
     taskRepository.findMemberInTask.mockResolvedValue({ id: 7 });
@@ -349,7 +372,7 @@ describe("updateSubTaskDeadline — 마감일 해제/재지정", () => {
   });
 
   it("null → 마감일 지정: 담당자가 없으면 알림을 만들지 않는다", async () => {
-    arrangeSubTask({ endDate: null, assignee: null });
+    arrangeSubTask({ endDate: null, subTaskAssignees: [] });
     taskRepository.findAlarmBySubTaskId.mockResolvedValue(null);
     mockTx.subTask.update.mockResolvedValue({
       id: 50,
@@ -435,17 +458,17 @@ describe("updateSelectedSubTasks — 일괄 수정으로 마감일 해제", () =
       title: "세부과제",
       isAlarm: true,
       endDate: null,
-      assigneeId: 1,
-      assignee: { userId: 1, user: { alarmSetting: { taskAlarm: 4 } } },
+      subTaskAssignees: [],
     });
-    taskRepository.findAlarmBySubTaskId.mockResolvedValue({ id: 900 });
 
     const results = await taskService.updateSelectedSubTasks(1, 70, [
       { subTaskId: 80, endDate: null },
     ]);
 
-    expect(alarmRepository.deleteAlarmById).toHaveBeenCalledWith(900, mockTx);
-    expect(alarmRepository.updateAlarm).not.toHaveBeenCalled();
+    expect(alarmRepository.deleteAlarmsBySubTaskIds).toHaveBeenCalledWith(
+      [80],
+      mockTx,
+    );
     expect(alarmRepository.createSubTaskAlarm).not.toHaveBeenCalled();
     expect(results[0].deadline).toBeNull();
   });
@@ -461,10 +484,15 @@ describe("updateSelectedSubTasks — 일괄 수정으로 마감일 해제", () =
       title: "세부과제",
       isAlarm: true,
       endDate: newEnd,
-      assigneeId: 1,
-      assignee: { userId: 1, user: { alarmSetting: { taskAlarm: 4 } } },
+      subTaskAssignees: [
+        {
+          member: {
+            userId: 1,
+            user: { alarmSetting: { taskAlarm: 4 } },
+          },
+        },
+      ],
     });
-    taskRepository.findAlarmBySubTaskId.mockResolvedValue(null);
 
     await taskService.updateSelectedSubTasks(1, 70, [
       { subTaskId: 81, endDate: newEnd },
@@ -531,9 +559,10 @@ describe("alarmService.updateSubtaskAlarmStatus — 마감일 미지정 세부�
       taskId: 110,
       title: "세부과제",
       status: "PENDING",
-      assigneeId: 2,
       task: { members: [{ id: 2, userId: 1, role: false }] },
-      assignee: { userId: 1, user: { alarmSetting: { taskAlarm: 3 } } },
+      subTaskAssignees: [
+        { member: { user: { id: 1, alarmSetting: { taskAlarm: 3 } } } },
+      ],
     });
     alarmRepository.updateSubtaskAlarmStatus.mockResolvedValue({
       id: 100,
@@ -541,7 +570,6 @@ describe("alarmService.updateSubtaskAlarmStatus — 마감일 미지정 세부�
       title: "세부과제",
       isAlarm: true,
       endDate: null,
-      assigneeId: 2,
     });
 
     await alarmService.updateSubtaskAlarmStatus(1, 100, true);
@@ -557,9 +585,10 @@ describe("alarmService.updateSubtaskAlarmStatus — 마감일 미지정 세부�
       taskId: 110,
       title: "세부과제",
       status: "PENDING",
-      assigneeId: 2,
       task: { members: [{ id: 2, userId: 1, role: false }] },
-      assignee: { userId: 1, user: { alarmSetting: { taskAlarm: 3 } } },
+      subTaskAssignees: [
+        { member: { user: { id: 1, alarmSetting: { taskAlarm: 3 } } } },
+      ],
     });
     alarmRepository.updateSubtaskAlarmStatus.mockResolvedValue({
       id: 101,
@@ -567,7 +596,6 @@ describe("alarmService.updateSubtaskAlarmStatus — 마감일 미지정 세부�
       title: "세부과제",
       isAlarm: true,
       endDate,
-      assigneeId: 2,
     });
     prisma.userAlarm.findFirst.mockResolvedValue(null);
 

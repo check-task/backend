@@ -237,7 +237,7 @@ model Member {
   user User @relation("UserMembers", fields: [userId], references: [id], onDelete: Restrict) // 유저와 연결 (삭제 시 멤버는 그대로 남아있음)
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade) // 과제와 연결 (삭제 시 멤버도 삭제됨)
   folder Folder? @relation(fields: [folderId], references: [id], onDelete: Restrict) // 폴더와 연결 (삭제 시 멤버도 삭제됨)
-  subTasks SubTask[] @relation("assignee") // 유저에게 할당된 세부과제 (개인과제일 경우 모두 자신에게 할당됨)
+  assignedSubTasks SubTaskAssignee[]
   
   @@unique([userId, taskId])
   @@map("Member")
@@ -246,7 +246,6 @@ model Member {
 // 세부 과제 (SubTask)
 model SubTask {
   id         Int  @id @default(autoincrement()) @map("sub_task_id")
-  assigneeId Int? @map("assignee_id") // 담당자 id (개인과제일 경우 모두 자신에게 할당됨), 처음 세부과제 생성 시 담당자 없음.
   taskId     Int  @map("task_id") // 과제 id
 
   title     String        @db.VarChar(100) // 세부과제 제목
@@ -257,12 +256,25 @@ model SubTask {
   updatedAt DateTime?     @updatedAt @map("updated_at") @db.Timestamp // 세부과제 수정 일자
 
   // 관계 설정 (Relations)
-  task       Task        @relation(fields: [taskId], references: [id], onDelete: Cascade) // 과제와 연결 (삭제 시 세부과제도 삭제됨)
-  assignee   Member?       @relation("assignee", fields: [assigneeId], references: [id], onDelete: Restrict) // 담당자와 연결 (삭제 시 담당자는 그대로 남아있음)
-  comments   Comment[]
-  userAlarms UserAlarm[]
+  task            Task                @relation(fields: [taskId], references: [id], onDelete: Cascade) // 과제와 연결 (삭제 시 세부과제도 삭제됨)
+  subTaskAssignees SubTaskAssignee[]
+  comments        Comment[]
+  userAlarms      UserAlarm[]
 
   @@map("SubTask")
+}
+
+model SubTaskAssignee {
+  id         Int      @id @default(autoincrement()) @map("sub_task_assignee_id")
+  subTaskId  Int      @map("sub_task_id")
+  memberId   Int      @map("member_id")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  subTask SubTask @relation(fields: [subTaskId], references: [id], onDelete: Cascade)
+  member  Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([subTaskId, memberId])
+  @@map("SubTaskAssignee")
 }
 
 // 댓글 (Comment)

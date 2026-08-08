@@ -203,28 +203,30 @@ export const setupTaskHandlers = (io, socket) => {
   // 세부과제 담당자 설정
   socket.on(taskEvents.SET_ASSIGNEE, async (payload, callback) => {
       try {
-        const { taskId, subTaskId, assigneeId } = payload;
-        console.log(`[SOCKET][subTask:assignee update] 요청 수신`, {taskId, subTaskId, assigneeId,});
+        const { taskId, subTaskId, assigneeId, assigneeIds } = payload;
+        console.log(`[SOCKET][subTask:assignee update] 요청 수신`, { taskId, subTaskId, assigneeId, assigneeIds });
 
         const inputData = taskHelper.buildUpdateSubTaskAssigneeParams({
           userId: socket.user.id,
           subTaskId,
           assigneeId,
+          assigneeIds,
         });
 
         const updatedSubTask = await taskService.setSubTaskAssignee(
           inputData.subTaskId,
           inputData.assigneeId,
-          inputData.userId
+          inputData.assigneeIds,
+          inputData.userId,
         );
 
         io.to(`task:${taskId}`).emit(taskEvents.ASSIGNEE_UPDATED, {
           subTaskId: updatedSubTask.subTaskId,
-          assignee: updatedSubTask?.assignee,
-          updatedAt: updatedSubTask.updatedAt?.toISOString()
+          assignees: updatedSubTask?.assignees || [],
+          updatedAt: updatedSubTask.updatedAt?.toISOString(),
         });
 
-        respond(callback, {success: true, data: inputData});
+        respond(callback, { success: true, data: updatedSubTask });
       } catch (err) {
         console.error("[SOCKET][subTask:assignee update] 실패", err);
         callback?.({ success: false, reason: err.message });

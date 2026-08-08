@@ -2582,7 +2582,9 @@ paths:
       tags:
         - Task
       summary: 세부 TASK 담당자 설정
-      description: 세부 TASK의 담당자를 설정합니다.
+      description: |
+        세부 TASK의 담당자를 설정합니다.
+        - assigneeIds 배열에 담당자 ID를 넣어 전달합니다. (예: [5] 또는 [5, 6, 7])
       security:
         - bearerAuth: []
       parameters:
@@ -2598,13 +2600,13 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - assigneeId
               properties:
-                assigneeId:
-                  type: integer
-                  description: 담당자로 지정할 사용자 ID
-                  example: 5
+                assigneeIds:
+                  type: array
+                  items:
+                    type: integer
+                  description: 담당자로 지정할 사용자 ID 배열
+                  example: [5, 6, 7]
       responses:
         '200':
           description: 담당자 설정 성공
@@ -2615,6 +2617,15 @@ paths:
                 message: "담당자가 지정되었습니다."
                 data:
                   sub_task_id: 10
+                  assignees:
+                    - memberId: 1
+                      userId: 5
+                      nickname: "홍길동"
+                      profileImage: "https://example.com/profile1.jpg"
+                    - memberId: 2
+                      userId: 6
+                      nickname: "김철수"
+                      profileImage: null
         '403':
           description: 권한 없음
           content:

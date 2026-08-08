@@ -264,23 +264,31 @@ async function main() {
     await prisma.subTask.create({
       data: {
         taskId: personalTasks[0].id,
-        assigneeId: memP0u0.id,
         title: "디자인 완료",
         endDate: now.add(3, "day").toDate(),
         status: "PROGRESS",
         isAlarm: true,
         ...subTaskTime,
+        subTaskAssignees: {
+          create: {
+            memberId: memP0u0.id
+          }
+        }
       },
     }),
     await prisma.subTask.create({
       data: {
         taskId: personalTasks[0].id,
-        assigneeId: memP0u0.id,
         title: "프론트엔드 개발",
         endDate: now.add(5, "day").toDate(),
         status: "PENDING",
         isAlarm: true,
         ...subTaskTime,
+        subTaskAssignees: {
+          create: {
+            memberId: memP0u0.id
+          }
+        }
       },
     }),
     await prisma.subTask.create({
@@ -299,12 +307,16 @@ async function main() {
     await prisma.subTask.create({
       data: {
         taskId: personalTasks[1].id,
-        assigneeId: memP1u0.id,
         title: "책 3권 읽기",
         endDate: now.add(10, "day").toDate(),
         status: "PENDING",
         isAlarm: true,
         ...subTaskTime,
+        subTaskAssignees: {
+          create: {
+            memberId: memP1u0.id
+          }
+        }
       },
     }),
   );
@@ -313,34 +325,46 @@ async function main() {
     await prisma.subTask.create({
       data: {
         taskId: teamTask.id,
-        assigneeId: memTeamU0.id,
         title: "기획서 작성",
         endDate: now.add(5, "day").toDate(),
         status: "COMPLETED",
         isAlarm: true,
         ...subTaskTime,
+        subTaskAssignees: {
+          create: {
+            memberId: memTeamOwner.id
+          }
+        }
       },
     }),
     await prisma.subTask.create({
       data: {
         taskId: teamTask.id,
-        assigneeId: memTeamOwner.id,
         title: "데이터베이스 설계",
         endDate: now.add(10, "day").toDate(),
         status: "PROGRESS",
         isAlarm: true,
         ...subTaskTime,
+        subTaskAssignees: {
+          create: {
+            memberId: memTeamU0.id
+          }
+        }
       },
     }),
     await prisma.subTask.create({
       data: {
         taskId: teamTask.id,
-        assigneeId: memTeamU2.id,
         title: "API 개발",
         endDate: now.add(15, "day").toDate(),
         status: "PENDING",
         isAlarm: true,
         ...subTaskTime,
+        subTaskAssignees: {
+          create: {
+            memberId: memTeamU2.id
+          }
+        }
       },
     }),
   );

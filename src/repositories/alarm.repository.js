@@ -220,7 +220,6 @@ class AlarmRepository {
       select: {
         id: true,
         taskId: true,
-        assigneeId: true,
         title: true,
         endDate: true,
         isAlarm: true,

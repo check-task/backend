@@ -74,9 +74,8 @@ class MemberService {
         parseInt(taskId),
         tx,
       );
-      await tx.subTask.updateMany({
-        where: { assigneeId: requestingMember.id },
-        data: { assigneeId: null },
+      await tx.subTaskAssignee.deleteMany({
+        where: { memberId: requestingMember.id },
       });
       await tx.member.delete({ where: { id: requestingMember.id } });
       return {
