@@ -1573,9 +1573,7 @@ paths:
                       isAlarm: true
                       commentCount: 0
                       comments: []
-                      assigneeId: null
-                      assigneeName: "PENDING"
-                      assigneeProfileImage: null
+                      assignees: []
                     - subTaskId: 54
                       title: "실시간으로 추가된 세부과제2"
                       deadline: "2026-05-30"
@@ -1588,9 +1586,19 @@ paths:
                           writer: "오소윤"
                           profileImage: "http://img1.kakaocdn.net/thumb/R640x640.q70/?fname=http://t1.kakaocdn.net/account_images/default_profile.jpeg"
                           createdAt: "2026-02-10T18:50:15.000Z"
-                      assigneeId: 1
-                      assigneeName: "오소윤"
-                      assigneeProfileImage: "http://img1.kakaocdn.net/thumb/R640x640.q70/?fname=http://t1.kakaocdn.net/account_images/default_profile.jpeg"
+                      assignees:
+                        - memberId: 1
+                          userId: 1
+                          nickname: "오소윤"
+                          profileImage: "http://img1.kakaocdn.net/thumb/R640x640.q70/?fname=http://t1.kakaocdn.net/account_images/default_profile.jpeg"
+                        - memberId: 12
+                          userId: 2
+                          nickname: "선준우"
+                          profileImage: null
+                        - memberId: 13
+                          userId: 3
+                          nickname: "성태경"
+                          profileImage: null
                   communications:
                     - id: 1
                       taskId: 22
@@ -2234,109 +2242,6 @@ paths:
         '500':
           description: 서버 내부 오류 (트랜잭션 실패 등)
   
-  # 세부 과제 생성
-  /api/v1/task/{taskId}/subTask:
-    post:
-      tags:
-        - Task
-      summary: 단일 세부 과제 추가
-      description: |
-        특정 과제 내에 세부 과제를 하나 추가합니다.
-        - 상태(status): PENDING 자동 지정
-        - 담당자(assigneeId): 팀 과제는 NULL, 개인 과제는 본인 자동 지정
-        - 마감일(deadline): 선택 사항. 생략하거나 null이면 마감일 미지정으로 생성되며, 이 경우 마감 알림은 생성되지 않습니다.
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: taskId
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [title]
-              properties:
-                title:
-                  type: string
-                  example: "세부과제1"
-                deadline:
-                  type: string
-                  format: date
-                  nullable: true
-                  description: 마감일. 생략하거나 null이면 마감일 미지정으로 생성됩니다.
-                  example: "2026-05-30"
-                isAlarm:
-                  type: boolean
-                  example: true
-      responses:
-        '200':
-          description: 생성 성공
-          content:
-            application/json:
-              example:
-                resultType: "SUCCESS"
-                message: "세부 Task가 성공적으로 추가되었습니다."
-                data:
-                  subTaskId: 12
-                  title: "세부과제1"
-                  deadline: "2026-05-30T00:00:00.000Z"
-        '400':
-          description: 마감일 설정 오류
-          content:
-            application/json:
-              examples:
-                invalid_deadline:
-                  summary: "세부 과제 마감일이 부모 마감일을 초과하는 경우"
-                  value:
-                    resultType: "FAIL"
-                    code: 400
-                    errorCode: "INVALID_DEADLINE"
-                    reason: "세부 과제의 마감일은 부모 과제의 마감일보다 늦을 수 없습니다."
-                    data: null
-                task_deadline_expired:
-                  summary: "부모 과제의 마감일이 이미 지난 경우"
-                  value:
-                    resultType: "FAIL"
-                    code: 400
-                    errorCode: "TASK_DEADLINE_EXPIRED"
-                    reason: "이미 마감일이 지난 과제에는 세부 과제를 추가할 수 없습니다."
-                    data: null
-                subtask_end_date_required:
-                  summary: "세부 과제 마감일이 전달되지 않은 경우"
-                  value:
-                    resultType: "FAIL"
-                    code: 400
-                    errorCode: "SUBTASK_END_DATE_REQUIRED"
-                    reason: "세부 과제 마감일(deadline)이 필요합니다."
-                    data: null
-        '403':
-          description: 권한 없음
-          content:
-            application/json:
-              example:
-                resultType: "FAIL"
-                code: 403
-                errorCode: "FORBIDDEN_TASK"
-                reason: "해당 과제에 접근할 권한이 없습니다."
-                data: null
-        '404':
-          description: 부모 과제를 찾을 수 없음
-          content:
-            application/json:
-              example:
-                resultType: "FAIL"
-                code: 404
-                errorCode: "TASK_NOT_FOUND"
-                reason: "존재하지 않는 과제입니다."
-                data: null
-        '500':
-          description: 서버 내부 오류
-
   # 팀원 정보(역할) 수정
   /api/v1/task/{taskId}/member/{userId}:
     patch:
@@ -2730,7 +2635,7 @@ paths:
                         description: 변경된 마감일. 미지정 상태이면 null입니다.
                         example: "2026-01-31"
         '400':
-          description: 요청값 오류
+          description: 요청값 / 마감일 설정 오류
           content:
             application/json:
               examples:
@@ -2795,7 +2700,9 @@ paths:
       tags:
         - Task
       summary: 세부 TASK 담당자 설정
-      description: 세부 TASK의 담당자를 설정합니다.
+      description: |
+        세부 TASK의 담당자를 설정합니다.
+        - assigneeIds 배열에 담당자 ID를 넣어 전달합니다. (예: [5] 또는 [5, 6, 7])
       security:
         - bearerAuth: []
       parameters:
@@ -2811,13 +2718,13 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - assigneeId
               properties:
-                assigneeId:
-                  type: integer
-                  description: 담당자로 지정할 사용자 ID
-                  example: 5
+                assigneeIds:
+                  type: array
+                  items:
+                    type: integer
+                  description: 담당자로 지정할 사용자 ID 배열
+                  example: [5, 6, 7]
       responses:
         '200':
           description: 담당자 설정 성공
@@ -2828,6 +2735,15 @@ paths:
                 message: "담당자가 지정되었습니다."
                 data:
                   sub_task_id: 10
+                  assignees:
+                    - memberId: 1
+                      userId: 5
+                      nickname: "홍길동"
+                      profileImage: "https://example.com/profile1.jpg"
+                    - memberId: 2
+                      userId: 6
+                      nickname: "김철수"
+                      profileImage: null
         '403':
           description: 권한 없음
           content:
@@ -3007,6 +2923,47 @@ paths:
                       deadline:
                         type: string
                         format: date-time
+        '400':
+          description: 마감일 설정 오류
+          content:
+            application/json:
+              examples:
+                invalid_deadline:
+                  summary: "세부 과제 마감일이 부모 마감일을 초과하는 경우"
+                  value:
+                    resultType: "FAIL"
+                    code: 400
+                    errorCode: "INVALID_DEADLINE"
+                    reason: "세부 과제의 마감일은 부모 과제의 마감일보다 늦을 수 없습니다."
+                    data: null
+                task_deadline_expired:
+                  summary: "부모 과제의 마감일이 이미 지난 경우"
+                  value:
+                    resultType: "FAIL"
+                    code: 400
+                    errorCode: "TASK_DEADLINE_EXPIRED"
+                    reason: "이미 마감일이 지난 과제에는 세부 과제를 추가할 수 없습니다."
+                    data: null
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 403
+                errorCode: "FORBIDDEN_TASK"
+                reason: "해당 과제에 접근할 권한이 없습니다."
+                data: null
+        '404':
+          description: 부모 과제를 찾을 수 없음
+          content:
+            application/json:
+              example:
+                resultType: "FAIL"
+                code: 404
+                errorCode: "TASK_NOT_FOUND"
+                reason: "존재하지 않는 과제입니다."
+                data: null
     delete:
       tags:
         - Task
@@ -4784,7 +4741,158 @@ paths:
           description: "토큰 누락 (TOKEN_REQUIRED)"
         '401':
           description: "카카오 토큰 만료 또는 위조 (INVALID_KAKAO_TOKEN)"
-  
+  # 앱용 애플 로그인
+  /api/v1/auth/app/signin/apple:
+    post:
+      summary: "앱 애플 로그인 및 회원가입"
+      description: "모바일 앱에서 획득한 애플 identityToken을 검증하여 로그인 및 가입 처리를 수행합니다."
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - identityToken
+              properties:
+                identityToken:
+                  type: string
+                  description: "Apple에서 발급받은 JWT 형식의 identity token"
+                  example: "eyJhbGciOiJSUzI1NiIsImtpZ..."
+                user:
+                  type: string
+                  description: "최초 로그인 시 Apple에서 제공하는 유저 정보 (JSON 문자열) - 선택 사항"
+                  example: "{\"name\":{\"firstName\":\"길동\",\"lastName\":\"홍\"},\"email\":\"test@apple.com\"}"
+      responses:
+        '200':
+          description: "애플 로그인 성공 (탈퇴 회원의 경우 별도 응답 반환)"
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    description: "정상 로그인 성공 응답"
+                    required: [resultType, message, data]
+                    properties:
+                      resultType:
+                        type: string
+                        example: "SUCCESS"
+                      message:
+                        type: string
+                        example: "애플 앱 로그인이 완료되었습니다."
+                      data:
+                        type: object
+                        required: [accessToken, refreshToken, isNewUser, user]
+                        properties:
+                          accessToken:
+                            type: string
+                            example: "eyJhbGciOiJIUzI1Ni..."
+                          refreshToken:
+                            type: string
+                            example: "8c9d0e11-d3c4..."
+                          isNewUser:
+                            type: boolean
+                            example: false
+                          user:
+                            type: object
+                            properties:
+                              id:
+                                type: number
+                                example: 3
+                              email:
+                                type: string
+                                example: "test@apple.com"
+                              nickname:
+                                type: string
+                                example: "홍길동"
+                  - type: object
+                    description: "탈퇴 처리된 계정으로 로그인 시도한 경우의 응답"
+                    required: [resultType, message, data]
+                    properties:
+                      resultType:
+                        type: string
+                        example: "SUCCESS"
+                      message:
+                        type: string
+                        example: "탈퇴 처리된 애플 계정입니다."
+                      data:
+                        type: object
+                        required: [withdrawnUser, restoreToken]
+                        properties:
+                          withdrawnUser:
+                            type: boolean
+                            example: true
+                          restoreToken:
+                            type: string
+                            example: "b3a1c2d4-e5f6-7890-abcd-ef1234567890"
+        '400':
+          description: "토큰 누락 (TOKEN_REQUIRED) 또는 잘못된 형식의 데이터 요청 (JSON 파싱 에러 등)"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "FAIL"
+                  code:
+                    type: number
+                    example: 400
+                  errorCode:
+                    type: string
+                    example: "BAD_REQUEST"
+                  reason:
+                    type: string
+                    example: "Expected ',' or '}' after property value in JSON"
+                  data:
+                    nullable: true
+                    example: null
+        '401':
+          description: "애플 토큰 만료 (APPLE_TOKEN_EXPIRED) 또는 유효하지 않은 토큰 (INVALID_APPLE_TOKEN)"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "FAIL"
+                  code:
+                    type: number
+                    example: 401
+                  errorCode:
+                    type: string
+                    example: "INVALID_APPLE_TOKEN"
+                  reason:
+                    type: string
+                    example: "유효하지 않은 토큰입니다."
+                  data:
+                    nullable: true
+                    example: null
+        '500':
+          description: "서버 내부 오류 (DB 연결 에러, Prisma 제약 조건 처리 실패 등)"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: "FAIL"
+                  code:
+                    type: number
+                    example: 500
+                  errorCode:
+                    type: string
+                    example: "INTERNAL_SERVER_ERROR"
+                  reason:
+                    type: string
+                    example: "서버 내부 오류가 발생했습니다."
+                  data:
+                    nullable: true
+                    example: null
   # 로그아웃 (자체/카카오/애플 공용)
   /api/v1/auth/logout:
     post:

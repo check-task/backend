@@ -70,10 +70,24 @@ export class TaskRequestDTO {
       deadline: data.deadline,
       type: data.type === "TEAM" ? "TEAM" : "PERSONAL",
       status: "PENDING",
-      subTasks: (data.subTasks || []).map((st) => ({
-        title: st.title,
-        endDate: st.endDate ? new Date(st.endDate) : null,
-      })),
+      subTasks: (data.subTasks || []).map((st) => {
+        const assigneeId =
+          st.assigneeId !== undefined && st.assigneeId !== null
+            ? Number(st.assigneeId)
+            : undefined;
+        const assigneeIds = Array.isArray(st.assigneeIds)
+          ? st.assigneeIds
+              .map((id) => Number(id))
+              .filter((id) => !Number.isNaN(id) && id > 0)
+          : undefined;
+
+        return {
+          title: st.title,
+          endDate: st.endDate ? new Date(st.endDate) : null,
+          ...(assigneeId !== undefined ? { assigneeId } : {}),
+          ...(assigneeIds?.length ? { assigneeIds } : {}),
+        };
+      }),
       references: (data.references || []).map(ref => ({
         name: ref.name,
         url: ref.url || null,
@@ -124,6 +138,12 @@ export class TaskRequestDTO {
       data.assigneeId !== undefined && data.assigneeId !== null
         ? Number(data.assigneeId)
         : undefined;
+    const assigneeIds = Array.isArray(data.assigneeIds)
+      ? data.assigneeIds
+          .map((id) => Number(id))
+          .filter((id) => !Number.isNaN(id) && id > 0)
+      : undefined;
+
     return {
       title: data.title,
       endDate: data.deadline ? new Date(data.deadline) : undefined,
@@ -132,6 +152,7 @@ export class TaskRequestDTO {
       ...(assigneeId !== undefined && !Number.isNaN(assigneeId)
         ? { assigneeId }
         : {}),
+      ...(assigneeIds?.length ? { assigneeIds } : {}),
     };
   }
 
@@ -142,14 +163,26 @@ export class TaskRequestDTO {
     if (data.title !== undefined) {
       result.title = data.title;
     }
+
     const endDateRaw = data.endDate !== undefined ? data.endDate : data.deadline;
     if (endDateRaw !== undefined) {
       // null / 빈 문자열이면 마감일 미지정으로 되돌립니다.
       result.endDate =
         endDateRaw === null || endDateRaw === "" ? null : new Date(endDateRaw);
     }
+
     if (data.isAlarm !== undefined) {
       result.isAlarm = Boolean(data.isAlarm);
+    }
+
+    if (data.assigneeId !== undefined) {
+      result.assigneeId = Number(data.assigneeId);
+    }
+
+    if (Array.isArray(data.assigneeIds)) {
+      result.assigneeIds = data.assigneeIds
+        .map((id) => Number(id))
+        .filter((id) => !Number.isNaN(id) && id > 0);
     }
 
     return result;
@@ -198,9 +231,13 @@ export class TaskResponseDTO extends TaskUtils {
               profileImage: comment.user?.profileImage || null,
               createdAt: comment.createdAt,
             })) || [],
-          assigneeId: st.assignee?.user?.id || null,
-          assigneeName: st.assignee?.user?.nickname || "미지정",
-          assigneeProfileImage: st.assignee?.user?.profileImage || null,
+          assignees:
+            st.subTaskAssignees?.map((assignment) => ({
+              memberId: assignment.member.id,
+              userId: assignment.member.user.id,
+              nickname: assignment.member.user.nickname,
+              profileImage: assignment.member.user.profileImage || null,
+            })) || [],
         })) || [],
       communications: task.communications?.map((c) => ({ ...c })) || [],
       meetingLogs: task.logs?.map((log) => ({ ...log })) || [],

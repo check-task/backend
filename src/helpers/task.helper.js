@@ -45,20 +45,53 @@ class TaskHandler {
     };
   }
 
-  buildUpdateSubTaskAssigneeParams({ userId, subTaskId, assigneeId }) {
+  buildUpdateSubTaskAssigneeParams({ userId, subTaskId, assigneeId, assigneeIds }) {
     if (!subTaskId) {throw new BadRequestError("INVALID_SUBTASK_ID", "서브태스크 ID가 필요합니다.");}
   
     let normalizedAssigneeId = null;
     if (assigneeId !== undefined && assigneeId !== null && assigneeId !== "") {
       normalizedAssigneeId = Number(assigneeId);
   
-      if (isNaN(normalizedAssigneeId)) {throw new BadRequestError("INVALID_ASSIGNEE_ID", "유효하지 않은 담당자 ID입니다.");}
+      if (isNaN(normalizedAssigneeId)) {
+        throw new BadRequestError("INVALID_ASSIGNEE_ID", "유효하지 않은 담당자 ID입니다.");
+      }
     }
-  
+
+    let normalizedAssigneeIds;
+    if (assigneeIds !== undefined && assigneeIds !== null) {
+      if (!Array.isArray(assigneeIds)) {
+        throw new BadRequestError(
+          "INVALID_ASSIGNEE_IDS",
+          "assigneeIds는 배열이어야 합니다.",
+        );
+      }
+      normalizedAssigneeIds = assigneeIds.map((id) => {
+        const isPositiveIntegerFormat =
+          typeof id === "number"
+            ? Number.isInteger(id)
+            : typeof id === "string" && /^\d+$/.test(id);
+
+        const parsed = isPositiveIntegerFormat ? Number(id) : NaN;
+
+        if (
+          !isPositiveIntegerFormat ||
+          !Number.isSafeInteger(parsed) ||
+          parsed <= 0
+        ) {
+          throw new BadRequestError(
+            "INVALID_ASSIGNEE_ID",
+            "유효하지 않은 담당자 ID입니다.",
+          );
+        }
+        return parsed;
+      });
+    }
+
     return {
       subTaskId: Number(subTaskId),
       userId,
       assigneeId: normalizedAssigneeId,
+      assigneeIds: normalizedAssigneeIds,
     };
   }
 

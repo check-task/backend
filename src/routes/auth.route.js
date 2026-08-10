@@ -2,11 +2,13 @@ import { Router } from "express";
 import passport from "passport";
 import { kakaoMiddleware } from "../middlewares/auth.middleware.js";
 import { AuthController } from "../controllers/auth.controller.js";
+import { LoginController } from "../controllers/login.controller.js";
 import { BadRequestError } from "../errors/custom.error.js";
 import { redis } from "../config/redis.config.js";
 
 const router = Router();
 const authController = new AuthController();
+const loginController = new LoginController();
 
 //카카오 연동하기
 router.get("/kakao",
@@ -114,6 +116,12 @@ router.get(
 router.post(
   "/apple/callback",
   authController.appleCallback.bind(authController)
+);
+
+// 앱 애플 로그인
+router.post(
+  "/app/signin/apple",
+  loginController.appAppleLogin.bind(loginController)
 );
 
 export default router;
