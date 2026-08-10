@@ -879,10 +879,32 @@ class TaskService {
     }
   }
 
+  // 초대 코드 생성/조회 권한 확인 (개인 과제 불가, 해당 과제 멤버만 가능)
+  async assertCanManageInvite(taskInfo, userId) {
+    if (taskInfo.type === "PERSONAL") {
+      throw new ForbiddenError(
+        "PERSONAL_TASK",
+        "개인 과제는 초대 코드 생성이 불가능합니다.",
+      );
+    }
+
+    // 모든 멤버가 초대할 수 있음
+    const isMember = await prisma.member.findFirst({
+      where: { taskId: taskInfo.id, userId },
+    });
+
+    if (!isMember) {
+      throw new ForbiddenError(
+        "NOT_MEMBER",
+        "해당 과제에 참여한 멤버가 아닙니다.",
+      );
+    }
+  }
+
   // 초대 코드 조회
   async checkInviteCode(taskInfo) {
     // 초대 코드 / 만료시간 없는 경우
-    if (taskInfo.inviteCode == null || !taskInfo.inviteExpiredAt == null) {
+    if (taskInfo.inviteCode == null || taskInfo.inviteExpiredAt == null) {
       return { isValid: false };
     }
 
@@ -901,24 +923,9 @@ class TaskService {
 
   // 초대 코드 생성
   async generateInviteCode(taskInfo, userId) {
-    if (taskInfo.type === "PERSONAL") {
-      throw new ForbiddenError(
-        "PERSONAL_TASK",
-        "개인 과제는 초대 코드 생성이 불가능합니다.",
-      );
-    }
-
-    // 사용자가 해당 과제의 멤버인지 확인 - 모든 멤버가 초대할 수 있음
-    const isMember = await prisma.member.findFirst({
-      where: { taskId: taskInfo.id, userId },
-    });
-
-    if (!isMember) {
-      throw new ForbiddenError(
-        "NOT_MEMBER",
-        "해당 과제에 참여한 멤버가 아닙니다.",
-      );
-    }
+    // 이미 checkInviteCode 이전 단계에서 assertCanManageInvite로 검증되지만,
+    // 이 메서드가 단독으로 호출될 경우를 대비해 다시 한번 확인합니다.
+    await this.assertCanManageInvite(taskInfo, userId);
 
     // 랜덤한 8자리 초대 코드 생성 (대문자 + 숫자)
     const inviteCode = Array(8)
