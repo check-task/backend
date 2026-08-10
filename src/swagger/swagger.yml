@@ -1573,9 +1573,7 @@ paths:
                       isAlarm: true
                       commentCount: 0
                       comments: []
-                      assigneeId: null
-                      assigneeName: "PENDING"
-                      assigneeProfileImage: null
+                      assignees: []
                     - subTaskId: 54
                       title: "실시간으로 추가된 세부과제2"
                       deadline: "2026-05-30"
@@ -1588,9 +1586,19 @@ paths:
                           writer: "오소윤"
                           profileImage: "http://img1.kakaocdn.net/thumb/R640x640.q70/?fname=http://t1.kakaocdn.net/account_images/default_profile.jpeg"
                           createdAt: "2026-02-10T18:50:15.000Z"
-                      assigneeId: 1
-                      assigneeName: "오소윤"
-                      assigneeProfileImage: "http://img1.kakaocdn.net/thumb/R640x640.q70/?fname=http://t1.kakaocdn.net/account_images/default_profile.jpeg"
+                      assignees:
+                        - memberId: 1
+                          userId: 1
+                          nickname: "오소윤"
+                          profileImage: "http://img1.kakaocdn.net/thumb/R640x640.q70/?fname=http://t1.kakaocdn.net/account_images/default_profile.jpeg"
+                        - memberId: 12
+                          userId: 2
+                          nickname: "선준우"
+                          profileImage: null
+                        - memberId: 13
+                          userId: 3
+                          nickname: "성태경"
+                          profileImage: null
                   communications:
                     - id: 1
                       taskId: 22
