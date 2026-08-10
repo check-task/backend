@@ -892,17 +892,12 @@ class TaskService {
 
         // 마감일이 미지정이면 알림 시각을 계산할 수 없으므로 알림을 만들지 않습니다.
         if (
-          nextAssigneeMemberId != null &&
           updatedTask.isAlarm &&
           updatedTask.endDate &&
-          memberIdChanged
+          memberIdsChanged
         ) {
-          const newMember = await tx.member.findFirst({
-            where: { id: nextAssigneeMemberId, taskId: task.id },
-            include: { user: { include: { alarmSetting: true } } },
-          });
 
-          for (const assignment of newAssignments) {
+          for (const assignment of updatedTask.subTaskAssignees) {
             const assignee = assignment.member;
             if (!assignee?.userId) continue;
 
