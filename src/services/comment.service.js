@@ -107,9 +107,7 @@ class CommentService {
 
       // 댓글 작성자만 삭제 가능
       if (comment.user.id !== userId) {
-        const error = new Error("삭제 권한이 없습니다.");
-        error.status = 403;
-        throw error;
+        throw new ForbiddenError("FORBIDDEN", "삭제 권한이 없습니다.");
       }
 
       // 댓글 삭제

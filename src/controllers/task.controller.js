@@ -322,6 +322,9 @@ class TaskController {
         throw new NotFoundError("TASK_NOT_FOUND", "과제를 찾을 수 없습니다.");
       }
 
+      // 기존 초대 코드를 그대로 반환하는 경로에서도 권한 검사가 반드시 먼저 수행.
+      await taskService.assertCanManageInvite(task, userId);
+
       let result;
 
       const check = await taskService.checkInviteCode(task);
@@ -339,7 +342,7 @@ class TaskController {
 
       res.status(200).json({
         resultType: "SUCCESS",
-        message: "초대 코드 반환 완료.",
+        message: "초대 링크가 생성되었습니다.",
         data: {
           invite_code: result.invite_code,
           invite_expired: result.invite_expired,
