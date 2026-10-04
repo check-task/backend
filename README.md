@@ -1,10 +1,10 @@
 # :sparkles: Check Task Back-End :sparkles:
 ## Team
-|<img width="250" height="250" alt="image" src="https://github.com/user-attachments/assets/bb166557-3a96-4715-b7e9-eab379b29541" />|<img width="250" height="250" alt="image" src="https://github.com/user-attachments/assets/38c7fdaa-2ca7-4421-a34c-7bbc93ce0ba1" />|<img width="250" height="250" alt="image" src="https://github.com/user-attachments/assets/5a245a4d-3e5b-4c24-95d8-b74fdacb6ef4" />|<img width="250" height="250" alt="image" src="https://github.com/user-attachments/assets/fd09a935-a8ee-40eb-87ea-c2170c753e14" />|<img width="250" height="250" alt="image" src="https://github.com/user-attachments/assets/a31dffc4-7508-45ee-8842-e15b6e9ed317" />|
-|:-:|:-:|:-:|:-:|:-:|
-| [제이엠/김정민](https://github.com/JungMINI-developer) | [소리/오소윤](https://github.com/soyun0318) | [제로/정규은](https://github.com/jeongkyueun) | [우변/양우영](https://github.com/yangwooyoung123) | [페이커/선준우](https://github.com/junu999) |
-| **Back-End (팀장)** | **Back-End** | **Back-End** | **Back-End** | **Back-End** |
-| 백엔드 총괄<br/>초기 세팅<br/>알림 기능 구현 | 과제 관련 기능 구현 | 팀 과제 세부 기능 구현 | 로그인 기능 구현<br/>배포 및 운영 환경 구성 | 유저 관련 기능 구현 |
+|<img width="250" height="250" alt="image" src="https://github.com/user-attachments/assets/bb166557-3a96-4715-b7e9-eab379b29541" />|<img width="250" height="250" alt="image" src="https://github.com/user-attachments/assets/38c7fdaa-2ca7-4421-a34c-7bbc93ce0ba1" />|<img width="250" height="250" alt="image" src="https://github.com/user-attachments/assets/5a245a4d-3e5b-4c24-95d8-b74fdacb6ef4" />|<img width="250" height="250" alt="image" src="https://github.com/user-attachments/assets/fd09a935-a8ee-40eb-87ea-c2170c753e14" />|<img width="250" height="250" alt="image" src="https://github.com/user-attachments/assets/a31dffc4-7508-45ee-8842-e15b6e9ed317" />| <img width="250" height="250" alt="KakaoTalk_Photo_2026-10-04-16-43-41" src="https://github.com/user-attachments/assets/b355519c-f61b-43a3-9566-de0a74908fe4" /> |
+|:-:|:-:|:-:|:-:|:-:| :-:|
+| [제이엠/김정민](https://github.com/JungMINI-developer) | [소리/오소윤](https://github.com/soyun0318) | [제로/정규은](https://github.com/jeongkyueun) | [우변/양우영](https://github.com/yangwooyoung123) | [페이커/선준우](https://github.com/junu999) | [송월/김민지](https://github.com/songwol38) |
+| **Back-End (팀장)** | **Back-End** | **Back-End** | **Back-End** | **Back-End** | **Back-End** |
+| 백엔드 총괄<br/>초기 세팅<br/>알림 기능 구현 | 과제 관련 기능 구현 | 팀 과제 세부 기능 구현 | 로그인 기능 구현<br/>배포 및 운영 환경 구성 | 유저 관련 기능 구현 | 팀 협업 자료 기능 구현 및 PM |
 
 ## ⚙️ 시스템 구성도
 <img width="1639" height="621" alt="Group 3" src="https://github.com/user-attachments/assets/48898d5b-61b2-4761-9a12-b83c5d44e92c" />
