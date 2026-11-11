@@ -16,6 +16,7 @@ vi.mock("../../src/middlewares/upload.middleware.js", () => ({
   uploadToS3: vi.fn().mockResolvedValue("https://s3.example.com/profile.png"),
   default: {
     single: () => (req, res, next) => next(),
+    array: () => (req, res, next) => next(),
   },
 }));
 vi.mock("../../src/config/s3.config.js", () => ({
