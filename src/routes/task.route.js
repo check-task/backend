@@ -1,5 +1,5 @@
 import express from "express";
-import multer from "multer";
+import upload from "../middlewares/upload.middleware.js";
 
 import taskController from "../controllers/task.controller.js";
 import authenticate from "../middlewares/authenticate.middleware.js";
@@ -26,7 +26,6 @@ import {
   deleteAllSubTaskParamsSchema,
 } from "../validators/task.schema.js";
 
-const upload = multer({ storage: multer.memoryStorage() });
 
 const router = express.Router();
 

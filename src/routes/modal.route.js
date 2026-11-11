@@ -1,5 +1,5 @@
 import { Router } from "express";
-import multer from "multer";
+import upload from "../middlewares/upload.middleware.js";
 
 import modalController from "../controllers/modal.controller.js";
 import authenticate from "../middlewares/authenticate.middleware.js";
@@ -17,7 +17,6 @@ import {
 } from "../validators/modal.schema.js";
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage() });
 
 // ─── 자료 ─────────────────────────────────────────────────────────
 router.post(

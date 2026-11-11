@@ -9,6 +9,7 @@ import { corsOptions } from "./config/cors.config.js";
 import apiRouter from "./routes/index.js";
 import prisma from "./db.config.js";
 import { swaggerHandler } from "./middlewares/swagger.middleware.js";
+import { swaggerBasicAuth } from "./middlewares/swagger-auth.middleware.js";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 import path from "path";
@@ -82,6 +83,8 @@ swaggerDocument.servers = [
   },
 ];
 
+// Swagger UI, 정적 리소스, OpenAPI JSON에 동일한 접속 인증 적용
+app.use(["/docs", "/openapi.json"], swaggerBasicAuth);
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.get("/openapi.json", swaggerHandler);
