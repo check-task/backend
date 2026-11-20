@@ -20,6 +20,7 @@ const setupSocket = (httpServer) => {
           "http://localhost:3000",
           "https://checktask.kro.kr",
           "https://checktask.p-e.kr",
+          "https://www.checktask.kr"
         ],
         methods: ["GET", "POST", "PATCH", "DELETE"],
         credentials: true
